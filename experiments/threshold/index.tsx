@@ -5,14 +5,14 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore } from './store'
 import { Scene } from './Scene'
-import { useControls, folder } from 'leva'
+import { useControls, folder, button } from 'leva'
 import { useWebcam, useSampler } from './hooks'
 import { useAudio } from './audio'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
-const POS_FLAT = new THREE.Vector3(0, 0, 15)
-const POS_VOLUMETRIC = new THREE.Vector3(10, -10, 15)
+const POS_FLAT = new THREE.Vector3(0, 0, 22) // Increased distance to prevent clipping
+const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
 
 function AnimatedCamera() {
@@ -42,6 +42,7 @@ export default function ThresholdExperiment() {
     renderMode, setRenderMode,
     viewMode, setViewMode,
     sourceMode, setSourceMode,
+    showGrid, setShowGrid,
     audioEnabled, setAudioEnabled,
     audioReactive, setAudioReactive,
     soundType, setSoundType,
@@ -50,23 +51,39 @@ export default function ThresholdExperiment() {
 
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
-  const { analyzerRef, clickSynthRef } = useAudio()
+  const { analyzerRef, synthRef, clickSynthRef } = useAudio()
 
+  // 1. Keyboard Shortcut (Spacebar)
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.code === 'Space') {
+        e.preventDefault()
         const currentMode = useStore.getState().viewMode
-        setViewMode(currentMode === 'flat' ? 'volumetric' : 'flat')
+        const nextMode = currentMode === 'flat' ? 'volumetric' : 'flat'
+        setViewMode(nextMode)
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [setViewMode])
 
+  // 2. Mouse Wheel (Threshold)
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const delta = e.deltaY * -0.0005
+      const currentThresh = useStore.getState().threshold
+      const nextThresh = Math.max(0, Math.min(1, currentThresh + delta))
+      setThreshold(nextThresh)
+    }
+    window.addEventListener('wheel', handleWheel, { passive: true })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [setThreshold])
+
+  // 3. Leva Controls (Controlled via store values)
   useControls('Signal', {
     source: folder({
-      mode: { value: sourceMode, options: ['pixel', 'ai'], onChange: setSourceMode },
+      mode: { value: sourceMode, options: { '2D CAMERA': 'pixel', '3D SCAN (AI)': 'ai' }, onChange: setSourceMode },
       resolution: { value: resolution, min: 16, max: 128, step: 1, onChange: setResolution },
     }),
     processing: folder({
@@ -80,7 +97,7 @@ export default function ThresholdExperiment() {
       extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
     }),
     render: folder({
-      mode: { value: renderMode, options: ['radio', 'dots', 'blocks', 'particles', 'ascii'], onChange: setRenderMode },
+      mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'particles', 'ascii', 'spectral'], onChange: setRenderMode },
       theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
     })
   })
@@ -88,6 +105,7 @@ export default function ThresholdExperiment() {
   useControls('View', {
     display: folder({
       mode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
+      grid: { value: showGrid, onChange: setShowGrid },
     })
   })
 
@@ -113,7 +131,7 @@ export default function ThresholdExperiment() {
           </p>
           <button 
             onClick={() => setInitialized(true)}
-            className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform shadow-[0_0_20px_rgba(0,255,65,0.4)]"
+            className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform"
           >
             INITIALIZE
           </button>
@@ -123,8 +141,14 @@ export default function ThresholdExperiment() {
   }
 
   return (
-    <div className="w-full h-full bg-[#050505] relative">
-      <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+    <div className="w-full h-full bg-[#050505] relative overflow-hidden">
+      <video 
+        ref={videoRef} 
+        autoPlay 
+        playsInline 
+        muted 
+        className="fixed opacity-0 pointer-events-none" 
+      />
 
       {loading && (
         <div className="absolute top-4 left-4 z-50 text-[#00ff41] text-[10px] tracking-[0.2em] animate-pulse">
@@ -144,17 +168,17 @@ export default function ThresholdExperiment() {
         <color attach="background" args={['#050505']} />
         
         <EffectComposer>
-          <Bloom luminanceThreshold={0.2} intensity={1.2} levels={9} mipmapBlur />
-          <ChromaticAberration offset={new THREE.Vector2(0.0015, 0.0015)} />
-          <Scanline opacity={0.2} density={2.5} />
-          <Noise opacity={0.08} />
+          <Bloom luminanceThreshold={0.5} intensity={0.8} levels={8} mipmapBlur />
+          <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
+          <Scanline opacity={0.1} density={2} />
+          <Noise opacity={0.03} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>
         
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1} color={theme === 'acid' ? '#ccff00' : '#00ff41'} />
         
-        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} clickSynthRef={clickSynthRef} />
+        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} synthRef={synthRef} clickSynthRef={clickSynthRef} />
       </Canvas>
     </div>
   )

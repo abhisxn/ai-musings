@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
+
 interface ThresholdState {
   // UI / Global
   initialized: boolean
@@ -26,14 +28,17 @@ interface ThresholdState {
   viewMode: 'flat' | 'volumetric'
   setViewMode: (val: 'flat' | 'volumetric') => void
 
-  renderMode: 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii'
-  setRenderMode: (val: 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii') => void
+  renderMode: RenderMode
+  setRenderMode: (val: RenderMode) => void
   
   theme: 'dark' | 'light' | 'acid' | 'heatmap'
   setTheme: (val: 'dark' | 'light' | 'acid' | 'heatmap') => void
 
   sourceMode: 'pixel' | 'ai'
   setSourceMode: (val: 'pixel' | 'ai') => void
+
+  showGrid: boolean
+  setShowGrid: (val: boolean) => void
   
   // Audio
   audioEnabled: boolean
@@ -76,6 +81,9 @@ export const useStore = create<ThresholdState>((set) => ({
 
   sourceMode: 'pixel',
   setSourceMode: (sourceMode) => set({ sourceMode }),
+
+  showGrid: true,
+  setShowGrid: (showGrid) => set({ showGrid }),
   
   audioEnabled: false,
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),

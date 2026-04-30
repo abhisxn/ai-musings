@@ -19,14 +19,19 @@ export function useWebcam() {
           video: { width: 640, height: 480 },
           audio: false
         })
+        console.log("Webcam: Stream captured", mediaStream.id)
         currentStream = mediaStream
         setStream(mediaStream)
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream
+          videoRef.current.onloadedmetadata = () => {
+            console.log("Webcam: Metadata loaded", videoRef.current?.videoWidth, videoRef.current?.videoHeight)
+            videoRef.current?.play().catch(e => console.error("Webcam: Play error", e))
+          }
           setVideoElement(videoRef.current)
         }
       } catch (err) {
-        console.error("Webcam Error:", err)
+        console.error("Webcam: Error", err)
       }
     }
 
@@ -88,16 +93,27 @@ export function useSampler() {
     let isProcessing = false
     let frameId: number
     let isMounted = true
+    let frameCount = 0
 
     const process = async () => {
       if (!isMounted) return
 
       if (videoElement.readyState >= 2 && !isProcessing) {
         isProcessing = true
+        frameCount++
         try {
+          if (frameCount === 1) {
+            console.log("Sampler: Video ready", videoElement.videoWidth, "x", videoElement.videoHeight)
+          }
+
           ctx.drawImage(videoElement, 0, 0, 128, 128)
           const imageData = ctx.getImageData(0, 0, 128, 128)
           
+          if (frameCount % 60 === 0) {
+            const centerIdx = (64 * 128 + 64) * 4
+            console.log("Sampler: Frame", frameCount, "Center Pixel:", imageData.data[centerIdx], imageData.data[centerIdx+1], imageData.data[centerIdx+2])
+          }
+
           if (sourceMode === 'ai' && aiModelRef.current && transformersRef.current) {
             const { RawImage } = transformersRef.current
             const image = new RawImage(imageData.data, 128, 128, 4)
@@ -105,14 +121,21 @@ export function useSampler() {
             
             if (!isMounted) return
 
-            const depthData = result.depth.data
+            const depthData = result.depth.data // This is a Float32Array
             
+            // Find min/max for normalization if needed, but depth-anything usually is 0-1 or 0-255
+            // Let's ensure it's mapped 0-1
+            let max = 0
+            for (let i = 0; i < depthData.length; i++) if (depthData[i] > max) max = depthData[i]
+
             for (let y = 0; y < resolution; y++) {
               const targetY = y * resolution
               const sy = Math.floor((y / resolution) * 128)
               for (let x = 0; x < resolution; x++) {
                 const sx = Math.floor((x / resolution) * 128)
-                dataRef.current[targetY + x] = depthData[sy * 128 + sx] / 255
+                const val = depthData[sy * 128 + sx]
+                // Normalize to 0-1 based on observed max if it looks flat
+                dataRef.current[targetY + x] = max > 1 ? val / max : val
               }
             }
           } else {

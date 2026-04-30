@@ -1,7 +1,7 @@
 import { ExperimentMeta } from './types'
 
 // Import all meta files explicitly — Next.js static export requires static imports
-import thresholdMeta from '@/content/experiments/threshold/meta'
+import thresholdMeta from '@/experiments/threshold/meta'
 
 const registry: ExperimentMeta[] = [
   thresholdMeta,

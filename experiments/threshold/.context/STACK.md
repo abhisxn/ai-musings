@@ -26,6 +26,8 @@ Integration: Embedded via `app/experiments/[slug]/page.tsx`.
 ## Audio
 
 - **Tone.js 15+:** Integrated via custom React hooks (`useAudioEngine`).
+- **Dynamic Synth Coupling:** Swaps synth profiles (Chimes, Bells, Pulse, Sine) based on user state.
+- **Pitch Mapping:** Real-time note selection from a C Major Pentatonic scale mapped to pixel vertical coordinates.
 - **FFT Analysis:** Audio data passed to shaders as uniforms for music-reactive visuals.
 
 ## State Management

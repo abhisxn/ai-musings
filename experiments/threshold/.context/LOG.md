@@ -22,3 +22,9 @@ Decision log for this experiment.
 [2026-04-30] [REFACTOR] Done — Pivoted from AI Depth Estimation (too slow) to high-speed Real-Time Pixel Sampling (60fps mirror functionality).
 [2026-04-30] [PERF] Done — Implemented pixel-to-luminance mirror filter for immediate visual feedback.
 [2026-04-30] [CAMERA] Done — Implemented AnimatedCamera for smooth lerp transitions between flat and volumetric views; added spacebar shortcut.
+[2026-05-01] [FIX] Done — Restored Radio mode 2D logic; fixed Blocks mode 3D volumetric extrusion.
+[2026-05-01] [RENDER] Done — Implemented "Spectral" render mode (House of Cards aesthetic) using unskinned point clouds with temporal shimmer and additive blending.
+[2026-05-01] [THEME] Done — Redesigned "Heatmap" theme with a full multi-chromatic spectral gradient (Blue → Red).
+[2026-05-01] [UI] Done — Added user-controlled "Gridlines" toggle in the View panel; subtilized grid visuals.
+[2026-05-01] [AUDIO] Done — Fixed sound type switching bug; implemented vertical pitch-mapping using a C Major Pentatonic scale for more expressive audio feedback.
+[2026-05-01] [STABILITY] Done — Resolved all syntax and TypeScript errors; verified project integrity with tsc check.
