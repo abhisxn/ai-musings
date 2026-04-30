@@ -1,0 +1,20 @@
+/* Shared design system tokens */
+
+:root {
+  --hud-bg: #0a0a0a;
+  --hud-fg: #f0f0f0;
+  --hud-accent: #e0ff00;
+  --hud-muted: #555;
+  --hud-font: 'IBM Plex Mono', monospace;
+  --hud-size-sm: 12px;
+  --hud-size-md: 16px;
+  --hud-size-lg: 24px;
+}
+
+body {
+  background: var(--hud-bg);
+  color: var(--hud-fg);
+  font-family: var(--hud-font);
+  margin: 0;
+  padding: 0;
+}
