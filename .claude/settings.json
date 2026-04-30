@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xxd \"/Users/abhishek/AI Musings/.context/LOG.md\")",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx tailwindcss *)",
+      "Bash(./node_modules/.bin/tailwindcss init *)",
+      "Bash(node_modules/.bin/tailwindcss init *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(npx next *)",
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/musings/experiments)",
+      "Bash(curl -sL -o /dev/null -w \"%{http_code}\" http://localhost:3000/musings/experiments)",
+      "Read(//private/tmp/**)",
+      "Bash(kill 83002)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/musings/experiments/threshold)",
+      "Bash(curl -sL -o /dev/null -w \"%{http_code} %{url_effective}\" http://localhost:3000/musings/experiments/threshold)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/musings/experiments/threshold/threshold.html\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/abhishek/AI Musings/experiments/threshold",
+      "/Users/abhishek/AI Musings/docs/superpowers",
+      "/Users/abhishek/AI Musings/app/experiments/[slug]"
+    ]
+  }
+}

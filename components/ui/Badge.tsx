@@ -9,14 +9,15 @@ export function Badge({ label, onClick, active = false }: BadgeProps) {
     <button
       onClick={onClick}
       className={`
-        px-2 py-0.5 text-xs font-mono border transition-colors
+        px-3 py-1 text-[10px] font-mono transition-all duration-200 uppercase tracking-tighter
         ${active
-          ? 'border-green-400 text-green-400 bg-green-400/10'
-          : 'border-zinc-600 text-zinc-400 hover:border-zinc-400 hover:text-zinc-200'
+          ? 'text-neon-green text-glow border-l-2 border-neon-green bg-neon-green/5'
+          : 'text-zinc-600 hover:text-zinc-300 hover:border-l-2 hover:border-zinc-500'
         }
-        ${onClick ? 'cursor-pointer' : 'cursor-default'}
+        ${onClick ? 'cursor-crosshair' : 'cursor-default'}
       `}
     >
+      <span className="opacity-50 mr-1">{active ? '●' : '○'}</span>
       {label}
     </button>
   )

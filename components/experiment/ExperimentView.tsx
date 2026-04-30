@@ -5,7 +5,10 @@ import { ExperimentFrame } from './ExperimentFrame'
 import { ExperimentMeta } from '@/lib/types'
 
 // Dynamically import React experiments with SSR disabled
-const Threshold = dynamic(() => import('@/experiments/threshold'), { ssr: false })
+const Threshold = dynamic(() => import('../../experiments/threshold/index'), { 
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-zinc-600 text-xs font-mono animate-pulse">LOADING EXPERIMENT...</div>
+})
 
 interface Props {
   meta: ExperimentMeta
