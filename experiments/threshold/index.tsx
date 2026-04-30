@@ -65,24 +65,41 @@ export default function ThresholdExperiment() {
   }, [setViewMode])
 
   useControls('Signal', {
-    source: { value: sourceMode, options: ['pixel', 'ai'], onChange: setSourceMode },
-    resolution: { value: resolution, min: 16, max: 128, step: 1, onChange: setResolution },
-    inverse: { value: inverse, onChange: setInverse },
+    source: folder({
+      mode: { value: sourceMode, options: ['pixel', 'ai'], onChange: setSourceMode },
+      resolution: { value: resolution, min: 16, max: 128, step: 1, onChange: setResolution },
+    }),
+    processing: folder({
+      inverse: { value: inverse, onChange: setInverse },
+    })
   })
 
   useControls('Visuals', {
-    viewMode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
-    threshold: { value: threshold, min: 0, max: 1, step: 0.01, onChange: setThreshold },
-    extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
-    renderMode: { value: renderMode, options: ['radio', 'dots', 'blocks', 'particles', 'ascii'], onChange: setRenderMode },
-    theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
+    params: folder({
+      threshold: { value: threshold, min: 0, max: 1, step: 0.01, onChange: setThreshold },
+      extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
+    }),
+    render: folder({
+      mode: { value: renderMode, options: ['radio', 'dots', 'blocks', 'particles', 'ascii'], onChange: setRenderMode },
+      theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
+    })
+  })
+
+  useControls('View', {
+    display: folder({
+      mode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
+    })
   })
 
   useControls('Audio', {
-    enabled: { value: audioEnabled, onChange: setAudioEnabled },
-    reactive: { value: audioReactive, onChange: setAudioReactive },
-    audioMode: { value: soundType, options: ['sine', 'chimes', 'bells', 'pulse'], onChange: setSoundType },
-    volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
+    main: folder({
+      enabled: { value: audioEnabled, onChange: setAudioEnabled },
+      reactive: { value: audioReactive, onChange: setAudioReactive },
+    }),
+    settings: folder({
+      type: { value: soundType, options: ['sine', 'chimes', 'bells', 'pulse'], onChange: setSoundType },
+      volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
+    })
   })
 
   if (!initialized) {
@@ -96,7 +113,7 @@ export default function ThresholdExperiment() {
           </p>
           <button 
             onClick={() => setInitialized(true)}
-            className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform"
+            className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform shadow-[0_0_20px_rgba(0,255,65,0.4)]"
           >
             INITIALIZE
           </button>
@@ -127,10 +144,10 @@ export default function ThresholdExperiment() {
         <color attach="background" args={['#050505']} />
         
         <EffectComposer>
-          <Bloom luminanceThreshold={0.5} intensity={1.5} levels={8} mipmapBlur />
-          <ChromaticAberration offset={new THREE.Vector2(0.002, 0.002)} />
-          <Scanline opacity={0.15} density={2} />
-          <Noise opacity={0.05} />
+          <Bloom luminanceThreshold={0.2} intensity={1.2} levels={9} mipmapBlur />
+          <ChromaticAberration offset={new THREE.Vector2(0.0015, 0.0015)} />
+          <Scanline opacity={0.2} density={2.5} />
+          <Noise opacity={0.08} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>
         

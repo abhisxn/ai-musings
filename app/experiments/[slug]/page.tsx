@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getAllExperiments, getExperimentBySlug } from '@/lib/experiments'
 import { ExperimentLayout } from '@/components/experiment/ExperimentLayout'
-import { ExperimentFrame } from '@/components/experiment/ExperimentFrame'
+import { ExperimentView } from '@/components/experiment/ExperimentView'
 
 export async function generateStaticParams() {
   return getAllExperiments().map(e => ({ slug: e.slug }))
@@ -18,13 +18,7 @@ export default async function ExperimentPage({ params }: Props) {
 
   return (
     <ExperimentLayout meta={meta}>
-      {meta.type === 'iframe' && meta.iframeSrc ? (
-        <ExperimentFrame src={meta.iframeSrc} title={meta.title} />
-      ) : (
-        <div className="flex items-center justify-center h-full text-zinc-600 text-sm font-mono">
-          [ react component not yet connected ]
-        </div>
-      )}
+      <ExperimentView meta={meta} />
     </ExperimentLayout>
   )
 }

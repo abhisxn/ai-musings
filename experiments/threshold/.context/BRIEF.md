@@ -1,54 +1,51 @@
-# Threshold V2
+# Threshold V3 (Volumetric)
 
 ## WHO YOU ARE BUILDING FOR
 
 Abhishek Saxena. Senior product designer, 12+ years. Vibe coder — prompts only, never writes code manually.
 Building AI Musings: creative web experiments at thatguyabhishek.com/musings.
-Reference energy: MSCHF × early Flash web × Yugo Nakamura.
+Reference energy: MSCHF × early Flash web × Yugo Nakamura × Ryoji Ikeda.
 
 ## WHAT THIS EXPERIMENT IS
 
-**THRESHOLD v2** — a camera-fed terminal instrument that lets users tune how it sees them.
-Not a demo. A machine that's already been watching — you're just changing its settings.
+**THRESHOLD v3** — a volumetric terminal instrument. It uses AI depth estimation to turn your webcam feed into a physical 3D topography of radio buttons, ASCII symbols, and block characters.
+It's no longer just a flat grid; it's a living, breathing scan of your environment.
 
-Experiment type: Type 3 (Absurdist Repurposing) + Type 4 (Perceptual Wit).
-The radio button grid is the anchor concept. Every other mode is a lens on the same idea.
+Experiment type: Type 3 (Absurdist Repurposing) + Type 5 (Volumetric Perception).
+The 3D point cloud is the anchor. Every "cell" exists in 3D space, extruding and reacting to depth.
 
 ## AESTHETIC
 
-- Monospace terminal aesthetic throughout. Share Tech Mono.
-- Dark by default. Light theme available.
-- Minimal chrome. Controls hidden behind a pull-up panel.
-- Scanline overlay. Corner brackets. Glitch flash on mode switch.
-- The UI should feel like equipment, not an app.
+- High-fidelity Terminal: 4K scanlines, chromatic aberration, and volumetric bloom.
+- Monospace hardware aesthetic. Share Tech Mono.
+- Dark / Acid / Heatmap themes.
+- The UI (Leva) should feel like a specialized laboratory workstation.
 
 ## RENDER MODES
 
-Four modes for how the camera signal is drawn: radio buttons, ASCII, block characters, particle dots.
+- **Radio Volumetric:** A massive grid of 3D radio buttons that physically depress/extrude based on depth.
+- **ASCII Cloud:** A 3D field of characters floating in space.
+- **Block Voxel:** A brutalist landscape of 3D cubes.
+- **Particle Flow:** 100,000+ points of light reacting to both depth and audio frequency.
 
 ## FILTER MODES
 
-Five filters applied to brightness signal before rendering: threshold, heatmap, negative, edge, ghost.
+- **Depth-Mapped:** Visuals reactive to physical distance from camera.
+- **Sobel Edge:** 3D edges glowing in dark space.
+- **Ghost Trails:** Temporal persistence where movement leaves a 3D wake.
 
 ## CONTROLS
 
-Threshold slider (10–245), delay/lerp smoothing (0–90), decay hold time (0–3000ms).
-Temperature palette: cool / neutral / warm / acid — shifts the "on" colour.
-Sound mode: click / tone / static / pulse / mute — Tone.js, triggered on cell state change.
+- **Depth Sensitivity:** Tune the AI's Z-axis extrusion.
+- **Resolution:** Scale from "Lo-Fi DOM" (36x22) to "Ultra WebGL" (200x120).
+- **Audio Coupling:** Link synth frequency to depth or pixel brightness.
+- **Camera Fly-through:** Ability to tilt/rotate the entire 3D grid.
 
 ## HARD RULES — NEVER VIOLATE
 
-1. No backend. No auth. No database. Fully self-contained.
-2. Every feature must work without breaking the others. State machine, not spaghetti.
-3. Tone.js is the only audio library. No Web Audio API directly unless Tone can't do it.
-4. No console.log spam in shipped code. Comments explain intent, not syntax.
-5. After each section is built, test it before proceeding.
-6. Check STACK.md before choosing implementation format — delivery format is decided there, not here.
+1. No backend. No auth. Fully client-side AI and rendering.
+2. Tone.js is the only audio library. Use it for both generation and FFT analysis.
+3. Performance is king. If it drops below 60fps, reduce resolution or optimize shaders.
+4. The "Vibe" must remain Monospace/Terminal. Avoid "Generic 3D" look.
+5. All depth processing must happen in real-time. No static pre-processing.
 
-## AGENT BEHAVIOUR
-
-- Read BRIEF.md, STACK.md, and LOG.md before writing any code. These three files are the full context.
-- Build section by section. Log each completed section to LOG.md: `[SECTION] Done — [any decision made]`.
-- If a design decision is ambiguous, default to the simpler implementation and log it.
-- Never redesign what's already decided. Execute what's specified.
-- Ask zero clarifying questions. The spec is complete. Build it.

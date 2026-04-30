@@ -2,14 +2,14 @@ import { ExperimentMeta } from '@/lib/types'
 
 const meta: ExperimentMeta = {
   slug: 'threshold',
-  title: 'Threshold v2',
-  description: 'A camera-fed terminal instrument. Tune how it sees you.',
+  title: 'Threshold v3',
+  description: 'Volumetric terminal instrument. AI depth estimation.',
   date: '2026-04-30',
-  type: 'iframe',
+  type: 'react',
   status: 'wip',
-  tags: ['vision', 'audio', 'terminal', 'camera'],
+  tags: ['vision', 'audio', 'terminal', 'camera', 'webgl', 'ai'],
   series: 'perception',
-  iframeSrc: '/musings/experiments/threshold/threshold.html',
 }
+
 
 export default meta
