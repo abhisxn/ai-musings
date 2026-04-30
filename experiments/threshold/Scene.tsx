@@ -20,7 +20,7 @@ export function Scene({
   const count = resolution * resolution
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
-  const prevStatesRef = useRef<Uint8Array>(new Uint8Array(128 * 128))
+  const prevStates = useMemo(() => new Uint8Array(resolution * resolution), [resolution])
 
   const color = useMemo(() => {
     switch (theme) {
@@ -48,6 +48,9 @@ export function Scene({
       }
     }
 
+    let clicksThisFrame = 0
+    const MAX_CLICKS_PER_FRAME = 8
+
     let i = 0
     for (let y = 0; y < resolution; y++) {
       for (let x = 0; x < resolution; x++) {
@@ -56,12 +59,13 @@ export function Scene({
         if (inverse) brightness = 1.0 - brightness
 
         const isActive = brightness > threshold
-        const wasActive = prevStatesRef.current[id] === 1
+        const wasActive = prevStates[id] === 1
 
-        if (isActive && !wasActive && audioEnabled && clickSynthRef.current) {
+        if (isActive && !wasActive && audioEnabled && clickSynthRef.current && clicksThisFrame < MAX_CLICKS_PER_FRAME) {
           clickSynthRef.current.triggerAttackRelease("C2", "32n")
+          clicksThisFrame++
         }
-        prevStatesRef.current[id] = isActive ? 1 : 0
+        prevStates[id] = isActive ? 1 : 0
 
         const zExtrusion = isActive ? (brightness * extrusion) : 0.05
         const audioHeight = isActive ? (audioIntensity * extrusion * 2) : 0
