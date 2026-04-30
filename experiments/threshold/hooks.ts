@@ -11,6 +11,7 @@ export function useWebcam() {
 
   useEffect(() => {
     if (!initialized) return
+    let currentStream: MediaStream | null = null
 
     async function setupCamera() {
       try {
@@ -18,6 +19,7 @@ export function useWebcam() {
           video: { width: 640, height: 480 },
           audio: false
         })
+        currentStream = mediaStream
         setStream(mediaStream)
         if (videoRef.current) {
           videoRef.current.srcObject = mediaStream
@@ -31,7 +33,7 @@ export function useWebcam() {
     setupCamera()
 
     return () => {
-      stream?.getTracks().forEach(track => track.stop())
+      currentStream?.getTracks().forEach(track => track.stop())
     }
   }, [initialized, setVideoElement])
 
@@ -85,8 +87,11 @@ export function useSampler() {
     
     let isProcessing = false
     let frameId: number
+    let isMounted = true
 
     const process = async () => {
+      if (!isMounted) return
+
       if (videoElement.readyState >= 2 && !isProcessing) {
         isProcessing = true
         try {
@@ -97,6 +102,9 @@ export function useSampler() {
             const { RawImage } = transformersRef.current
             const image = new RawImage(imageData.data, 128, 128, 4)
             const result = await aiModelRef.current(image)
+            
+            if (!isMounted) return
+
             const depthData = result.depth.data
             
             for (let y = 0; y < resolution; y++) {
@@ -131,11 +139,17 @@ export function useSampler() {
           isProcessing = false 
         }
       }
-      frameId = requestAnimationFrame(process)
+      
+      if (isMounted) {
+        frameId = requestAnimationFrame(process)
+      }
     }
 
     process()
-    return () => cancelAnimationFrame(frameId)
+    return () => {
+      isMounted = false
+      cancelAnimationFrame(frameId)
+    }
   }, [videoElement, resolution, sourceMode, initialized])
 
   return { loading, dataRef }
