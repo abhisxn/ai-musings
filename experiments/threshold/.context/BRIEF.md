@@ -6,6 +6,22 @@ Abhishek Saxena. Senior product designer, 12+ years. Vibe coder — prompts only
 Building AI Musings: creative web experiments at thatguyabhishek.com/musings.
 Reference energy: MSCHF × early Flash web × Yugo Nakamura × Ryoji Ikeda.
 
+## FOLDER STRUCTURE
+
+```text
+experiments/threshold/
+├── .context/           # Brief, Stack, Log
+├── src/                # Isolated logic
+│   ├── audio.ts        # Tone.js engine
+│   ├── hooks.ts        # Webcam & AI sampling
+│   ├── store.ts        # Zustand state
+│   ├── Scene.tsx       # R3F components
+│   └── ThresholdView.tsx # Main UI component
+├── index.tsx           # Entry point
+├── meta.ts             # Metadata
+└── README.md           # Design POV
+```
+
 ## WHAT THIS EXPERIMENT IS
 
 **THRESHOLD v3** — a volumetric terminal instrument. It uses AI depth estimation to turn your webcam feed into a physical 3D topography of radio buttons, ASCII symbols, and block characters.

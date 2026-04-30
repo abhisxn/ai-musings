@@ -28,3 +28,7 @@ Decision log for this experiment.
 [2026-05-01] [UI] Done — Added user-controlled "Gridlines" toggle in the View panel; subtilized grid visuals.
 [2026-05-01] [AUDIO] Done — Fixed sound type switching bug; implemented vertical pitch-mapping using a C Major Pentatonic scale for more expressive audio feedback.
 [2026-05-01] [STABILITY] Done — Resolved all syntax and TypeScript errors; verified project integrity with tsc check.
+[2026-05-01] [REFACTOR] Done — Isolated internal logic (audio, hooks, store, scene) into `src/` subfolder.
+[2026-05-01] [REFACTOR] Done — Extracted UI to `ThresholdView.tsx` and simplified `index.tsx` entry point.
+[2026-05-01] [CLEANUP] Done — Removed legacy `.html` files and backups from `experiments/` and `public/`.
+[2026-05-01] [DOCS] Done — Updated `README.md`, `BRIEF.md`, `STACK.md`, and `LOG.md` to reflect new architecture.

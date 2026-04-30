@@ -3,8 +3,9 @@
 ## Delivery Format
 
 Next.js 15 + React 19 Component.
-Path: `experiments/threshold/index.tsx`
+Path: `experiments/threshold/index.tsx` (Entry) -> `src/ThresholdView.tsx` (Logic)
 Integration: Embedded via `app/experiments/[slug]/page.tsx`.
+URL: `/musings/experiments/threshold/`
 
 ## Core Engine
 
