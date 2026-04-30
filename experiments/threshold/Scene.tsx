@@ -7,10 +7,12 @@ import { useStore } from './store'
 
 export function Scene({ 
   pixelDataRef, 
-  analyzerRef 
+  analyzerRef,
+  clickSynthRef
 }: { 
   pixelDataRef: React.RefObject<Float32Array>,
-  analyzerRef: React.RefObject<any> 
+  analyzerRef: React.RefObject<any>,
+  clickSynthRef: React.RefObject<any>
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled } = useStore()
@@ -18,6 +20,7 @@ export function Scene({
   const count = resolution * resolution
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
+  const prevStatesRef = useRef<Uint8Array>(new Uint8Array(128 * 128))
 
   const color = useMemo(() => {
     switch (theme) {
@@ -53,6 +56,13 @@ export function Scene({
         if (inverse) brightness = 1.0 - brightness
 
         const isActive = brightness > threshold
+        const wasActive = prevStatesRef.current[id] === 1
+
+        if (isActive && !wasActive && audioEnabled && clickSynthRef.current) {
+          clickSynthRef.current.triggerAttackRelease("C2", "32n")
+        }
+        prevStatesRef.current[id] = isActive ? 1 : 0
+
         const zExtrusion = isActive ? (brightness * extrusion) : 0.05
         const audioHeight = isActive ? (audioIntensity * extrusion * 2) : 0
         const finalZ = zExtrusion + audioHeight

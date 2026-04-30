@@ -50,7 +50,7 @@ export default function ThresholdExperiment() {
 
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
-  const { analyzerRef } = useAudio()
+  const { analyzerRef, clickSynthRef } = useAudio()
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -137,7 +137,7 @@ export default function ThresholdExperiment() {
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1} color={theme === 'acid' ? '#ccff00' : '#00ff41'} />
         
-        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} />
+        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} clickSynthRef={clickSynthRef} />
       </Canvas>
     </div>
   )
