@@ -1,15 +1,35 @@
 'use client'
 
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore } from './store'
 import { Scene } from './Scene'
 import { useControls, folder } from 'leva'
 import { useWebcam, useSampler } from './hooks'
 import { useAudio } from './audio'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
+
+const tempTargetPos = new THREE.Vector3()
+const tempLookAt = new THREE.Vector3(0, 0, 0)
+
+function AnimatedCamera() {
+  const viewMode = useStore(state => state.viewMode)
+  const cameraRef = useRef<THREE.PerspectiveCamera>(null)
+
+  useFrame(() => {
+    if (!cameraRef.current) return
+    const targetPos = viewMode === 'flat' ? [0, 0, 15] : [10, -10, 15]
+    tempTargetPos.set(targetPos[0], targetPos[1], targetPos[2])
+    
+    cameraRef.current.position.lerp(tempTargetPos, 0.05)
+    cameraRef.current.lookAt(tempLookAt)
+    cameraRef.current.updateProjectionMatrix()
+  })
+
+  return <PerspectiveCamera ref={cameraRef} makeDefault fov={50} />
+}
 
 export default function ThresholdExperiment() {
   const { 
@@ -20,8 +40,10 @@ export default function ThresholdExperiment() {
     inverse, setInverse,
     theme, setTheme,
     renderMode, setRenderMode,
+    viewMode, setViewMode,
     sourceMode, setSourceMode,
     audioEnabled, setAudioEnabled,
+    audioReactive, setAudioReactive,
     soundType, setSoundType,
     volume, setVolume
   } = useStore()
@@ -30,6 +52,16 @@ export default function ThresholdExperiment() {
   const { loading, dataRef } = useSampler()
   const { analyzerRef } = useAudio()
 
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setViewMode(viewMode === 'flat' ? 'volumetric' : 'flat')
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [viewMode, setViewMode])
+
   useControls('Signal', {
     source: { value: sourceMode, options: ['pixel', 'ai'], onChange: setSourceMode },
     resolution: { value: resolution, min: 16, max: 128, step: 1, onChange: setResolution },
@@ -37,6 +69,7 @@ export default function ThresholdExperiment() {
   })
 
   useControls('Visuals', {
+    viewMode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
     threshold: { value: threshold, min: 0, max: 1, step: 0.01, onChange: setThreshold },
     extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
     renderMode: { value: renderMode, options: ['radio', 'dots', 'blocks', 'particles', 'ascii'], onChange: setRenderMode },
@@ -45,6 +78,7 @@ export default function ThresholdExperiment() {
 
   useControls('Audio', {
     enabled: { value: audioEnabled, onChange: setAudioEnabled },
+    reactive: { value: audioReactive, onChange: setAudioReactive },
     audioMode: { value: soundType, options: ['sine', 'chimes', 'bells', 'pulse'], onChange: setSoundType },
     volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
   })
@@ -87,8 +121,7 @@ export default function ThresholdExperiment() {
       </div>
 
       <Canvas shadows gl={{ antialias: false }}>
-        <PerspectiveCamera makeDefault position={[0, 0, 15]} />
-        <OrbitControls makeDefault />
+        <AnimatedCamera />
         <color attach="background" args={['#050505']} />
         
         <EffectComposer>
