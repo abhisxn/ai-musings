@@ -9,7 +9,7 @@ const meta: ExperimentMeta = {
   status: 'wip',
   tags: ['vision', 'audio', 'terminal', 'camera'],
   series: 'perception',
-  iframeSrc: '/experiments/threshold/threshold.html',
+  iframeSrc: '/musings/experiments/threshold/threshold.html',
 }
 
 export default meta

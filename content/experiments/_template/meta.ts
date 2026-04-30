@@ -9,7 +9,7 @@ const meta: ExperimentMeta = {
   status: 'wip',                // 'live' | 'wip' | 'archived'
   tags: ['tag-one', 'tag-two'],
   series: undefined,            // optional series name
-  // iframeSrc: '/experiments/your-slug/index.html', // required if type === 'iframe'
+  // iframeSrc: '/musings/experiments/your-slug/index.html', // required if type === 'iframe'
 }
 
 export default meta
