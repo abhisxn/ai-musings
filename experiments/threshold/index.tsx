@@ -11,21 +11,21 @@ import { useAudio } from './audio'
 import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
 
-const tempTargetPos = new THREE.Vector3()
-const tempLookAt = new THREE.Vector3(0, 0, 0)
+const POS_FLAT = new THREE.Vector3(0, 0, 15)
+const POS_VOLUMETRIC = new THREE.Vector3(10, -10, 15)
+const LOOK_AT = new THREE.Vector3(0, 0, 0)
 
 function AnimatedCamera() {
   const viewMode = useStore(state => state.viewMode)
   const cameraRef = useRef<THREE.PerspectiveCamera>(null)
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!cameraRef.current) return
-    const targetPos = viewMode === 'flat' ? [0, 0, 15] : [10, -10, 15]
-    tempTargetPos.set(targetPos[0], targetPos[1], targetPos[2])
+    const targetPos = viewMode === 'flat' ? POS_FLAT : POS_VOLUMETRIC
     
-    cameraRef.current.position.lerp(tempTargetPos, 0.05)
-    cameraRef.current.lookAt(tempLookAt)
-    cameraRef.current.updateProjectionMatrix()
+    const factor = 1 - Math.pow(0.01, delta)
+    cameraRef.current.position.lerp(targetPos, factor)
+    cameraRef.current.lookAt(LOOK_AT)
   })
 
   return <PerspectiveCamera ref={cameraRef} makeDefault fov={50} />
@@ -54,13 +54,15 @@ export default function ThresholdExperiment() {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      if (e.repeat) return
       if (e.code === 'Space') {
-        setViewMode(viewMode === 'flat' ? 'volumetric' : 'flat')
+        const currentMode = useStore.getState().viewMode
+        setViewMode(currentMode === 'flat' ? 'volumetric' : 'flat')
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [viewMode, setViewMode])
+  }, [setViewMode])
 
   useControls('Signal', {
     source: { value: sourceMode, options: ['pixel', 'ai'], onChange: setSourceMode },
