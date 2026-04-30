@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-mono: 'Share Tech Mono', monospace;
+}
+
+body {
+  background: #0a0a0a;
+  color: #e5e5e5;
+  font-family: var(--font-mono);
+}
