@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-const contentDir = path.join(process.cwd(), 'content', 'experiments')
+const contentDir = path.join(process.cwd(), 'experiments')
 const publicDir = path.join(process.cwd(), 'public', 'experiments')
 
 function ensureDir(dir: string) {
@@ -10,6 +10,10 @@ function ensureDir(dir: string) {
 
 function syncExperiment(slug: string) {
   const src = path.join(contentDir, slug)
+  
+  // Ensure we are only looking at directories
+  if (!fs.statSync(src).isDirectory()) return
+
   const dest = path.join(publicDir, slug)
   ensureDir(dest)
 
@@ -22,7 +26,7 @@ function syncExperiment(slug: string) {
   }
 }
 
-const slugs = fs.readdirSync(contentDir).filter(f => !f.startsWith('_'))
+const slugs = fs.readdirSync(contentDir).filter(f => !f.startsWith('_') && !f.startsWith('.'))
 for (const slug of slugs) {
   syncExperiment(slug)
 }

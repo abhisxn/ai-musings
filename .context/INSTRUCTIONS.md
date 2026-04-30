@@ -12,6 +12,7 @@ ai-musings/
 │           └── page.tsx    ← Next.js route per experiment
 ├── experiments/
 │   └── [slug]/
+│       ├── meta.ts         ← experiment metadata
 │       ├── index.tsx       ← experiment component
 │       ├── sketch.js       ← p5.js or vanilla logic (if applicable)
 │       └── README.md       ← design POV + build notes
@@ -29,6 +30,7 @@ ai-musings/
 
 ## Experiment Structure
 Each experiment lives in `experiments/[slug]/`. It must have:
+- `meta.ts` — the single source of truth for structured facts (tags, status, series, type, date)
 - `index.tsx` — the React component that wraps the experiment
 - A design POV in `README.md` — minimum one sentence, mandatory
 
@@ -61,7 +63,7 @@ These rules apply regardless of which AI tool is being used (Claude, Gemini, Kil
 
 1. After any task, append a dated line to the nearest LOG.md (project or experiment level).
    Format: `[YYYY-MM-DD] [SECTION] Done — [decision or note]`
-2. `content/experiments/[slug]/meta.ts` is the only source of truth for structured facts (tags, status, series, type, date). Never duplicate these in markdown.
+2. `experiments/[slug]/meta.ts` is the only source of truth for structured facts (tags, status, series, type, date). Never duplicate these in markdown.
 3. `BRIEF.md` is written once at experiment creation. Only update it if the concept pivots significantly.
 4. `STACK.md` is updated when a tech decision changes — not after every session.
 5. `CLAUDE.md`, `GEMINI.md`, `AGENTS.md` are routing files only — never store facts in them.
