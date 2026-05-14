@@ -1,4 +1,3 @@
-// experiments/threshold/src/types.ts
 export type GestureType = 'jazz-hands' | 'peace-sign' | 'fist-pump'
 
 export interface PoseKeypoint {

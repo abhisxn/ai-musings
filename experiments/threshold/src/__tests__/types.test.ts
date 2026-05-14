@@ -1,5 +1,4 @@
-// experiments/threshold/src/__tests__/types.test.ts
-import { GestureType, HallucinatedControl } from '../types'
+import { GestureType, HallucinatedControl } from '../../types'
 
 describe('Gesture Types', () => {
   it('should define jazz hands gesture', () => {
