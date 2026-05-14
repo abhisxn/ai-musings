@@ -78,15 +78,29 @@ export function Scene({
     if (!pixelDataRef.current) return
     
     // Respond to AI Composer state (hallucinated controls)
-    if (currentGesture) {
-      // Placeholder: Apply hallucinated controls to render
-      // For now, just log the current gesture
-      if (state.clock.elapsedTime < 0.1) { // Log once at start
-        console.log('Scene: AI Composer gesture:', currentGesture)
-        console.log('Scene: Hallucinated controls:', hallucinatedControls)
-      }
+    if (currentShader && currentGesture && hallucinatedControls.length > 0) {
+      const glitchIntensity = hallucinatedControls.find(c => c.id === 'glitch-intensity')
+      const chromaticAberration = hallucinatedControls.find(c => c.id === 'chromatic-aberration')
+      const bloomIntensity = hallucinatedControls.find(c => c.id === 'bloom-intensity')
+      const beatFrequency = hallucinatedControls.find(c => c.id === 'beat-frequency')
+      const bassBoost = hallucinatedControls.find(c => c.id === 'bass-boost')
+
+      const emissiveScale = currentGesture === 'jazz-hands' && glitchIntensity
+        ? 1.0 + glitchIntensity.defaultValue * 3.0
+        : currentGesture === 'peace-sign' && bloomIntensity
+          ? 1.0 + bloomIntensity.defaultValue * 2.0
+          : currentGesture === 'fist-pump' && bassBoost
+            ? 1.0 + bassBoost.defaultValue * 4.0
+            : 1.0
+
+      const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef]
+      meshRefs.forEach(ref => {
+        if (ref.current && ref.current.material instanceof THREE.MeshStandardMaterial) {
+ref.current.material.emissiveIntensity = emissiveScale
+        }
+      })
     }
-    
+
     let audioIntensity = 0
     if (audioEnabled && audioReactive && analyzerRef.current) {
       const analyser = analyzerRef.current.analyser || analyzerRef.current

@@ -10,12 +10,50 @@ export function useAudio() {
   const synthRef = useRef<Tone.PolySynth | Tone.Sampler | null>(null)
   const clickSynthRef = useRef<Tone.PolySynth | null>(null)
   
-  // Respond to AI Composer audio profile (Task 10)
+  // Respond to AI Composer audio profile — swap synth type sample-accurately
   useEffect(() => {
-    if (!audioProfile) return
-    console.log('Audio: AI Composer profile changed to:', audioProfile)
-    // TODO: Implement actual Tone.js profile swapping based on audioProfile
-  }, [audioProfile])
+    if (!audioProfile || !audioEnabled) return
+
+    const swapProfile = async () => {
+      await Tone.start()
+
+      if (synthRef.current) {
+        synthRef.current.dispose()
+        synthRef.current = null
+      }
+
+      let newSynth: Tone.PolySynth | null = null
+
+      if (audioProfile === 'chimes') {
+        newSynth = new Tone.PolySynth(Tone.FMSynth, {
+          harmonicity: 3,
+          modulationIndex: 10,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.3, sustain: 0.1, release: 1.2 }
+        }).toDestination()
+      } else if (audioProfile === 'bells') {
+        newSynth = new Tone.PolySynth(Tone.AMSynth, {
+          harmonicity: 1.2,
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.005, decay: 0.5, sustain: 0, release: 2 }
+        }).toDestination()
+      } else if (audioProfile === 'pulse') {
+        newSynth = new Tone.PolySynth(Tone.MonoSynth, {
+          oscillator: { type: 'pulse' },
+          envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.1 }
+        }).toDestination()
+      }
+
+      if (newSynth && analyzerRef.current) {
+        newSynth.connect(analyzerRef.current)
+        synthRef.current = newSynth
+      }
+
+      console.log('Audio: AI Composer profile swapped to:', audioProfile)
+    }
+
+    swapProfile()
+  }, [audioProfile, audioEnabled])
 
   // 1. Synth Lifecycle (Swaps when soundType changes)
   useEffect(() => {

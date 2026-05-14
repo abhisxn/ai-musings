@@ -78,7 +78,7 @@ export default function ThresholdView() {
     return () => window.removeEventListener('wheel', handleWheel)
   }, [setThreshold])
 
-  const { currentGesture } = useStore()
+  const { currentGesture, hallucinatedControls } = useStore()
   
   useEffect(() => {
     if (!currentGesture) return
@@ -125,6 +125,13 @@ export default function ThresholdView() {
       volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
     })
   })
+
+  useControls('AI Composer', {
+    panel: folder({
+      currentGesture: { value: currentGesture || 'none', disabled: true },
+      controlCount: { value: hallucinatedControls.length, disabled: true }
+    })
+  }, [currentGesture, hallucinatedControls])
 
   if (!initialized) {
     return (
