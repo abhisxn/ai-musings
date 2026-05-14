@@ -75,6 +75,7 @@ export class AIComposer {
       uniform sampler2D uTexture;
       uniform float uGlitchIntensity;
       uniform float uChromaticAberration;
+      uniform float uParticleCount;
       uniform float uTime;
       varying vec2 vUv;
 
@@ -85,7 +86,8 @@ export class AIComposer {
         float r = texture2D(uTexture, uv + vec2(uChromaticAberration, 0.0)).r;
         float g = texture2D(uTexture, uv).g;
         float b = texture2D(uTexture, uv - vec2(uChromaticAberration, 0.0)).b;
-        gl_FragColor = vec4(r, g, b, 1.0);
+        float particles = step(0.5, sin(uv.x * uParticleCount + uv.y * uParticleCount + uTime));
+        gl_FragColor = vec4(r + particles * 0.2, g, b, 1.0);
       }
     `
   }
@@ -102,7 +104,7 @@ export class AIComposer {
 
       void main() {
         vec2 uv = vUv;
-        float depth = texture2D(uDepthMap, uv).r;
+        float depth = texture2D(uDepthMap, uv).r * uExtrusionDepth;
         float bloom = smoothstep(1.0 - uBloomIntensity, 1.0, depth);
         vec3 color = mix(
           vec3(depth * 0.5, depth * 0.8, 1.0),
