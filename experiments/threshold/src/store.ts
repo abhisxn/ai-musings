@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { GestureType, HallucinatedControl } from './types'
 
 export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
 
@@ -49,6 +50,19 @@ interface ThresholdState {
   setSoundType: (val: 'sine' | 'chimes' | 'bells' | 'pulse') => void
   volume: number
   setVolume: (val: number) => void
+
+  // AI Composer State (NEW)
+  currentGesture: GestureType | null
+  setCurrentGesture: (gesture: GestureType | null) => void
+  
+  hallucinatedControls: HallucinatedControl[]
+  spawnHallucinatedControls: (controls: HallucinatedControl[]) => void
+  
+  currentShader: string | null
+  setCurrentShader: (shader: string | null) => void
+  
+  audioProfile: string | null
+  setAudioProfile: (profile: string | null) => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -93,4 +107,17 @@ export const useStore = create<ThresholdState>((set) => ({
   setSoundType: (soundType) => set({ soundType }),
   volume: -12,
   setVolume: (volume) => set({ volume }),
+
+  // AI Composer State (NEW)
+  currentGesture: null,
+  setCurrentGesture: (gesture) => set({ currentGesture: gesture }),
+  
+  hallucinatedControls: [],
+  spawnHallucinatedControls: (controls) => set({ hallucinatedControls: controls }),
+  
+  currentShader: null,
+  setCurrentShader: (shader) => set({ currentShader: shader }),
+  
+  audioProfile: null,
+  setAudioProfile: (profile) => set({ audioProfile: profile }),
 }))
