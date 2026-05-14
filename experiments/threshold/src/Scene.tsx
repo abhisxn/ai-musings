@@ -74,8 +74,10 @@ export function Scene({
 
   const spacing = 0.25
 
-  useFrame((state) => {
+useFrame((state) => {
     if (!pixelDataRef.current) return
+
+    let aiEmissiveScale = 1.0
     
     // Respond to AI Composer state (hallucinated controls)
     if (currentShader && currentGesture && hallucinatedControls.length > 0) {
@@ -85,7 +87,7 @@ export function Scene({
       const beatFrequency = hallucinatedControls.find(c => c.id === 'beat-frequency')
       const bassBoost = hallucinatedControls.find(c => c.id === 'bass-boost')
 
-      const emissiveScale = currentGesture === 'jazz-hands' && glitchIntensity
+      aiEmissiveScale = currentGesture === 'jazz-hands' && glitchIntensity
         ? 1.0 + glitchIntensity.defaultValue * 3.0
         : currentGesture === 'peace-sign' && bloomIntensity
           ? 1.0 + bloomIntensity.defaultValue * 2.0
@@ -96,7 +98,7 @@ export function Scene({
       const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef]
       meshRefs.forEach(ref => {
         if (ref.current && ref.current.material instanceof THREE.MeshStandardMaterial) {
-ref.current.material.emissiveIntensity = emissiveScale
+          ref.current.material.emissiveIntensity = aiEmissiveScale
         }
       })
     }
@@ -242,7 +244,7 @@ ref.current.material.emissiveIntensity = emissiveScale
       if (ref.current) {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = theme === 'heatmap'
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
-          ref.current.material.emissiveIntensity = (theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8)
+          ref.current.material.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8)) * aiEmissiveScale
           // Ensure material color is white when using instance colors (heatmap)
           if (theme === 'heatmap') ref.current.material.color.set('#fff')
           else ref.current.material.color.set(color)
