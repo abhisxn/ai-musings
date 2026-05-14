@@ -5,11 +5,12 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore } from './store'
 import { Scene } from './Scene'
-import { useControls, folder } from 'leva'
+import { useControls, folder, useRegister } from 'leva'
 import { useWebcam, useSampler } from './hooks'
 import { useAudio } from './audio'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
+import { AIComposer } from './ai-composer'
 
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
@@ -76,6 +77,27 @@ export default function ThresholdView() {
     window.addEventListener('wheel', handleWheel, { passive: true })
     return () => window.removeEventListener('wheel', handleWheel)
   }, [setThreshold])
+
+  const { currentGesture } = useStore()
+  const register = useRegister()
+  
+  useEffect(() => {
+    if (!currentGesture) return
+    
+    const composer = new AIComposer()
+    const experience = composer.composeExperience(currentGesture)
+    
+    // Spawn runtime Leva panel based on hallucinated controls
+    experience.hallucinatedControls.forEach(control => {
+      register(control.id, {
+        value: control.defaultValue,
+        min: control.min,
+        max: control.max,
+        step: control.step,
+        label: control.label
+      })
+    })
+  }, [currentGesture, register])
 
   useControls('Signal', {
     source: folder({
