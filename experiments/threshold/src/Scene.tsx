@@ -25,6 +25,7 @@ export function Scene({
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid } = useStore()
+  const { currentGesture, hallucinatedControls, currentShader } = useStore()
   
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   
@@ -75,7 +76,17 @@ export function Scene({
 
   useFrame((state) => {
     if (!pixelDataRef.current) return
-
+    
+    // Respond to AI Composer state (hallucinated controls)
+    if (currentGesture) {
+      // Placeholder: Apply hallucinated controls to render
+      // For now, just log the current gesture
+      if (state.clock.elapsedTime < 0.1) { // Log once at start
+        console.log('Scene: AI Composer gesture:', currentGesture)
+        console.log('Scene: Hallucinated controls:', hallucinatedControls)
+      }
+    }
+    
     let audioIntensity = 0
     if (audioEnabled && audioReactive && analyzerRef.current) {
       const analyser = analyzerRef.current.analyser || analyzerRef.current

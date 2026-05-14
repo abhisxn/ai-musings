@@ -5,10 +5,17 @@ import * as Tone from 'tone'
 import { useStore } from './store'
 
 export function useAudio() {
-  const { audioEnabled, volume, soundType } = useStore()
-  const analyzerRef = useRef<Tone.Analyser | null>(null)
+  const { audioEnabled, volume, soundType, audioProfile } = useStore()
+  const analyzerRef = useRef<Tone.Analyzer | null>(null)
   const synthRef = useRef<Tone.PolySynth | Tone.Sampler | null>(null)
   const clickSynthRef = useRef<Tone.PolySynth | null>(null)
+  
+  // Respond to AI Composer audio profile (Task 10)
+  useEffect(() => {
+    if (!audioProfile) return
+    console.log('Audio: AI Composer profile changed to:', audioProfile)
+    // TODO: Implement actual Tone.js profile swapping based on audioProfile
+  }, [audioProfile])
 
   // 1. Synth Lifecycle (Swaps when soundType changes)
   useEffect(() => {
