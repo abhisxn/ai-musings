@@ -6,11 +6,19 @@ import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette }
 import { useStore } from './store'
 import { Scene } from './Scene'
 import { useControls, folder } from 'leva'
-import { useWebcam, useSampler } from './hooks'
+import { useWebcam, useSampler, usePoseDetection } from './hooks'
 import { useAudio } from './audio'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { AIComposer } from './ai-composer'
+
+if (typeof window !== 'undefined') {
+  ;(window as any).__threshold = { useStore, AIComposer }
+}
+
+if (typeof window !== 'undefined') {
+  ;(window as any).__threshold = { useStore, AIComposer }
+}
 
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
@@ -52,6 +60,8 @@ export default function ThresholdView() {
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
   const { analyzerRef, synthRef, clickSynthRef } = useAudio()
+  usePoseDetection()
+  usePoseDetection()
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

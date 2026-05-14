@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from './store'
+import { GestureType } from './types'
 
 export function useWebcam() {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -176,4 +177,126 @@ export function useSampler() {
   }, [videoElement, resolution, sourceMode, initialized])
 
   return { loading, dataRef }
+}
+
+function detectGestureFromKeypoints(keypoints: Array<{x: number, y: number, z: number, confidence: number}>): GestureType | null {
+  if (!keypoints || keypoints.length < 21) return null
+
+  const wrist = keypoints[0]
+  const thumbTip = keypoints[4]
+  const indexTip = keypoints[8]
+  const middleTip = keypoints[12]
+  const ringTip = keypoints[16]
+  const pinkyTip = keypoints[20]
+  const indexPip = keypoints[6]
+  const middlePip = keypoints[10]
+  const ringPip = keypoints[14]
+  const pinkyPip = keypoints[18]
+
+  const dist = (a: typeof wrist, b: typeof wrist) =>
+    Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+
+  const fingerSpread = dist(indexTip, pinkyTip)
+  const handSize = dist(wrist, middleTip)
+
+  const indexExtended = dist(indexTip, indexPip) > handSize * 0.3
+  const middleExtended = dist(middleTip, middlePip) > handSize * 0.3
+  const ringExtended = dist(ringTip, ringPip) > handSize * 0.25
+  const pinkyExtended = dist(pinkyTip, pinkyPip) > handSize * 0.25
+
+  const extendedCount = [indexExtended, middleExtended, ringExtended, pinkyExtended].filter(Boolean).length
+  const spreadNorm = fingerSpread / handSize
+
+  if (extendedCount >= 4 && spreadNorm > 0.8) return 'jazz-hands'
+  if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) return 'peace-sign'
+  if (extendedCount <= 1) return 'fist-pump'
+
+  return null
+}
+
+export function usePoseDetection() {
+  const initialized = useStore(state => state.initialized)
+  const setCurrentGesture = useStore(state => state.setCurrentGesture)
+  const workerRef = useRef<Worker | null>(null)
+  const [poseReady, setPoseReady] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const currentGestureRef = useRef<GestureType | null>(null)
+
+  // 1. Initialize pose worker
+  useEffect(() => {
+    if (!initialized) return
+
+    const worker = new Worker(
+      new URL('./workers/pose-worker.js', import.meta.url),
+      { type: 'classic' }
+    )
+    workerRef.current = worker
+
+    worker.onmessage = (event) => {
+      const { type, keypoints } = event.data
+      if (type === 'INIT_DONE') {
+        console.log('Pose: Worker initialized')
+        setPoseReady(true)
+      }
+      if (type === 'POSE_RESULTS' && keypoints) {
+        const gesture = detectGestureFromKeypoints(keypoints)
+        if (gesture && gesture !== currentGestureRef.current) {
+          currentGestureRef.current = gesture
+          if (debounceRef.current) clearTimeout(debounceRef.current)
+          debounceRef.current = setTimeout(() => {
+            setCurrentGesture(gesture)
+            console.log('Pose: Gesture detected:', gesture)
+            currentGestureRef.current = null
+          }, 500)
+        }
+      }
+    }
+
+    worker.postMessage({ type: 'INIT' })
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      worker.terminate()
+      workerRef.current = null
+    }
+  }, [initialized, setCurrentGesture])
+
+  // 2. Capture frames and send to pose worker
+  const videoElement = useStore(state => state.videoElement)
+
+  useEffect(() => {
+    if (!videoElement || !poseReady) return
+
+    let isActive = true
+    let frameId: number
+    let frameCount = 0
+    const INTERVAL = 2 // Process every 2nd frame (~15fps for pose, lightweight)
+
+    const capture = async () => {
+      if (!isActive) return
+      frameCount++
+
+      if (videoElement.readyState >= 2 && workerRef.current && frameCount % INTERVAL === 0) {
+        try {
+          const bitmap = await createImageBitmap(videoElement, {
+            resizeWidth: 320,
+            resizeHeight: 240,
+            resizeQuality: 'low'
+          })
+          workerRef.current.postMessage({ type: 'DETECT', imageBitmap: bitmap }, [bitmap])
+        } catch (e) {
+          // Silently handle — bitmap may fail if video isn't ready
+        }
+      }
+
+      if (isActive) frameId = requestAnimationFrame(capture)
+    }
+
+    capture()
+
+    return () => {
+      isActive = false
+      cancelAnimationFrame(frameId)
+    }
+  }, [videoElement, poseReady])
 }
