@@ -2,14 +2,14 @@
 
 let poseDetector = null
 
-// Dynamic import of MediaPipe (loaded from CDN to avoid bundle size)
-self.importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js')
-
 self.onmessage = async (event) => {
   const { type, imageData, width, height } = event.data
   
   if (type === 'INIT') {
     try {
+      // Load MediaPipe Pose via CDN importScripts
+      self.importScripts('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js')
+      
       const { Pose } = self
       poseDetector = new Pose({
         locateFile: (file) => {
@@ -21,7 +21,7 @@ self.onmessage = async (event) => {
         modelComplexity: 1,
         smoothLandmarks: true,
         enableSegmentation: false,
-        smoothSegmentation: true,
+        smoothSegmentation: false, // Fixed: disabled when segmentation is off
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
       })
@@ -40,8 +40,16 @@ self.onmessage = async (event) => {
     }
   }
   
-  if (type === 'DETECT' && poseDetector) {
-    // Convert imageData to MediaPipe format and detect
-    // ... implementation for 30fps pose detection
+  if (type === 'DETECT' && poseDetector && imageData) {
+    try {
+      // Convert imageData to MediaPipe format and detect
+      // Note: For 30fps, main thread should send webcam frame as imageData
+      const imageElement = new Image()
+      imageElement.src = imageData // Assuming imageData is a data URL or blob URL
+      
+      poseDetector.send({ image: imageElement })
+    } catch (err) {
+      self.postMessage({ type: 'ERROR', error: err.message })
+    }
   }
 }
