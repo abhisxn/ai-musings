@@ -5,7 +5,7 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore } from './store'
 import { Scene } from './Scene'
-import { useControls, folder, useRegister } from 'leva'
+import { useControls, folder } from 'leva'
 import { useWebcam, useSampler } from './hooks'
 import { useAudio } from './audio'
 import { useEffect, useRef } from 'react'
@@ -79,25 +79,13 @@ export default function ThresholdView() {
   }, [setThreshold])
 
   const { currentGesture } = useStore()
-  const register = useRegister()
   
   useEffect(() => {
     if (!currentGesture) return
-    
     const composer = new AIComposer()
     const experience = composer.composeExperience(currentGesture)
-    
-    // Spawn runtime Leva panel based on hallucinated controls
-    experience.hallucinatedControls.forEach(control => {
-      register(control.id, {
-        value: control.defaultValue,
-        min: control.min,
-        max: control.max,
-        step: control.step,
-        label: control.label
-      })
-    })
-  }, [currentGesture, register])
+    console.log('ThresholdView: AI Composer experience:', experience)
+  }, [currentGesture])
 
   useControls('Signal', {
     source: folder({

@@ -6,7 +6,7 @@ import { useStore } from './store'
 
 export function useAudio() {
   const { audioEnabled, volume, soundType, audioProfile } = useStore()
-  const analyzerRef = useRef<Tone.Analyzer | null>(null)
+  const analyzerRef = useRef<Tone.Analyser | null>(null)
   const synthRef = useRef<Tone.PolySynth | Tone.Sampler | null>(null)
   const clickSynthRef = useRef<Tone.PolySynth | null>(null)
   
