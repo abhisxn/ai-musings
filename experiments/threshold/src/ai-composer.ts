@@ -72,6 +72,7 @@ export class AIComposer {
   private generateGlitchShader(): string {
     return `
       precision highp float;
+      uniform sampler2D uTexture;
       uniform float uGlitchIntensity;
       uniform float uChromaticAberration;
       uniform float uTime;
@@ -92,6 +93,7 @@ export class AIComposer {
   private generateBloomShader(): string {
     return `
       precision highp float;
+      uniform sampler2D uDepthMap;
       uniform float uExtrusionDepth;
       uniform float uBloomIntensity;
       uniform float uSpectralMode;
