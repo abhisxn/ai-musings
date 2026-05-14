@@ -40,7 +40,17 @@ self.onmessage = async (event) => {
     return
   }
 
-  if (type === 'DETECT' && poseDetector) {
+  if (type === 'DETECT') {
+    if (!poseDetector) {
+      self.postMessage({ type: 'ERROR', error: 'Pose detector not initialized. Send INIT first.' })
+      return
+    }
+
+    if (!imageBitmap && !imageData) {
+      self.postMessage({ type: 'ERROR', error: 'DETECT requires imageBitmap or imageData payload.' })
+      return
+    }
+
     try {
       if (imageBitmap) {
         poseDetector.send({ image: imageBitmap })

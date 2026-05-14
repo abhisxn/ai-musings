@@ -11,7 +11,7 @@ function getGL() {
   return gl
 }
 
-function compileShader(gl, type, source) {
+function compileShader(type, source) {
   const shader = gl.createShader(type === 'vertex' ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER)
   gl.shaderSource(shader, source)
   gl.compileShader(shader)
@@ -23,7 +23,7 @@ function compileShader(gl, type, source) {
   return shader
 }
 
-function linkProgram(gl, vs, fs) {
+function linkProgram(vs, fs) {
   const program = gl.createProgram()
   gl.attachShader(program, vs)
   gl.attachShader(program, fs)
@@ -36,22 +36,29 @@ function linkProgram(gl, vs, fs) {
   return program
 }
 
-const VERTEX_SHADER_SRC = `
+const DEFAULT_VERTEX_SRC = `
   attribute vec4 aPosition;
   void main() {
     gl_Position = aPosition;
   }
 `
 
+const DEFAULT_FRAGMENT_SRC = `
+  precision highp float;
+  void main() {
+    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+  }
+`
+
 self.onmessage = (event) => {
-  const { type, shaderCode, uniforms } = event.data
+  const { type, shaderCode, vertexCode, uniforms } = event.data
 
   if (type === 'INIT') {
     try {
       const ctx = getGL()
       self.postMessage({ type: 'INIT_DONE', hasWebGL: !!ctx })
     } catch (err) {
-      self.postMessage({ type: 'ERROR', error: err.message })
+      self.postMessage({ type: 'INIT_ERROR', error: err.message })
     }
     return
   }
@@ -62,29 +69,24 @@ self.onmessage = (event) => {
       const ctx = getGL()
       if (!ctx) throw new Error('WebGL not available in OffscreenCanvas')
 
-      const vs = compileShader(ctx, 'vertex', VERTEX_SHADER_SRC)
-      const fs = compileShader(ctx, 'fragment', shaderCode || `
-        precision highp float;
-        void main() {
-          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-        }
-      `)
-      const program = linkProgram(ctx, vs, fs)
+      const vs = compileShader('vertex', vertexCode || DEFAULT_VERTEX_SRC)
+      const fs = compileShader('fragment', shaderCode || DEFAULT_FRAGMENT_SRC)
+      const program = linkProgram(vs, fs)
 
       const compileTime = performance.now() - startTime
 
+      gl.deleteShader(vs)
+      gl.deleteShader(fs)
+      gl.deleteProgram(program)
+
       self.postMessage({
         type: 'COMPILE_SUCCESS',
-        programId: program.id || String(Math.random()),
         compileTime,
         timestamp: Date.now()
       })
-
-      ctx.deleteShader(vs)
-      ctx.deleteShader(fs)
-      ctx.deleteProgram(program)
     } catch (err) {
-      self.postMessage({ type: 'COMPILE_ERROR', error: err.message, compileTime: performance.now() - startTime })
+      const compileTime = performance.now() - startTime
+      self.postMessage({ type: 'COMPILE_ERROR', error: err.message, compileTime })
     }
   }
 }
