@@ -178,21 +178,27 @@ export function useSampler() {
 export function usePoseDetection() {
   const initialized = useStore(state => state.initialized)
   const setCurrentGesture = useStore(state => state.setCurrentGesture)
-  const setCurrentShader = useStore(state => state.setCurrentShader)
-  const setAudioProfile = useStore(state => state.setAudioProfile)
-  const currentGesture = useStore(state => state.currentGesture)
-  const spawnHallucinatedControls = useStore(state => state.spawnHallucinatedControls)
   const workerRef = useRef<Worker | null>(null)
   const [poseReady, setPoseReady] = useState(false)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastGestureRef = useRef<GestureType | null>(null)
   const lastGestureTimeRef = useRef(0)
   const demoModeRef = useRef(false)
 
   // Gesture label for UI
   const [statusText, setStatusText] = useState<string>('waiting for camera...')
+  const demoCycleRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // 1. Initialize pose worker (no CDN dependency — pure pixel analysis)
+  const startDemoCycle = () => {
+    if (demoCycleRef.current) return
+    const gestures: GestureType[] = ['jazz-hands', 'peace-sign', 'fist-pump']
+    let i = 0
+    demoCycleRef.current = setInterval(() => {
+      setCurrentGesture(gestures[i % gestures.length])
+      i++
+    }, 3000)
+  }
+
+  // 1. Initialize pose worker (no CDN dependency — pure pixel analysis)  
   useEffect(() => {
     if (!initialized) return
 
@@ -210,31 +216,24 @@ export function usePoseDetection() {
       if (type === 'INIT_DONE') {
         console.log('Pose: Worker ready')
         setPoseReady(true)
-        setStatusText('camera active')
-
-        // Fallback: if no gesture detected for 10s, switch to demo mode
         initTimer = setTimeout(() => {
           if (!lastGestureRef.current && !demoModeRef.current) {
-            console.log('Pose: No gestures detected, entering demo mode')
+            console.log('Pose: Entering demo mode — no camera gesture detected')
             demoModeRef.current = true
-            setStatusText('demo mode')
             startDemoCycle()
           }
         }, 10000)
       }
 
-      if (type === 'POSE_RESULTS' && gesture) {
-        lastGestureRef.current = gesture as GestureType
-
-        if (debounceRef.current) clearTimeout(debounceRef.current)
-
-        // Debounce: wait 800ms before accepting a new gesture
-        const now = Date.now()
-        if (now - lastGestureTimeRef.current > 800) {
-          lastGestureTimeRef.current = now
-          setCurrentGesture(gesture as GestureType)
-          console.log('Pose: Gesture detected:', gesture, 'confidence:', confidence?.toFixed(2))
-          setStatusText(`gesture: ${gesture}`)
+      if (type === 'POSE_RESULTS') {
+        if (gesture) {
+          lastGestureRef.current = gesture as GestureType
+          const now = Date.now()
+          if (now - lastGestureTimeRef.current > 800) {
+            lastGestureTimeRef.current = now
+            setCurrentGesture(gesture as GestureType)
+            console.log('Pose: Gesture:', gesture, Math.round(confidence * 100) + '%')
+          }
         }
       }
     }
@@ -243,31 +242,12 @@ export function usePoseDetection() {
 
     return () => {
       if (initTimer) clearTimeout(initTimer)
-      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (demoCycleRef.current) clearInterval(demoCycleRef.current)
       worker.terminate()
       workerRef.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized])
-
-  // Demo mode: cycle through gestures
-  const startDemoCycle = () => {
-    const gestures: GestureType[] = ['jazz-hands', 'peace-sign', 'fist-pump']
-    const experienceLabels = ['glitch', 'bloom', 'bass']
-    let i = 0
-    const cycle = setInterval(() => {
-      const g = gestures[i % gestures.length]
-      setCurrentGesture(g)
-      setStatusText(`demo: ${g} — ${experienceLabels[i % experienceLabels.length]}`)
-      i++
-      // After 3 cycles, check if real detection has started
-      if (i >= 6 && lastGestureRef.current) {
-        clearInterval(cycle)
-        setStatusText(`gesture: ${lastGestureRef.current}`)
-      }
-    }, 3000)
-    return cycle
-  }
 
   // 2. Capture frames and send to pose worker
   const videoElement = useStore(state => state.videoElement)
