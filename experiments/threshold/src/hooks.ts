@@ -122,10 +122,8 @@ export function useSampler() {
             
             if (!isMounted) return
 
-            const depthData = result.depth.data // This is a Float32Array
-            
-            // Find min/max for normalization if needed, but depth-anything usually is 0-1 or 0-255
-            // Let's ensure it's mapped 0-1
+            const depthData = result.depth.data
+
             let max = 0
             for (let i = 0; i < depthData.length; i++) if (depthData[i] > max) max = depthData[i]
 
@@ -135,7 +133,6 @@ export function useSampler() {
               for (let x = 0; x < resolution; x++) {
                 const sx = Math.floor((x / resolution) * 128)
                 const val = depthData[sy * 128 + sx]
-                // Normalize to 0-1 based on observed max if it looks flat
                 dataRef.current[targetY + x] = max > 1 ? val / max : val
               }
             }
@@ -151,7 +148,6 @@ export function useSampler() {
                 const r = data[idx]
                 const g = data[idx + 1]
                 const b = data[idx + 2]
-                // Luma calculation
                 const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
                 dataRef.current[targetY + x] = brightness
               }
@@ -179,50 +175,24 @@ export function useSampler() {
   return { loading, dataRef }
 }
 
-function detectGestureFromKeypoints(keypoints: Array<{x: number, y: number, z: number, confidence: number}>): GestureType | null {
-  if (!keypoints || keypoints.length < 21) return null
-
-  const wrist = keypoints[0]
-  const thumbTip = keypoints[4]
-  const indexTip = keypoints[8]
-  const middleTip = keypoints[12]
-  const ringTip = keypoints[16]
-  const pinkyTip = keypoints[20]
-  const indexPip = keypoints[6]
-  const middlePip = keypoints[10]
-  const ringPip = keypoints[14]
-  const pinkyPip = keypoints[18]
-
-  const dist = (a: typeof wrist, b: typeof wrist) =>
-    Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
-
-  const fingerSpread = dist(indexTip, pinkyTip)
-  const handSize = dist(wrist, middleTip)
-
-  const indexExtended = dist(indexTip, indexPip) > handSize * 0.3
-  const middleExtended = dist(middleTip, middlePip) > handSize * 0.3
-  const ringExtended = dist(ringTip, ringPip) > handSize * 0.25
-  const pinkyExtended = dist(pinkyTip, pinkyPip) > handSize * 0.25
-
-  const extendedCount = [indexExtended, middleExtended, ringExtended, pinkyExtended].filter(Boolean).length
-  const spreadNorm = fingerSpread / handSize
-
-  if (extendedCount >= 4 && spreadNorm > 0.8) return 'jazz-hands'
-  if (indexExtended && middleExtended && !ringExtended && !pinkyExtended) return 'peace-sign'
-  if (extendedCount <= 1) return 'fist-pump'
-
-  return null
-}
-
 export function usePoseDetection() {
   const initialized = useStore(state => state.initialized)
   const setCurrentGesture = useStore(state => state.setCurrentGesture)
+  const setCurrentShader = useStore(state => state.setCurrentShader)
+  const setAudioProfile = useStore(state => state.setAudioProfile)
+  const currentGesture = useStore(state => state.currentGesture)
+  const spawnHallucinatedControls = useStore(state => state.spawnHallucinatedControls)
   const workerRef = useRef<Worker | null>(null)
   const [poseReady, setPoseReady] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const currentGestureRef = useRef<GestureType | null>(null)
+  const lastGestureRef = useRef<GestureType | null>(null)
+  const lastGestureTimeRef = useRef(0)
+  const demoModeRef = useRef(false)
 
-  // 1. Initialize pose worker
+  // Gesture label for UI
+  const [statusText, setStatusText] = useState<string>('waiting for camera...')
+
+  // 1. Initialize pose worker (no CDN dependency — pure pixel analysis)
   useEffect(() => {
     if (!initialized) return
 
@@ -232,22 +202,39 @@ export function usePoseDetection() {
     )
     workerRef.current = worker
 
+    let initTimer: ReturnType<typeof setTimeout> | null = null
+
     worker.onmessage = (event) => {
-      const { type, keypoints } = event.data
+      const { type, gesture, confidence } = event.data
+
       if (type === 'INIT_DONE') {
-        console.log('Pose: Worker initialized')
+        console.log('Pose: Worker ready')
         setPoseReady(true)
+        setStatusText('camera active')
+
+        // Fallback: if no gesture detected for 10s, switch to demo mode
+        initTimer = setTimeout(() => {
+          if (!lastGestureRef.current && !demoModeRef.current) {
+            console.log('Pose: No gestures detected, entering demo mode')
+            demoModeRef.current = true
+            setStatusText('demo mode')
+            startDemoCycle()
+          }
+        }, 10000)
       }
-      if (type === 'POSE_RESULTS' && keypoints) {
-        const gesture = detectGestureFromKeypoints(keypoints)
-        if (gesture && gesture !== currentGestureRef.current) {
-          currentGestureRef.current = gesture
-          if (debounceRef.current) clearTimeout(debounceRef.current)
-          debounceRef.current = setTimeout(() => {
-            setCurrentGesture(gesture)
-            console.log('Pose: Gesture detected:', gesture)
-            currentGestureRef.current = null
-          }, 500)
+
+      if (type === 'POSE_RESULTS' && gesture) {
+        lastGestureRef.current = gesture as GestureType
+
+        if (debounceRef.current) clearTimeout(debounceRef.current)
+
+        // Debounce: wait 800ms before accepting a new gesture
+        const now = Date.now()
+        if (now - lastGestureTimeRef.current > 800) {
+          lastGestureTimeRef.current = now
+          setCurrentGesture(gesture as GestureType)
+          console.log('Pose: Gesture detected:', gesture, 'confidence:', confidence?.toFixed(2))
+          setStatusText(`gesture: ${gesture}`)
         }
       }
     }
@@ -255,11 +242,32 @@ export function usePoseDetection() {
     worker.postMessage({ type: 'INIT' })
 
     return () => {
+      if (initTimer) clearTimeout(initTimer)
       if (debounceRef.current) clearTimeout(debounceRef.current)
       worker.terminate()
       workerRef.current = null
     }
-  }, [initialized, setCurrentGesture])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized])
+
+  // Demo mode: cycle through gestures
+  const startDemoCycle = () => {
+    const gestures: GestureType[] = ['jazz-hands', 'peace-sign', 'fist-pump']
+    const experienceLabels = ['glitch', 'bloom', 'bass']
+    let i = 0
+    const cycle = setInterval(() => {
+      const g = gestures[i % gestures.length]
+      setCurrentGesture(g)
+      setStatusText(`demo: ${g} — ${experienceLabels[i % experienceLabels.length]}`)
+      i++
+      // After 3 cycles, check if real detection has started
+      if (i >= 6 && lastGestureRef.current) {
+        clearInterval(cycle)
+        setStatusText(`gesture: ${lastGestureRef.current}`)
+      }
+    }, 3000)
+    return cycle
+  }
 
   // 2. Capture frames and send to pose worker
   const videoElement = useStore(state => state.videoElement)
@@ -270,33 +278,29 @@ export function usePoseDetection() {
     let isActive = true
     let frameId: number
     let frameCount = 0
-    const INTERVAL = 2 // Process every 2nd frame (~15fps for pose, lightweight)
 
     const capture = async () => {
       if (!isActive) return
       frameCount++
 
-      if (videoElement.readyState >= 2 && workerRef.current && frameCount % INTERVAL === 0) {
+      if (videoElement.readyState >= 2 && workerRef.current && frameCount % 3 === 0) {
         try {
           const bitmap = await createImageBitmap(videoElement, {
-            resizeWidth: 320,
-            resizeHeight: 240,
+            resizeWidth: 160,
+            resizeHeight: 120,
             resizeQuality: 'low'
           })
           workerRef.current.postMessage({ type: 'DETECT', imageBitmap: bitmap }, [bitmap])
         } catch (e) {
-          // Silently handle — bitmap may fail if video isn't ready
+          // frame not ready
         }
       }
-
       if (isActive) frameId = requestAnimationFrame(capture)
     }
 
     capture()
-
-    return () => {
-      isActive = false
-      cancelAnimationFrame(frameId)
-    }
+    return () => { isActive = false; cancelAnimationFrame(frameId) }
   }, [videoElement, poseReady])
+
+  return { poseReady, statusText }
 }

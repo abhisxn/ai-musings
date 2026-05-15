@@ -8,13 +8,9 @@ import { Scene } from './Scene'
 import { useControls, folder } from 'leva'
 import { useWebcam, useSampler, usePoseDetection } from './hooks'
 import { useAudio } from './audio'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { AIComposer } from './ai-composer'
-
-if (typeof window !== 'undefined') {
-  ;(window as any).__threshold = { useStore, AIComposer }
-}
 
 if (typeof window !== 'undefined') {
   ;(window as any).__threshold = { useStore, AIComposer }
@@ -23,6 +19,18 @@ if (typeof window !== 'undefined') {
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
+
+const GESTURE_COLORS: Record<string, string> = {
+  'jazz-hands': '#ff00ff',
+  'peace-sign': '#00ffff',
+  'fist-pump': '#ff4400',
+}
+
+const GESTURE_LABELS: Record<string, string> = {
+  'jazz-hands': 'GLITCH MODE',
+  'peace-sign': 'BLOOM MODE',
+  'fist-pump': 'BASS MODE',
+}
 
 function AnimatedCamera() {
   const viewMode = useStore(state => state.viewMode)
@@ -60,8 +68,20 @@ export default function ThresholdView() {
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
   const { analyzerRef, synthRef, clickSynthRef } = useAudio()
-  usePoseDetection()
-  usePoseDetection()
+  const { statusText } = usePoseDetection()
+  const { currentGesture, hallucinatedControls } = useStore()
+  const gestureColor = currentGesture ? GESTURE_COLORS[currentGesture] || '#00ff41' : '#00ff41'
+  const gestureLabel = currentGesture ? GESTURE_LABELS[currentGesture] || currentGesture.toUpperCase() : ''
+  const [flash, setFlash] = useState(false)
+
+  useEffect(() => {
+    if (!currentGesture) return
+    const composer = new AIComposer()
+    composer.composeExperience(currentGesture)
+    setFlash(true)
+    const t = setTimeout(() => setFlash(false), 500)
+    return () => clearTimeout(t)
+  }, [currentGesture])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -87,15 +107,6 @@ export default function ThresholdView() {
     window.addEventListener('wheel', handleWheel, { passive: true })
     return () => window.removeEventListener('wheel', handleWheel)
   }, [setThreshold])
-
-  const { currentGesture, hallucinatedControls } = useStore()
-  
-  useEffect(() => {
-    if (!currentGesture) return
-    const composer = new AIComposer()
-    const experience = composer.composeExperience(currentGesture)
-    console.log('ThresholdView: AI Composer experience:', experience)
-  }, [currentGesture])
 
   useControls('Signal', {
     source: folder({
@@ -136,21 +147,14 @@ export default function ThresholdView() {
     })
   })
 
-  useControls('AI Composer', {
-    panel: folder({
-      currentGesture: { value: currentGesture || 'none', disabled: true },
-      controlCount: { value: hallucinatedControls.length, disabled: true }
-    })
-  }, [currentGesture, hallucinatedControls])
-
   if (!initialized) {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full bg-[#050505] text-[#00ff41] font-mono p-10">
         <div className="border border-[#00ff41] p-10 text-center max-w-md">
-          <h1 className="text-3xl mb-4 tracking-[0.2em]">THRESHOLD V3</h1>
+          <h1 className="text-3xl mb-4 tracking-[0.2em]">THRESHOLD V4</h1>
           <p className="text-xs opacity-50 mb-10 leading-relaxed tracking-widest">
-            VOLUMETRIC TERMINAL INSTRUMENT<br />
-            READY FOR INITIALIZATION
+            AI-COMPOSED AUDIOVISUAL INSTRUMENT<br />
+            GESTURE → EXPERIENCE PIPELINE
           </p>
           <button 
             onClick={() => setInitialized(true)}
@@ -177,6 +181,39 @@ export default function ThresholdView() {
         <div className="absolute bottom-8 left-8 border-l border-b border-[#00ff41]/40 w-10 h-10" />
         <div className="absolute bottom-8 right-8 border-r border-b border-[#00ff41]/40 w-10 h-10" />
       </div>
+
+      {/* AI Composer HUD — visible feedback when gesture is active */}
+      {currentGesture && (
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transition-all duration-500"
+          style={{ opacity: flash ? 1 : 0.7 }}
+        >
+          <div
+            className="text-center font-mono tracking-[0.3em] px-12 py-6 border"
+            style={{
+              borderColor: gestureColor,
+              color: gestureColor,
+              boxShadow: `0 0 30px ${gestureColor}44, inset 0 0 30px ${gestureColor}22`,
+              transition: 'border-color 0.3s, box-shadow 0.3s',
+            }}
+          >
+            <div className="text-lg font-bold animate-pulse">{gestureLabel}</div>
+            {hallucinatedControls.length > 0 && (
+              <div className="text-[10px] mt-2 opacity-60">
+                {hallucinatedControls.map(c => c.label).join(' • ')}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Status bar */}
+      <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
+        <div className="text-[9px] font-mono tracking-[0.2em] opacity-30 text-[#00ff41]">
+          {statusText}
+        </div>
+      </div>
+
       <Canvas shadows gl={{ antialias: false }}>
         <AnimatedCamera />
         <color attach="background" args={['#050505']} />
