@@ -54,7 +54,10 @@ interface ThresholdState {
   // AI Composer State (NEW)
   currentGesture: GestureType | null
   setCurrentGesture: (gesture: GestureType | null) => void
-  
+
+  currentMode: 'glitch' | 'bloom' | 'bass' | null
+  setCurrentMode: (mode: 'glitch' | 'bloom' | 'bass' | null) => void
+
   hallucinatedControls: HallucinatedControl[]
   spawnHallucinatedControls: (controls: HallucinatedControl[]) => void
   
@@ -111,7 +114,10 @@ export const useStore = create<ThresholdState>((set) => ({
   // AI Composer State (NEW)
   currentGesture: null,
   setCurrentGesture: (gesture) => set({ currentGesture: gesture }),
-  
+
+  currentMode: null,
+  setCurrentMode: (mode) => set({ currentMode: mode }),
+
   hallucinatedControls: [],
   spawnHallucinatedControls: (controls) => set({ hallucinatedControls: controls }),
   
