@@ -69,10 +69,17 @@ export default function ThresholdView() {
   const { loading, dataRef } = useSampler()
   const { analyzerRef, synthRef, clickSynthRef } = useAudio()
   const { statusText } = useMotionZones()
-  const { currentGesture, hallucinatedControls } = useStore()
+  const { currentGesture, currentMode, hallucinatedControls } = useStore()
   const gestureColor = currentGesture ? GESTURE_COLORS[currentGesture] || '#00ff41' : '#00ff41'
   const gestureLabel = currentGesture ? GESTURE_LABELS[currentGesture] || currentGesture.toUpperCase() : ''
   const [flash, setFlash] = useState(false)
+
+  const { setCurrentMode, setCurrentGesture } = useStore()
+  const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.8, levels: 8 })
+  const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.001, 0.001))
+  const [ppNoise, setPpNoise] = useState(0.03)
+  const [ppScanline, setPpScanline] = useState(0.1)
+  const [ppVignette, setPpVignette] = useState(1.1)
 
   useEffect(() => {
     if (!currentGesture) return
@@ -84,18 +91,57 @@ export default function ThresholdView() {
   }, [currentGesture])
 
   useEffect(() => {
+    switch (currentMode) {
+      case 'glitch':
+        setPpBloom({ threshold: 0.3, intensity: 1.2, levels: 8 })
+        setPpChromatic(new THREE.Vector2(0.005, 0.005))
+        setPpNoise(0.15)
+        setPpScanline(0.25)
+        setPpVignette(1.3)
+        break
+      case 'bloom':
+        setPpBloom({ threshold: 0.2, intensity: 2.0, levels: 8 })
+        setPpChromatic(new THREE.Vector2(0.001, 0.001))
+        setPpNoise(0.01)
+        setPpScanline(0.05)
+        setPpVignette(0.8)
+        break
+      case 'bass':
+        setPpBloom({ threshold: 0.4, intensity: 1.5, levels: 8 })
+        setPpChromatic(new THREE.Vector2(0.002, 0.002))
+        setPpNoise(0.05)
+        setPpScanline(0.2)
+        setPpVignette(1.0)
+        break
+      default: // IDLE
+        setPpBloom({ threshold: 0.5, intensity: 0.8, levels: 8 })
+        setPpChromatic(new THREE.Vector2(0.001, 0.001))
+        setPpNoise(0.03)
+        setPpScanline(0.1)
+        setPpVignette(1.1)
+    }
+  }, [currentMode])
+
+  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
+      const gestureMap: Record<string, 'jazz-hands' | 'peace-sign' | 'fist-pump'> = { '1': 'jazz-hands', '2': 'peace-sign', '3': 'fist-pump' }
+      const modeMap: Record<string, 'glitch' | 'bloom' | 'bass'> = { '1': 'glitch', '2': 'bloom', '3': 'bass' }
       if (e.code === 'Space') {
         e.preventDefault()
-        const currentMode = useStore.getState().viewMode
-        const nextMode = currentMode === 'flat' ? 'volumetric' : 'flat'
-        setViewMode(nextMode)
+        const current = useStore.getState().viewMode
+        setViewMode(current === 'flat' ? 'volumetric' : 'flat')
+      } else if (gestureMap[e.key]) {
+        setCurrentGesture(gestureMap[e.key])
+        setCurrentMode(modeMap[e.key] || null)
+      } else if (e.key === '0') {
+        setCurrentGesture(null)
+        setCurrentMode(null)
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [setViewMode])
+  }, [setCurrentGesture, setCurrentMode, setViewMode])
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -214,15 +260,52 @@ export default function ThresholdView() {
         </div>
       </div>
 
+      {/* Mode buttons */}
+      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex gap-3 pointer-events-auto">
+        {[
+          { mode: 'glitch' as const, gesture: 'jazz-hands' as const, label: 'GLITCH', color: '#ff00ff' },
+          { mode: 'bloom' as const, gesture: 'peace-sign' as const, label: 'BLOOM', color: '#00ffff' },
+          { mode: 'bass' as const, gesture: 'fist-pump' as const, label: 'BASS', color: '#ff4400' },
+        ].map(({ mode, gesture, label, color }) => (
+          <button
+            key={mode}
+            onClick={() => {
+              setCurrentGesture(currentMode === mode ? null : gesture)
+              setCurrentMode(currentMode === mode ? null : mode)
+            }}
+            className="px-5 py-2 text-[10px] font-mono tracking-[0.25em] transition-all duration-300"
+            style={{
+              border: `1px solid ${color}`,
+              color: currentMode === mode ? '#050505' : color,
+              background: currentMode === mode ? color : 'transparent',
+              opacity: currentMode === mode ? 1 : 0.6,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+        <button
+          onClick={() => { setCurrentGesture(null); setCurrentMode(null) }}
+          className="px-4 py-2 text-[10px] font-mono tracking-[0.25em] transition-all duration-300"
+          style={{
+            border: '1px dashed #00ff4166',
+            color: '#00ff4166',
+            background: 'transparent',
+          }}
+        >
+          IDLE
+        </button>
+      </div>
+
       <Canvas shadows gl={{ antialias: false }}>
         <AnimatedCamera />
         <color attach="background" args={['#050505']} />
         <EffectComposer>
-          <Bloom luminanceThreshold={0.5} intensity={0.8} levels={8} mipmapBlur />
-          <ChromaticAberration offset={new THREE.Vector2(0.001, 0.001)} />
-          <Scanline opacity={0.1} density={2} />
-          <Noise opacity={0.03} />
-          <Vignette eskil={false} offset={0.1} darkness={1.1} />
+          <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={ppBloom.levels} mipmapBlur />
+          <ChromaticAberration offset={ppChromatic} />
+          <Scanline opacity={ppScanline} density={2} />
+          <Noise opacity={ppNoise} />
+          <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
         </EffectComposer>
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1} color={theme === 'acid' ? '#ccff00' : '#00ff41'} />
