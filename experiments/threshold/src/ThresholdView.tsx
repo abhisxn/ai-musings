@@ -67,7 +67,7 @@ export default function ThresholdView() {
 
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
-  const { analyzerRef, synthRef, clickSynthRef } = useAudio()
+  const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
   const { currentGesture, currentMode, hallucinatedControls } = useStore()
   const gestureColor = currentGesture ? GESTURE_COLORS[currentGesture] || '#00ff41' : '#00ff41'
@@ -310,7 +310,7 @@ export default function ThresholdView() {
         </EffectComposer>
         <ambientLight intensity={0.2} />
         <pointLight position={[10, 10, 10]} intensity={1} color={theme === 'acid' ? '#ccff00' : '#00ff41'} />
-        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} synthRef={synthRef} clickSynthRef={clickSynthRef} />
+        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
       </Canvas>
     </div>
   )

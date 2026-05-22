@@ -9,13 +9,13 @@ import { useStore } from './store'
 export function Scene({ 
   pixelDataRef, 
   analyzerRef,
-  synthRef,
-  clickSynthRef
+  triggerVoice,
+  triggerClick
 }: { 
   pixelDataRef: React.RefObject<Float32Array>,
   analyzerRef: React.RefObject<any>,
-  synthRef: React.RefObject<any>,
-  clickSynthRef: React.RefObject<any>
+  triggerVoice: (brightness: number, noteIndex: number) => void,
+  triggerClick: (note?: string, duration?: string) => void,
 }) {
   const blocksRef = useRef<THREE.InstancedMesh>(null)
   const radioRingRef = useRef<THREE.InstancedMesh>(null)
@@ -128,14 +128,9 @@ useFrame((state) => {
         const wasActive = prevStates[id] === 1
 
         if (isActive && !wasActive && audioEnabled && clicksThisFrame < MAX_CLICKS_PER_FRAME) {
-          if (synthRef.current) {
-            const noteIdx = Math.floor(((resolution - y) / resolution) * NOTES.length)
-            const note = NOTES[Math.max(0, Math.min(NOTES.length - 1, noteIdx))]
-            synthRef.current.triggerAttackRelease(note, "16n")
-          }
-          if (clickSynthRef.current) {
-            clickSynthRef.current.triggerAttackRelease("C2", "32n")
-          }
+          const noteIdx = Math.floor(((resolution - y) / resolution) * NOTES.length)
+          triggerVoice(brightness, noteIdx)
+          triggerClick('C2', '32n')
           clicksThisFrame++
         }
         prevStates[id] = isActive ? 1 : 0
