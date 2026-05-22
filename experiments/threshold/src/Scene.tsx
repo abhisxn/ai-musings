@@ -25,7 +25,7 @@ export function Scene({
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid } = useStore()
-  const { currentGesture, hallucinatedControls, currentShader } = useStore()
+  const { currentGesture, currentMode, hallucinatedControls, currentShader } = useStore()
   
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   
@@ -77,30 +77,30 @@ export function Scene({
 useFrame((state) => {
     if (!pixelDataRef.current) return
 
-    let aiEmissiveScale = 1.0
-    
-    // Respond to AI Composer state (hallucinated controls)
-    if (currentShader && currentGesture && hallucinatedControls.length > 0) {
-      const glitchIntensity = hallucinatedControls.find(c => c.id === 'glitch-intensity')
-      const chromaticAberration = hallucinatedControls.find(c => c.id === 'chromatic-aberration')
-      const bloomIntensity = hallucinatedControls.find(c => c.id === 'bloom-intensity')
-      const beatFrequency = hallucinatedControls.find(c => c.id === 'beat-frequency')
-      const bassBoost = hallucinatedControls.find(c => c.id === 'bass-boost')
+    let emissiveColor = new THREE.Color(color)
+    let emissiveScale = 1.0
+    let targetRoughness = 0.4
+    let targetMetalness = 0.6
 
-      aiEmissiveScale = currentGesture === 'jazz-hands' && glitchIntensity
-        ? 1.0 + glitchIntensity.defaultValue * 3.0
-        : currentGesture === 'peace-sign' && bloomIntensity
-          ? 1.0 + bloomIntensity.defaultValue * 2.0
-          : currentGesture === 'fist-pump' && bassBoost
-            ? 1.0 + bassBoost.defaultValue * 4.0
-            : 1.0
-
-      const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef]
-      meshRefs.forEach(ref => {
-        if (ref.current && ref.current.material instanceof THREE.MeshStandardMaterial) {
-          ref.current.material.emissiveIntensity = aiEmissiveScale
-        }
-      })
+    switch (currentMode) {
+      case 'glitch':
+        emissiveColor = new THREE.Color('#ff00ff')
+        emissiveScale = 3.0
+        targetRoughness = 0.2
+        targetMetalness = 0.8
+        break
+      case 'bloom':
+        emissiveColor = new THREE.Color('#00ffff')
+        emissiveScale = 2.0
+        targetRoughness = 0.6
+        targetMetalness = 0.3
+        break
+      case 'bass':
+        emissiveColor = new THREE.Color('#ff4400')
+        emissiveScale = 4.0
+        targetRoughness = 0.3
+        targetMetalness = 0.7
+        break
     }
 
     let audioIntensity = 0
@@ -143,6 +143,14 @@ useFrame((state) => {
         const zExtrusion = (brightness * extrusion)
         const audioHeight = isActive ? (audioIntensity * extrusion) : 0
         const finalZ = Math.max(0.05, zExtrusion + audioHeight)
+        const time = state.clock.elapsedTime
+        let modeZ = finalZ
+        if (currentMode === 'glitch') {
+          modeZ = finalZ + Math.sin(time * 10 + id * 0.1) * 0.3
+        } else if (currentMode === 'bass') {
+          const beat = 0.5 + 0.5 * Math.sin(time * 4)
+          modeZ = finalZ * (0.5 + beat * 0.5)
+        }
         
         const posX = ((resolution - x) - resolution / 2) * spacing
         const posY = (y - resolution / 2) * -spacing
@@ -166,14 +174,14 @@ useFrame((state) => {
           }
         } else {
           // Volumetric Mode
-          dummy.position.set(posX, posY, finalZ / 2)
+          dummy.position.set(posX, posY, modeZ / 2)
           if (renderMode === 'ascii' || renderMode === 'pixel') {
             dummy.scale.set(spacing * s, spacing * s, 1)
           } else if (renderMode === 'dots' || renderMode === 'particles') {
             const pSize = renderMode === 'dots' ? 0.4 : 0.1
             dummy.scale.set(spacing * 0.9 * pSize, spacing * 0.9 * pSize, spacing * 0.9 * pSize)
           } else {
-            dummy.scale.set(spacing * 0.9, spacing * 0.9, finalZ)
+            dummy.scale.set(spacing * 0.9, spacing * 0.9, modeZ)
           }
         }
         
@@ -195,16 +203,16 @@ useFrame((state) => {
         if (renderMode === 'radio' && radioRingRef.current && radioDotRef.current) {
            // Outer Ring
            dummy.rotation.x = Math.PI / 2
-           dummy.position.set(posX, posY, viewMode === 'flat' ? 0 : finalZ / 2)
+           dummy.position.set(posX, posY, viewMode === 'flat' ? 0 : modeZ / 2)
            // Fix: Scaled for 2D vs 3D
-           const ringScale = viewMode === 'flat' ? 0.05 : finalZ
+           const ringScale = viewMode === 'flat' ? 0.05 : modeZ
            dummy.scale.set(spacing * 0.8, ringScale, spacing * 0.8)
            dummy.updateMatrix()
            radioRingRef.current.setMatrixAt(id, dummy.matrix)
            
            // Inner Dot
            const dotSize = isActive ? 0.4 : 0.01
-           const dotHeight = viewMode === 'flat' ? 0.06 : finalZ + 0.05
+           const dotHeight = viewMode === 'flat' ? 0.06 : modeZ + 0.05
            dummy.scale.set(spacing * dotSize, dotHeight, spacing * dotSize)
            dummy.updateMatrix()
            radioDotRef.current.setMatrixAt(id, dummy.matrix)
@@ -223,7 +231,7 @@ useFrame((state) => {
           const shimmer = (Math.random() - 0.5) * 0.02
           positions[id * 3] = posX + (isActive ? shimmer : 0)
           positions[id * 3 + 1] = posY + (isActive ? shimmer : 0)
-          positions[id * 3 + 2] = viewMode === 'flat' ? 0 : (finalZ + shimmer)
+          positions[id * 3 + 2] = viewMode === 'flat' ? 0 : (modeZ + shimmer)
           
           const hmColor = theme === 'heatmap' ? getHeatmapColor(brightness) : new THREE.Color(color)
           const boost = isActive ? 2.5 : 0.3
@@ -244,10 +252,21 @@ useFrame((state) => {
       if (ref.current) {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = theme === 'heatmap'
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
-          ref.current.material.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8)) * aiEmissiveScale
-          // Ensure material color is white when using instance colors (heatmap)
-          if (theme === 'heatmap') ref.current.material.color.set('#fff')
-          else ref.current.material.color.set(color)
+          const mat = ref.current.material
+          if (currentMode) {
+            mat.emissive.copy(emissiveColor)
+            mat.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8)) * emissiveScale
+            mat.color.copy(emissiveColor)
+            mat.roughness = targetRoughness
+            mat.metalness = targetMetalness
+          } else {
+            mat.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8))
+            if (theme === 'heatmap') mat.color.set('#fff')
+            else mat.color.set(color)
+            mat.emissive.set(color)
+            mat.roughness = 0.4
+            mat.metalness = 0.6
+          }
         }
         ref.current.instanceMatrix.needsUpdate = true
       }
