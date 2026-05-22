@@ -6,7 +6,7 @@ import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette }
 import { useStore } from './store'
 import { Scene } from './Scene'
 import { useControls, folder } from 'leva'
-import { useWebcam, useSampler, usePoseDetection } from './hooks'
+import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio } from './audio'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -68,7 +68,7 @@ export default function ThresholdView() {
   const { videoRef } = useWebcam()
   const { loading, dataRef } = useSampler()
   const { analyzerRef, synthRef, clickSynthRef } = useAudio()
-  const { statusText } = usePoseDetection()
+  const { statusText } = useMotionZones()
   const { currentGesture, hallucinatedControls } = useStore()
   const gestureColor = currentGesture ? GESTURE_COLORS[currentGesture] || '#00ff41' : '#00ff41'
   const gestureLabel = currentGesture ? GESTURE_LABELS[currentGesture] || currentGesture.toUpperCase() : ''
