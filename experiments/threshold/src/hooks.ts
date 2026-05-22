@@ -194,12 +194,12 @@ export function useMotionZones() {
 
     let isActive = true
     let frameId: number
-    let frameCount = 0
     let lockedUntil = 0
     const LOCK_DURATION = 3000
     const ZONE_THRESHOLD = 0.15
     const CONSECUTIVE_FRAMES = 5
-    const motionBuffer = [0, 0, 0]
+    const IDLE_THRESHOLD = ZONE_THRESHOLD * 0.5
+    const motionBuffer: number[] = []
     let prevZoneData: Uint8Array | null = null
     const canvas = document.createElement('canvas')
     canvas.width = 64
@@ -208,7 +208,6 @@ export function useMotionZones() {
 
     const detect = () => {
       if (!isActive) return
-      frameCount++
 
       if (videoElement.readyState < 2) {
         frameId = requestAnimationFrame(detect)
@@ -273,7 +272,7 @@ export function useMotionZones() {
             }
           }
 
-          if (maxDelta < ZONE_THRESHOLD * 0.5) {
+          if (maxDelta < IDLE_THRESHOLD) {
             setStatusText('idle')
           } else {
             const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
