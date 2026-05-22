@@ -255,8 +255,10 @@ export function useMotionZones() {
           const maxDelta = Math.max(...avgDeltas)
           const maxZone = avgDeltas.indexOf(maxDelta)
 
-          motionBuffer.push(maxZone)
-          motionBuffer.shift()
+motionBuffer.push(maxZone)
+if (motionBuffer.length > CONSECUTIVE_FRAMES) {
+  motionBuffer.shift()
+}
 
           if (motionBuffer.length >= CONSECUTIVE_FRAMES) {
             const allSame = motionBuffer.every(v => v === motionBuffer[0])
