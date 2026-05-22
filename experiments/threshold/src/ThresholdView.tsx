@@ -125,6 +125,7 @@ export default function ThresholdView() {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
       const gestureMap: Record<string, 'jazz-hands' | 'peace-sign' | 'fist-pump'> = { '1': 'jazz-hands', '2': 'peace-sign', '3': 'fist-pump' }
       const modeMap: Record<string, 'glitch' | 'bloom' | 'bass'> = { '1': 'glitch', '2': 'bloom', '3': 'bass' }
       if (e.code === 'Space') {
