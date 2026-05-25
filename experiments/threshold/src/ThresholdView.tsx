@@ -74,11 +74,11 @@ export default function ThresholdView() {
   const [flash, setFlash] = useState(false)
 
   const { setCurrentMode, setCurrentGesture } = useStore()
-  const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.8, levels: 8 })
-  const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.001, 0.001))
-  const [ppNoise, setPpNoise] = useState(0.03)
-  const [ppScanline, setPpScanline] = useState(0.1)
-  const [ppVignette, setPpVignette] = useState(1.1)
+  const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.3, levels: 6 })
+  const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.0005, 0.0005))
+  const [ppNoise, setPpNoise] = useState(0.01)
+  const [ppScanline, setPpScanline] = useState(0.05)
+  const [ppVignette, setPpVignette] = useState(0.8)
 
   useEffect(() => {
     if (!currentGesture) return
@@ -92,32 +92,32 @@ export default function ThresholdView() {
   useEffect(() => {
     switch (currentMode) {
       case 'glitch':
-        setPpBloom({ threshold: 0.3, intensity: 1.2, levels: 8 })
-        setPpChromatic(new THREE.Vector2(0.005, 0.005))
-        setPpNoise(0.15)
-        setPpScanline(0.25)
-        setPpVignette(1.3)
+        setPpBloom({ threshold: 0.4, intensity: 0.6, levels: 6 })
+        setPpChromatic(new THREE.Vector2(0.003, 0.003))
+        setPpNoise(0.08)
+        setPpScanline(0.15)
+        setPpVignette(1.0)
         break
       case 'bloom':
-        setPpBloom({ threshold: 0.2, intensity: 2.0, levels: 8 })
+        setPpBloom({ threshold: 0.4, intensity: 0.8, levels: 6 })
+        setPpChromatic(new THREE.Vector2(0.0005, 0.0005))
+        setPpNoise(0.005)
+        setPpScanline(0.02)
+        setPpVignette(0.6)
+        break
+      case 'bass':
+        setPpBloom({ threshold: 0.5, intensity: 0.5, levels: 6 })
         setPpChromatic(new THREE.Vector2(0.001, 0.001))
+        setPpNoise(0.02)
+        setPpScanline(0.1)
+        setPpVignette(0.8)
+        break
+      default: // IDLE
+        setPpBloom({ threshold: 0.5, intensity: 0.3, levels: 6 })
+        setPpChromatic(new THREE.Vector2(0.0005, 0.0005))
         setPpNoise(0.01)
         setPpScanline(0.05)
         setPpVignette(0.8)
-        break
-      case 'bass':
-        setPpBloom({ threshold: 0.4, intensity: 1.5, levels: 8 })
-        setPpChromatic(new THREE.Vector2(0.002, 0.002))
-        setPpNoise(0.05)
-        setPpScanline(0.2)
-        setPpVignette(1.0)
-        break
-      default: // IDLE
-        setPpBloom({ threshold: 0.5, intensity: 0.8, levels: 8 })
-        setPpChromatic(new THREE.Vector2(0.001, 0.001))
-        setPpNoise(0.03)
-        setPpScanline(0.1)
-        setPpVignette(1.1)
     }
   }, [currentMode])
 
