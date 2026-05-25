@@ -79,7 +79,7 @@ export function useSampler() {
         return
       }
 
-if (sourceMode === 'demo') {
+      if (sourceMode === 'demo') {
         isProcessing = true
         const time = Date.now() / 1000
         for (let y = 0; y < resolution; y++) {
@@ -137,7 +137,8 @@ if (sourceMode === 'demo') {
 
   return { dataRef }
 }
-        export function useMotionZones() {
+
+export function useMotionZones() {
   const initialized = useStore(state => state.initialized)
   const setCurrentGesture = useStore(state => state.setCurrentGesture)
   const setCurrentMode = useStore(state => state.setCurrentMode)
@@ -218,10 +219,10 @@ if (sourceMode === 'demo') {
           const maxDelta = Math.max(...avgDeltas)
           const maxZone = avgDeltas.indexOf(maxDelta)
 
-motionBuffer.push(maxZone)
-if (motionBuffer.length > CONSECUTIVE_FRAMES) {
-  motionBuffer.shift()
-}
+          motionBuffer.push(maxZone)
+          if (motionBuffer.length > CONSECUTIVE_FRAMES) {
+            motionBuffer.shift()
+          }
 
           if (motionBuffer.length >= CONSECUTIVE_FRAMES) {
             const allSame = motionBuffer.every(v => v === motionBuffer[0])
