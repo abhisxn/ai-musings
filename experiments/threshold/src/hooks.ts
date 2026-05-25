@@ -55,7 +55,8 @@ export function useSampler() {
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
-    if (!videoElement || !initialized) return
+    if (!initialized) return
+    if (sourceMode !== 'demo' && !videoElement) return
     
     if (!samplerCanvasRef.current) {
       samplerCanvasRef.current = document.createElement('canvas')
@@ -69,33 +70,34 @@ export function useSampler() {
     let isProcessing = false
     let frameId: number
     let isMounted = true
-    let frameCount = 0
 
     const process = () => {
       if (!isMounted) return
 
-      if (videoElement.readyState >= 2 && !isProcessing) {
+      if (isProcessing) {
+        frameId = requestAnimationFrame(process)
+        return
+      }
+
+if (sourceMode === 'demo') {
         isProcessing = true
-        frameCount++
-
-        if (sourceMode === 'demo') {
-          // DEMO MODE: animated sine wave pattern
-          const time = Date.now() / 1000
-          for (let y = 0; y < resolution; y++) {
-            const targetY = y * resolution
-            for (let x = 0; x < resolution; x++) {
-              const nx = x / resolution
-              const ny = y / resolution
-              const val = 0.5 + 0.5 * Math.sin(nx * 6 + time * 0.8) * Math.cos(ny * 4 + time * 0.5)
-              dataRef.current[targetY + x] = val
-            }
+        const time = Date.now() / 1000
+        for (let y = 0; y < resolution; y++) {
+          const targetY = y * resolution
+          for (let x = 0; x < resolution; x++) {
+            const nx = x / resolution
+            const ny = y / resolution
+            const val = 0.5 + 0.5 * Math.sin(nx * 6 + time * 0.8) * Math.cos(ny * 4 + time * 0.5)
+            dataRef.current[targetY + x] = val
           }
-          isProcessing = false
-          frameId = requestAnimationFrame(process)
-          return
         }
+        isProcessing = false
+        frameId = requestAnimationFrame(process)
+        return
+      }
 
-        // CAMERA MODE (pixel): unchanged
+      if (videoElement && videoElement.readyState >= 2) {
+        isProcessing = true
         try {
           ctx.drawImage(videoElement, 0, 0, 128, 128)
           const imageData = ctx.getImageData(0, 0, 128, 128)
@@ -133,10 +135,9 @@ export function useSampler() {
     }
   }, [videoElement, resolution, sourceMode, initialized])
 
-  return { loading: false, dataRef }
+  return { dataRef }
 }
-
-export function useMotionZones() {
+        export function useMotionZones() {
   const initialized = useStore(state => state.initialized)
   const setCurrentGesture = useStore(state => state.setCurrentGesture)
   const setCurrentMode = useStore(state => state.setCurrentMode)
