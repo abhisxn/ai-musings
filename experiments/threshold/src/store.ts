@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { GestureType, HallucinatedControl } from './types'
+import { GestureType, HallucinatedControl, Mood, Phase } from './types'
 
 export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
 
@@ -43,6 +43,16 @@ interface ThresholdState {
 
   showGrid: boolean
   setShowGrid: (val: boolean) => void
+
+  // Session Arc
+  moodEnabled: boolean
+  setMoodEnabled: (val: boolean) => void
+  currentMood: Mood
+  setCurrentMood: (mood: Mood) => void
+  sessionEnergy: number
+  setSessionEnergy: (val: number) => void
+  currentPhase: Phase
+  setCurrentPhase: (phase: Phase) => void
   
   // Audio
   audioEnabled: boolean
@@ -105,6 +115,16 @@ export const useStore = create<ThresholdState>((set) => ({
 
   showGrid: true,
   setShowGrid: (showGrid) => set({ showGrid }),
+
+  // Session Arc
+  moodEnabled: false,
+  setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
+  currentMood: 'luminous' as Mood,
+  setCurrentMood: (currentMood) => set({ currentMood }),
+  sessionEnergy: 0,
+  setSessionEnergy: (sessionEnergy) => set({ sessionEnergy }),
+  currentPhase: 'calm' as Phase,
+  setCurrentPhase: (currentPhase) => set({ currentPhase }),
   
   audioEnabled: false,
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),

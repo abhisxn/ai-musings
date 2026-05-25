@@ -1,5 +1,9 @@
 export type GestureType = 'jazz-hands' | 'peace-sign' | 'fist-pump'
 
+export type Mood = 'luminous' | 'deep' | 'pulse'
+export type Phase = 'calm' | 'active' | 'climax'
+export type InputSource = 'pixel' | 'demo'
+
 export interface PoseKeypoint {
   x: number
   y: number
