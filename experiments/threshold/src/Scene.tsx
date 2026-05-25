@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { Grid } from '@react-three/drei'
 import * as THREE from 'three'
 import { useStore } from './store'
+import { generateBlueNoiseTexture } from './blue-noise'
 
 export function Scene({ 
   pixelDataRef, 
@@ -24,7 +25,7 @@ export function Scene({
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity } = useStore()
   const { currentGesture, currentMode, hallucinatedControls, currentShader } = useStore()
   
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
@@ -33,6 +34,8 @@ export function Scene({
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
   const prevStates = useMemo(() => new Uint8Array(128 * 128), [])
+
+  const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
   const color = useMemo(() => {
     switch (theme) {
@@ -124,7 +127,11 @@ useFrame((state) => {
         let brightness = pixelDataRef.current[y * resolution + x] || 0
         if (inverse) brightness = 1.0 - brightness
 
-        const isActive = brightness > threshold
+        const bx = Math.floor((x / resolution) * 128)
+        const by = Math.floor((y / resolution) * 128)
+        const noiseIdx = by * 128 + bx
+        const modulatedThreshold = threshold + (blueNoise[noiseIdx] / 255) * ditherIntensity
+        const isActive = brightness > modulatedThreshold
         const wasActive = prevStates[id] === 1
 
         if (isActive && !wasActive && audioEnabled && clicksThisFrame < MAX_CLICKS_PER_FRAME) {

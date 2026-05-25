@@ -53,6 +53,7 @@ export default function ThresholdView() {
     resolution, setResolution,
     threshold, setThreshold,
     extrusion, setExtrusion,
+    ditherIntensity, setDitherIntensity,
     inverse, setInverse,
     theme, setTheme,
     renderMode, setRenderMode,
@@ -157,6 +158,7 @@ export default function ThresholdView() {
     params: folder({
       threshold: { value: threshold, min: 0, max: 1, step: 0.01, onChange: setThreshold },
       extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
+      dithering: { value: ditherIntensity, min: 0, max: 1, step: 0.01, onChange: setDitherIntensity },
     }),
     render: folder({
       mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'particles', 'ascii', 'spectral'], onChange: setRenderMode },

@@ -22,6 +22,9 @@ interface ThresholdState {
   extrusion: number
   setExtrusion: (val: number) => void
 
+  ditherIntensity: number
+  setDitherIntensity: (val: number) => void
+
   inverse: boolean
   setInverse: (val: boolean) => void
   
@@ -81,6 +84,9 @@ export const useStore = create<ThresholdState>((set) => ({
   
   extrusion: 3.0,
   setExtrusion: (extrusion) => set({ extrusion }),
+
+  ditherIntensity: 0.3,
+  setDitherIntensity: (ditherIntensity) => set({ ditherIntensity }),
 
   inverse: false,
   setInverse: (inverse) => set({ inverse }),
