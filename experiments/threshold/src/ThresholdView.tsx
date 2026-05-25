@@ -87,6 +87,18 @@ export default function ThresholdView() {
   const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
+    if (initialized && !localStorage.getItem('threshold_onboarding_done')) {
+      const timer = setTimeout(() => setShowOnboarding(true), 500)
+      return () => clearTimeout(timer)
+    }
+  }, [initialized])
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false)
+    localStorage.setItem('threshold_onboarding_done', 'true')
+  }
+
+  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
@@ -216,6 +228,43 @@ export default function ThresholdView() {
     )
   }
 
+  if (showOnboarding) {
+    return (
+      <div 
+        className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 font-mono cursor-pointer"
+        onClick={dismissOnboarding}
+      >
+        <div className="text-center max-w-lg px-8">
+          <div className="mb-8">
+            <div className="flex justify-center gap-4 mb-6">
+              <div className="w-16 h-24 border border-[#ff00ff44] rounded flex items-center justify-center">
+                <span className="text-[8px] text-[#ff00ff] tracking-[0.2em] animate-pulse">TEXTURE</span>
+              </div>
+              <div className="w-16 h-24 border border-[#00ffff44] rounded flex items-center justify-center">
+                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse">MELODY</span>
+              </div>
+              <div className="w-16 h-24 border border-[#ff440044] rounded flex items-center justify-center">
+                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse">RHYTHM</span>
+              </div>
+            </div>
+          </div>
+          
+          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41]">MOVE TO AWAKEN</h2>
+          <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
+            LEFT → TEXTURE &nbsp;|&nbsp; CENTER → MELODY &nbsp;|&nbsp; RIGHT → RHYTHM
+          </p>
+          <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
+            MOVE MORE → DEEPER EXPERIENCE<br />
+            STAND STILL → IT BREATHES
+          </p>
+          <p className="text-[8px] opacity-30 mt-8">
+            CLICK ANYWHERE TO START
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full h-full bg-[#050505] relative overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
@@ -224,6 +273,46 @@ export default function ThresholdView() {
         <div className="absolute top-8 right-8 border-r border-t border-[#00ff41]/40 w-10 h-10" />
         <div className="absolute bottom-8 left-8 border-l border-b border-[#00ff41]/40 w-10 h-10" />
         <div className="absolute bottom-8 right-8 border-r border-b border-[#00ff41]/40 w-10 h-10" />
+      </div>
+
+      {/* Ambient Edge Panels */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300"
+          style={{ 
+            background: `linear-gradient(to bottom, #ff00ff00, #ff00ff${Math.round(zoneEnergy[0] * 40).toString(16).padStart(2, '0')}, #ff00ff00)`,
+            opacity: 0.6,
+          }}
+        />
+        <div 
+          className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-300"
+          style={{ 
+            background: `linear-gradient(to right, #00ffff00, #00ffff${Math.round(zoneEnergy[1] * 60).toString(16).padStart(2, '0')}, #00ffff00)`,
+            opacity: 0.5,
+          }}
+        />
+        <div 
+          className="absolute bottom-0 left-0 right-0 h-[3px] transition-all duration-300"
+          style={{ 
+            background: `linear-gradient(to right, #ff440000, #ff4400${Math.round(zoneEnergy[2] * 50).toString(16).padStart(2, '0')}, #ff440000)`,
+            opacity: 0.5,
+          }}
+        />
+      </div>
+
+      {/* Webcam PIP */}
+      <div className="absolute top-8 right-8 z-20 rounded overflow-hidden border border-white/10 opacity-30 hover:opacity-70 transition-opacity pointer-events-none">
+        <video 
+          ref={videoRef} 
+          autoPlay playsInline muted 
+          className="w-32 h-24 object-cover"
+          style={{ transform: 'scaleX(-1)' }}
+        />
+        <div className="absolute inset-0 flex pointer-events-none">
+          <div className="flex-1 border-r border-[#ff00ff22]" />
+          <div className="flex-1 border-r border-[#00ffff22]" />
+          <div className="flex-1" />
+        </div>
       </div>
 
       {/* Status bar */}
