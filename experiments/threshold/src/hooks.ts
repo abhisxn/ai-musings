@@ -121,10 +121,8 @@ export function useSampler() {
             
             if (!isMounted) return
 
-            const depthData = result.depth.data // This is a Float32Array
-            
-            // Find min/max for normalization if needed, but depth-anything usually is 0-1 or 0-255
-            // Let's ensure it's mapped 0-1
+            const depthData = result.depth.data
+
             let max = 0
             for (let i = 0; i < depthData.length; i++) if (depthData[i] > max) max = depthData[i]
 
@@ -134,7 +132,6 @@ export function useSampler() {
               for (let x = 0; x < resolution; x++) {
                 const sx = Math.floor((x / resolution) * 128)
                 const val = depthData[sy * 128 + sx]
-                // Normalize to 0-1 based on observed max if it looks flat
                 dataRef.current[targetY + x] = max > 1 ? val / max : val
               }
             }
@@ -150,7 +147,6 @@ export function useSampler() {
                 const r = data[idx]
                 const g = data[idx + 1]
                 const b = data[idx + 2]
-                // Luma calculation
                 const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
                 dataRef.current[targetY + x] = brightness
               }
@@ -176,4 +172,145 @@ export function useSampler() {
   }, [videoElement, resolution, sourceMode, initialized])
 
   return { loading, dataRef }
+}
+
+export function useMotionZones() {
+  const initialized = useStore(state => state.initialized)
+  const setCurrentGesture = useStore(state => state.setCurrentGesture)
+  const setCurrentMode = useStore(state => state.setCurrentMode)
+  const videoElement = useStore(state => state.videoElement)
+  const currentGesture = useStore(state => state.currentGesture)
+  const [statusText, setStatusText] = useState<string>('waiting for camera...')
+
+  // Gesture → Mode mapping
+  const gestureToMode: Record<string, 'glitch' | 'bloom' | 'bass'> = {
+    'jazz-hands': 'glitch',
+    'peace-sign': 'bloom',
+    'fist-pump': 'bass',
+  }
+
+  useEffect(() => {
+    if (!videoElement || !initialized) return
+
+    let isActive = true
+    let frameId: number
+    let lockedUntil = 0
+    const LOCK_DURATION = 3000
+    const ZONE_THRESHOLD = 0.15
+    const CONSECUTIVE_FRAMES = 5
+    const IDLE_THRESHOLD = ZONE_THRESHOLD * 0.5
+    const motionBuffer: number[] = []
+    let prevZoneData: Uint8Array | null = null
+    const canvas = document.createElement('canvas')
+    canvas.width = 64
+    canvas.height = 48
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })!
+
+    const detect = () => {
+      if (!isActive) return
+
+      if (videoElement.readyState < 2) {
+        frameId = requestAnimationFrame(detect)
+        return
+      }
+
+      try {
+        ctx.drawImage(videoElement, 0, 0, 64, 48)
+        const imageData = ctx.getImageData(0, 0, 64, 48)
+        const pixels = imageData.data
+
+        if (!prevZoneData) {
+          prevZoneData = new Uint8Array(64 * 48)
+          for (let i = 0; i < 64 * 48; i++) {
+            const idx = i * 4
+            prevZoneData[i] = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
+          }
+          frameId = requestAnimationFrame(detect)
+          return
+        }
+
+        const zoneWidth = 64 / 3
+        const zoneDeltas = [0, 0, 0]
+        const zoneCounts = [0, 0, 0]
+
+        for (let y = 0; y < 48; y++) {
+          for (let x = 0; x < 64; x++) {
+            const idx = y * 64 + x
+            const pixelIdx = idx * 4
+            const brightness = (pixels[pixelIdx] + pixels[pixelIdx + 1] + pixels[pixelIdx + 2]) / 3
+            const delta = Math.abs(brightness - prevZoneData[idx])
+            const zone = Math.min(2, Math.floor(x / zoneWidth))
+            zoneDeltas[zone] += delta
+            zoneCounts[zone]++
+            prevZoneData[idx] = brightness
+          }
+        }
+
+        const avgDeltas = zoneDeltas.map((sum, i) => sum / zoneCounts[i])
+        const now = Date.now()
+
+        if (now < lockedUntil) {
+          setStatusText(`LOCKED ${Math.ceil((lockedUntil - now) / 1000)}s`)
+        } else {
+          const maxDelta = Math.max(...avgDeltas)
+          const maxZone = avgDeltas.indexOf(maxDelta)
+
+motionBuffer.push(maxZone)
+if (motionBuffer.length > CONSECUTIVE_FRAMES) {
+  motionBuffer.shift()
+}
+
+          if (motionBuffer.length >= CONSECUTIVE_FRAMES) {
+            const allSame = motionBuffer.every(v => v === motionBuffer[0])
+            if (allSame && avgDeltas[maxZone] > ZONE_THRESHOLD) {
+              const zoneGestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
+              const gesture = zoneGestures[motionBuffer[0]]
+              if (gesture) {
+                setCurrentGesture(gesture)
+                setCurrentMode(gestureToMode[gesture] || null)
+                lockedUntil = now + LOCK_DURATION
+                setStatusText(`TRIGGER: ${gestureToMode[gesture]?.toUpperCase() || gesture}`)
+              }
+            }
+          }
+
+          if (maxDelta < IDLE_THRESHOLD) {
+            setStatusText('idle')
+          } else {
+            const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
+            setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
+          }
+        }
+      } catch (e) {
+        // frame skip
+      }
+
+      frameId = requestAnimationFrame(detect)
+    }
+
+    detect()
+    return () => { isActive = false; cancelAnimationFrame(frameId) }
+  }, [videoElement, initialized, setCurrentGesture, setCurrentMode])
+
+  // Auto-demo mode: cycle gestures if no motion detected for 15s
+  useEffect(() => {
+    if (!initialized) return
+    let timer: ReturnType<typeof setTimeout>
+    const gestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
+    let i = 0
+
+    const cycle = () => {
+      if (!currentGesture) {
+        setCurrentGesture(gestures[i % gestures.length])
+        setCurrentMode(gestureToMode[gestures[i % gestures.length]] || null)
+        i++
+      }
+      timer = setTimeout(cycle, 8000)
+    }
+
+    timer = setTimeout(cycle, 15000)
+    return () => clearTimeout(timer)
+  }, [initialized, currentGesture, setCurrentGesture, setCurrentMode])
+
+  return { statusText }
 }
