@@ -70,7 +70,8 @@ export default function ThresholdView() {
     ditherIntensity, setDitherIntensity,
     moodEnabled, setMoodEnabled,
     currentMood, setCurrentMood,
-    sessionEnergy, currentPhase
+    sessionEnergy, currentPhase,
+    zoneEnergy
   } = useStore()
 
   const { videoRef } = useWebcam()
@@ -83,6 +84,7 @@ export default function ThresholdView() {
   const [ppNoise, setPpNoise] = useState(0.01)
   const [ppScanline, setPpScanline] = useState(0.05)
   const [ppVignette, setPpVignette] = useState(0.8)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
