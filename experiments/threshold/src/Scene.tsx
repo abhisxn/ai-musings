@@ -157,7 +157,7 @@ useFrame((state) => {
         const posX = ((resolution - x) - resolution / 2) * spacing
         const posY = (y - resolution / 2) * -spacing
         
-        const s = isActive ? 0.9 : 0.2
+        const s = isActive ? 0.4 : 0.1
         
         dummy.rotation.set(0, 0, 0)
         dummy.position.set(posX, posY, 0)
@@ -257,12 +257,12 @@ useFrame((state) => {
           const mat = ref.current.material
           if (currentMode) {
             mat.emissive.copy(emissiveColor)
-            mat.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8)) * emissiveScale
+            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale
             mat.color.copy(emissiveColor)
             mat.roughness = targetRoughness
             mat.metalness = targetMetalness
           } else {
-            mat.emissiveIntensity = ((theme === 'dark' ? 1.5 : 0.5) + (audioIntensity * 8))
+            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4))
             if (theme === 'heatmap') mat.color.set('#fff')
             else mat.color.set(color)
             mat.emissive.set(color)
