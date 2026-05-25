@@ -25,7 +25,7 @@ export function Scene({
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentPhase } = useStore()
   const { currentGesture, currentMode, hallucinatedControls, currentShader } = useStore()
   
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
@@ -38,13 +38,21 @@ export function Scene({
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
   const color = useMemo(() => {
+    if (moodEnabled) {
+      const phaseColors: Record<string, string> = {
+        calm: '#00ff41',
+        active: '#ffff00',
+        climax: '#ff4444',
+      }
+      return phaseColors[currentPhase] || '#00ff41'
+    }
     switch (theme) {
       case 'acid': return '#ccff00'
       case 'light': return '#ffffff'
       case 'heatmap': return '#ff003c' // Base for heatmap logic
       default: return '#00ff41'
     }
-  }, [theme])
+  }, [theme, moodEnabled, currentPhase])
 
   // House of Cards Spectral Palette (Blue -> Cyan -> Green -> Yellow -> Red)
   const getHeatmapColor = (b: number) => {
@@ -85,25 +93,45 @@ useFrame((state) => {
     let targetRoughness = 0.4
     let targetMetalness = 0.6
 
-    switch (currentMode) {
-      case 'glitch':
-        emissiveColor = new THREE.Color('#ff00ff')
-        emissiveScale = 3.0
-        targetRoughness = 0.2
-        targetMetalness = 0.8
-        break
-      case 'bloom':
-        emissiveColor = new THREE.Color('#00ffff')
-        emissiveScale = 2.0
-        targetRoughness = 0.6
-        targetMetalness = 0.3
-        break
-      case 'bass':
-        emissiveColor = new THREE.Color('#ff4400')
-        emissiveScale = 4.0
-        targetRoughness = 0.3
-        targetMetalness = 0.7
-        break
+    if (moodEnabled) {
+      switch (currentPhase) {
+        case 'calm':
+          emissiveScale = 0.5
+          targetRoughness = 0.6
+          targetMetalness = 0.3
+          break
+        case 'active':
+          emissiveScale = 1.5
+          targetRoughness = 0.4
+          targetMetalness = 0.6
+          break
+        case 'climax':
+          emissiveScale = 3.0
+          targetRoughness = 0.2
+          targetMetalness = 0.8
+          break
+      }
+    } else {
+      switch (currentMode) {
+        case 'glitch':
+          emissiveColor = new THREE.Color('#ff00ff')
+          emissiveScale = 3.0
+          targetRoughness = 0.2
+          targetMetalness = 0.8
+          break
+        case 'bloom':
+          emissiveColor = new THREE.Color('#00ffff')
+          emissiveScale = 2.0
+          targetRoughness = 0.6
+          targetMetalness = 0.3
+          break
+        case 'bass':
+          emissiveColor = new THREE.Color('#ff4400')
+          emissiveScale = 4.0
+          targetRoughness = 0.3
+          targetMetalness = 0.7
+          break
+      }
     }
 
     let audioIntensity = 0
