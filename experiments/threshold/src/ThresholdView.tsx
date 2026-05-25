@@ -10,27 +10,15 @@ import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio } from './audio'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { AIComposer } from './ai-composer'
+import { Mood } from './types'
 
 if (typeof window !== 'undefined') {
-  ;(window as any).__threshold = { useStore, AIComposer }
+  ;(window as any).__threshold = { useStore }
 }
 
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
-
-const GESTURE_COLORS: Record<string, string> = {
-  'jazz-hands': '#ff00ff',
-  'peace-sign': '#00ffff',
-  'fist-pump': '#ff4400',
-}
-
-const GESTURE_LABELS: Record<string, string> = {
-  'jazz-hands': 'GLITCH MODE',
-  'peace-sign': 'BLOOM MODE',
-  'fist-pump': 'BASS MODE',
-}
 
 function AnimatedCamera() {
   const viewMode = useStore(state => state.viewMode)
@@ -47,13 +35,29 @@ function AnimatedCamera() {
   return <PerspectiveCamera ref={cameraRef} makeDefault fov={50} />
 }
 
+function SessionTimer() {
+  const [elapsed, setElapsed] = useState(0)
+  const initialized = useStore(state => state.initialized)
+
+  useEffect(() => {
+    if (!initialized) return
+    const interval = setInterval(() => setElapsed(t => t + 1), 1000)
+    return () => clearInterval(interval)
+  }, [initialized])
+
+  return (
+    <div className="text-[9px] font-mono tracking-[0.2em] opacity-30">
+      {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
+    </div>
+  )
+}
+
 export default function ThresholdView() {
   const { 
     initialized, setInitialized,
     resolution, setResolution,
     threshold, setThreshold,
     extrusion, setExtrusion,
-    ditherIntensity, setDitherIntensity,
     inverse, setInverse,
     theme, setTheme,
     renderMode, setRenderMode,
@@ -62,19 +66,18 @@ export default function ThresholdView() {
     showGrid, setShowGrid,
     audioEnabled, setAudioEnabled,
     audioReactive, setAudioReactive,
-    volume, setVolume
+    volume, setVolume,
+    ditherIntensity, setDitherIntensity,
+    moodEnabled, setMoodEnabled,
+    currentMood, setCurrentMood,
+    sessionEnergy, currentPhase
   } = useStore()
 
   const { videoRef } = useWebcam()
   const { dataRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
-  const { currentGesture, currentMode, hallucinatedControls } = useStore()
-  const gestureColor = currentGesture ? GESTURE_COLORS[currentGesture] || '#00ff41' : '#00ff41'
-  const gestureLabel = currentGesture ? GESTURE_LABELS[currentGesture] || currentGesture.toUpperCase() : ''
-  const [flash, setFlash] = useState(false)
 
-  const { setCurrentMode, setCurrentGesture } = useStore()
   const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.3, levels: 6 })
   const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.0005, 0.0005))
   const [ppNoise, setPpNoise] = useState(0.01)
@@ -82,67 +85,29 @@ export default function ThresholdView() {
   const [ppVignette, setPpVignette] = useState(0.8)
 
   useEffect(() => {
-    if (!currentGesture) return
-    const composer = new AIComposer()
-    composer.composeExperience(currentGesture)
-    setFlash(true)
-    const t = setTimeout(() => setFlash(false), 500)
-    return () => clearTimeout(t)
-  }, [currentGesture])
-
-  useEffect(() => {
-    switch (currentMode) {
-      case 'glitch':
-        setPpBloom({ threshold: 0.4, intensity: 0.6, levels: 6 })
-        setPpChromatic(new THREE.Vector2(0.003, 0.003))
-        setPpNoise(0.08)
-        setPpScanline(0.15)
-        setPpVignette(1.0)
-        break
-      case 'bloom':
-        setPpBloom({ threshold: 0.4, intensity: 0.8, levels: 6 })
-        setPpChromatic(new THREE.Vector2(0.0005, 0.0005))
-        setPpNoise(0.005)
-        setPpScanline(0.02)
-        setPpVignette(0.6)
-        break
-      case 'bass':
-        setPpBloom({ threshold: 0.5, intensity: 0.5, levels: 6 })
-        setPpChromatic(new THREE.Vector2(0.001, 0.001))
-        setPpNoise(0.02)
-        setPpScanline(0.1)
-        setPpVignette(0.8)
-        break
-      default: // IDLE
-        setPpBloom({ threshold: 0.5, intensity: 0.3, levels: 6 })
-        setPpChromatic(new THREE.Vector2(0.0005, 0.0005))
-        setPpNoise(0.01)
-        setPpScanline(0.05)
-        setPpVignette(0.8)
-    }
-  }, [currentMode])
-
-  useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      const gestureMap: Record<string, 'jazz-hands' | 'peace-sign' | 'fist-pump'> = { '1': 'jazz-hands', '2': 'peace-sign', '3': 'fist-pump' }
-      const modeMap: Record<string, 'glitch' | 'bloom' | 'bass'> = { '1': 'glitch', '2': 'bloom', '3': 'bass' }
+      const modeList = ['radio', 'dots', 'blocks', 'particles', 'ascii', 'pixel', 'spectral'] as const
       if (e.code === 'Space') {
         e.preventDefault()
         const current = useStore.getState().viewMode
         setViewMode(current === 'flat' ? 'volumetric' : 'flat')
-      } else if (gestureMap[e.key]) {
-        setCurrentGesture(gestureMap[e.key])
-        setCurrentMode(modeMap[e.key] || null)
+      } else if (e.key >= '1' && e.key <= '7') {
+        const idx = parseInt(e.key) - 1
+        if (idx < modeList.length) setRenderMode(modeList[idx])
       } else if (e.key === '0') {
-        setCurrentGesture(null)
-        setCurrentMode(null)
+        setMoodEnabled(!useStore.getState().moodEnabled)
+      } else if (e.key === 'm' || e.key === 'M') {
+        const moods: Mood[] = ['luminous', 'deep', 'pulse']
+        const current = useStore.getState().currentMood
+        const nextIdx = (moods.indexOf(current) + 1) % moods.length
+        setCurrentMood(moods[nextIdx])
       }
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [setCurrentGesture, setCurrentMode, setViewMode])
+  }, [setViewMode, setRenderMode, setMoodEnabled, setCurrentMood])
 
   useControls('Signal', {
     source: folder({
@@ -163,6 +128,7 @@ export default function ThresholdView() {
     render: folder({
       mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'particles', 'ascii', 'spectral'], onChange: setRenderMode },
       theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
+      mood: { value: moodEnabled, onChange: setMoodEnabled },
     })
   })
 
@@ -187,11 +153,56 @@ export default function ThresholdView() {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full bg-[#050505] text-[#00ff41] font-mono p-10">
         <div className="border border-[#00ff41] p-10 text-center max-w-md">
-          <h1 className="text-3xl mb-4 tracking-[0.2em]">THRESHOLD V4</h1>
-          <p className="text-xs opacity-50 mb-10 leading-relaxed tracking-widest">
-            AI-COMPOSED AUDIOVISUAL INSTRUMENT<br />
-            GESTURE → EXPERIENCE PIPELINE
+          <h1 className="text-3xl mb-4 tracking-[0.2em]">THRESHOLD V5</h1>
+          <p className="text-xs opacity-50 mb-8 leading-relaxed tracking-widest">
+            VOLUMETRIC TERMINAL INSTRUMENT<br />
+            MOVEMENT → EXPERIENCE
           </p>
+          
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <span className="text-[10px] tracking-[0.2em] opacity-60">ARC</span>
+            <button
+              onClick={() => setMoodEnabled(!moodEnabled)}
+              className={`w-12 h-6 rounded-full transition-colors ${
+                moodEnabled ? 'bg-[#00ff41]' : 'bg-[#333]'
+              }`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-[#050505] transition-transform ${
+                moodEnabled ? 'translate-x-[26px]' : 'translate-x-[2px]'
+              }`} />
+            </button>
+            <span className="text-[10px] tracking-[0.2em] opacity-60">FREE</span>
+          </div>
+          
+          {moodEnabled && (
+            <div className="flex gap-2 mb-6">
+              {(['luminous', 'deep', 'pulse'] as const).map(m => {
+                const configs: Record<string, { label: string; color: string; emoji: string }> = {
+                  luminous: { label: 'LUMINOUS', color: '#00ff41', emoji: '🌿' },
+                  deep: { label: 'DEEP', color: '#ff00ff', emoji: '🔮' },
+                  pulse: { label: 'PULSE', color: '#ff4400', emoji: '🔥' },
+                }
+                const c = configs[m]
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setCurrentMood(m)}
+                    className={`px-3 py-2 text-[9px] tracking-[0.2em] transition-all ${
+                      currentMood === m ? 'text-[#050505]' : 'opacity-50'
+                    }`}
+                    style={{
+                      border: `1px solid ${c.color}`,
+                      color: currentMood === m ? '#050505' : c.color,
+                      background: currentMood === m ? c.color : 'transparent',
+                    }}
+                  >
+                    {c.emoji} {c.label}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
           <button 
             onClick={() => setInitialized(true)}
             className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform"
@@ -213,31 +224,6 @@ export default function ThresholdView() {
         <div className="absolute bottom-8 right-8 border-r border-b border-[#00ff41]/40 w-10 h-10" />
       </div>
 
-      {/* AI Composer HUD — visible feedback when gesture is active */}
-      {currentGesture && (
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transition-all duration-500"
-          style={{ opacity: flash ? 1 : 0.7 }}
-        >
-          <div
-            className="text-center font-mono tracking-[0.3em] px-12 py-6 border"
-            style={{
-              borderColor: gestureColor,
-              color: gestureColor,
-              boxShadow: `0 0 30px ${gestureColor}44, inset 0 0 30px ${gestureColor}22`,
-              transition: 'border-color 0.3s, box-shadow 0.3s',
-            }}
-          >
-            <div className="text-lg font-bold animate-pulse">{gestureLabel}</div>
-            {hallucinatedControls.length > 0 && (
-              <div className="text-[10px] mt-2 opacity-60">
-                {hallucinatedControls.map(c => c.label).join(' • ')}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
         <div className="text-[9px] font-mono tracking-[0.2em] opacity-30 text-[#00ff41]">
@@ -245,40 +231,39 @@ export default function ThresholdView() {
         </div>
       </div>
 
-      {/* Mode buttons */}
-      <div className="absolute bottom-12 left-1/2 -translate-x-1/2 z-20 flex gap-3 pointer-events-auto">
-        {[
-          { mode: 'glitch' as const, gesture: 'jazz-hands' as const, label: 'GLITCH', color: '#ff00ff' },
-          { mode: 'bloom' as const, gesture: 'peace-sign' as const, label: 'BLOOM', color: '#00ffff' },
-          { mode: 'bass' as const, gesture: 'fist-pump' as const, label: 'BASS', color: '#ff4400' },
-        ].map(({ mode, gesture, label, color }) => (
-          <button
-            key={mode}
-            onClick={() => {
-              setCurrentGesture(currentMode === mode ? null : gesture)
-              setCurrentMode(currentMode === mode ? null : mode)
-            }}
-            className="px-5 py-2 text-[10px] font-mono tracking-[0.25em] transition-all duration-300"
-            style={{
-              border: `1px solid ${color}`,
-              color: currentMode === mode ? '#050505' : color,
-              background: currentMode === mode ? color : 'transparent',
-              opacity: currentMode === mode ? 1 : 0.6,
-            }}
-          >
-            {label}
-          </button>
-        ))}
+      {/* Depth meter + Timer (bottom-left) */}
+      <div className="absolute bottom-6 left-6 z-20 pointer-events-none flex items-end gap-3">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-[3px] h-20 bg-[#1a1a1a] rounded-full relative overflow-hidden">
+            <div 
+              className="absolute bottom-0 w-full rounded-full transition-all duration-500"
+              style={{
+                height: `${sessionEnergy}%`,
+                background: currentPhase === 'calm' 
+                  ? '#00ff41' 
+                  : currentPhase === 'active' 
+                    ? '#ffff00' 
+                    : '#ff4444',
+                opacity: moodEnabled ? 1 : 0.15,
+              }}
+            />
+          </div>
+        </div>
+        <SessionTimer />
+      </div>
+
+      {/* Mood toggle HUD button (bottom-right) */}
+      <div className="absolute bottom-6 right-6 z-20">
         <button
-          onClick={() => { setCurrentGesture(null); setCurrentMode(null) }}
-          className="px-4 py-2 text-[10px] font-mono tracking-[0.25em] transition-all duration-300"
+          onClick={() => setMoodEnabled(!moodEnabled)}
+          className="text-[8px] tracking-[0.2em] px-3 py-1 transition-all pointer-events-auto"
           style={{
-            border: '1px dashed #00ff4166',
-            color: '#00ff4166',
-            background: 'transparent',
+            border: `1px solid ${moodEnabled ? '#00ff41' : '#333'}`,
+            color: moodEnabled ? '#00ff41' : '#555',
+            background: moodEnabled ? '#00ff4111' : 'transparent',
           }}
         >
-          IDLE
+          {moodEnabled ? 'ARC' : 'ARC OFF'}
         </button>
       </div>
 
