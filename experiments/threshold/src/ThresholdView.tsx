@@ -144,17 +144,6 @@ export default function ThresholdView() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [setCurrentGesture, setCurrentMode, setViewMode])
 
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      const delta = e.deltaY * -0.0005
-      const currentThresh = useStore.getState().threshold
-      const nextThresh = Math.max(0, Math.min(1, currentThresh + delta))
-      setThreshold(nextThresh)
-    }
-    window.addEventListener('wheel', handleWheel, { passive: true })
-    return () => window.removeEventListener('wheel', handleWheel)
-  }, [setThreshold])
-
   useControls('Signal', {
     source: folder({
       mode: { value: sourceMode, options: { '2D CAMERA': 'pixel', '3D SCAN (AI)': 'ai' }, onChange: setSourceMode },
