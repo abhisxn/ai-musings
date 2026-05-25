@@ -61,12 +61,11 @@ export default function ThresholdView() {
     showGrid, setShowGrid,
     audioEnabled, setAudioEnabled,
     audioReactive, setAudioReactive,
-    soundType, setSoundType,
     volume, setVolume
   } = useStore()
 
   const { videoRef } = useWebcam()
-  const { loading, dataRef } = useSampler()
+  const { dataRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
   const { currentGesture, currentMode, hallucinatedControls } = useStore()
@@ -146,7 +145,7 @@ export default function ThresholdView() {
 
   useControls('Signal', {
     source: folder({
-      mode: { value: sourceMode, options: { '2D CAMERA': 'pixel', '3D SCAN (AI)': 'ai' }, onChange: setSourceMode },
+      mode: { value: sourceMode, options: { 'CAMERA': 'pixel', 'DEMO': 'demo' }, onChange: setSourceMode },
       resolution: { value: resolution, min: 16, max: 128, step: 1, onChange: setResolution },
     }),
     processing: folder({
@@ -178,7 +177,6 @@ export default function ThresholdView() {
       reactive: { value: audioReactive, onChange: setAudioReactive },
     }),
     settings: folder({
-      type: { value: soundType, options: ['sine', 'chimes', 'bells', 'pulse'], onChange: setSoundType },
       volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
     })
   })
@@ -206,11 +204,6 @@ export default function ThresholdView() {
   return (
     <div className="w-full h-full bg-[#050505] relative overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
-      {loading && (
-        <div className="absolute top-4 left-4 z-50 text-[#00ff41] text-[10px] tracking-[0.2em] animate-pulse">
-          FETCHING AI MODEL...
-        </div>
-      )}
       <div className="absolute inset-0 pointer-events-none z-10">
         <div className="absolute top-8 left-8 border-l border-t border-[#00ff41]/40 w-10 h-10" />
         <div className="absolute top-8 right-8 border-r border-t border-[#00ff41]/40 w-10 h-10" />

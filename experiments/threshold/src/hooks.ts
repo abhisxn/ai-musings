@@ -53,31 +53,7 @@ export function useSampler() {
   
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const aiModelRef = useRef<any>(null)
-  const transformersRef = useRef<any>(null)
-  const [loading, setLoading] = useState(false)
 
-  // 1. AI Setup (Dynamic Import)
-  useEffect(() => {
-    if (!initialized || sourceMode !== 'ai' || aiModelRef.current) return
-    
-    async function loadAI() {
-      setLoading(true)
-      try {
-        const { pipeline, env, RawImage } = await import('@xenova/transformers')
-        env.allowLocalModels = false
-        transformersRef.current = { RawImage }
-        aiModelRef.current = await pipeline('depth-estimation', 'Xenova/depth-anything-small-hf')
-      } catch (err) { 
-        console.error("AI Load Error:", err) 
-      } finally { 
-        setLoading(false) 
-      }
-    }
-    loadAI()
-  }, [initialized, sourceMode])
-
-  // 2. Main Sampling Loop
   useEffect(() => {
     if (!videoElement || !initialized) return
     
@@ -95,67 +71,53 @@ export function useSampler() {
     let isMounted = true
     let frameCount = 0
 
-    const process = async () => {
+    const process = () => {
       if (!isMounted) return
 
       if (videoElement.readyState >= 2 && !isProcessing) {
         isProcessing = true
         frameCount++
-        try {
-          if (frameCount === 1) {
-            console.log("Sampler: Video ready", videoElement.videoWidth, "x", videoElement.videoHeight)
-          }
 
+        if (sourceMode === 'demo') {
+          // DEMO MODE: animated sine wave pattern
+          const time = Date.now() / 1000
+          for (let y = 0; y < resolution; y++) {
+            const targetY = y * resolution
+            for (let x = 0; x < resolution; x++) {
+              const nx = x / resolution
+              const ny = y / resolution
+              const val = 0.5 + 0.5 * Math.sin(nx * 6 + time * 0.8) * Math.cos(ny * 4 + time * 0.5)
+              dataRef.current[targetY + x] = val
+            }
+          }
+          isProcessing = false
+          frameId = requestAnimationFrame(process)
+          return
+        }
+
+        // CAMERA MODE (pixel): unchanged
+        try {
           ctx.drawImage(videoElement, 0, 0, 128, 128)
           const imageData = ctx.getImageData(0, 0, 128, 128)
-          
-          if (frameCount % 60 === 0) {
-            const centerIdx = (64 * 128 + 64) * 4
-            console.log("Sampler: Frame", frameCount, "Center Pixel:", imageData.data[centerIdx], imageData.data[centerIdx+1], imageData.data[centerIdx+2])
-          }
+          const data = imageData.data
 
-          if (sourceMode === 'ai' && aiModelRef.current && transformersRef.current) {
-            const { RawImage } = transformersRef.current
-            const image = new RawImage(imageData.data, 128, 128, 4)
-            const result = await aiModelRef.current(image)
-            
-            if (!isMounted) return
-
-            const depthData = result.depth.data
-
-            let max = 0
-            for (let i = 0; i < depthData.length; i++) if (depthData[i] > max) max = depthData[i]
-
-            for (let y = 0; y < resolution; y++) {
-              const targetY = y * resolution
-              const sy = Math.floor((y / resolution) * 128)
-              for (let x = 0; x < resolution; x++) {
-                const sx = Math.floor((x / resolution) * 128)
-                const val = depthData[sy * 128 + sx]
-                dataRef.current[targetY + x] = max > 1 ? val / max : val
-              }
-            }
-          } else {
-            // PIXEL MODE: Instant Brightness
-            const data = imageData.data
-            for (let y = 0; y < resolution; y++) {
-              const targetY = y * resolution
-              const sy = Math.floor((y / resolution) * 128)
-              for (let x = 0; x < resolution; x++) {
-                const sx = Math.floor((x / resolution) * 128)
-                const idx = (sy * 128 + sx) * 4
-                const r = data[idx]
-                const g = data[idx + 1]
-                const b = data[idx + 2]
-                const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-                dataRef.current[targetY + x] = brightness
-              }
+          for (let y = 0; y < resolution; y++) {
+            const targetY = y * resolution
+            const sy = Math.floor((y / resolution) * 128)
+            for (let x = 0; x < resolution; x++) {
+              const sx = Math.floor((x / resolution) * 128)
+              const idx = (sy * 128 + sx) * 4
+              const r = data[idx]
+              const g = data[idx + 1]
+              const b = data[idx + 2]
+              const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+              dataRef.current[targetY + x] = brightness
             }
           }
-        } catch (e) { 
-          console.error("Loop Error:", e) 
-        } finally { 
-          isProcessing = false 
+        } catch (e) {
+          // frame skip
+        } finally {
+          isProcessing = false
         }
       }
       
@@ -171,7 +133,7 @@ export function useSampler() {
     }
   }, [videoElement, resolution, sourceMode, initialized])
 
-  return { loading, dataRef }
+  return { loading: false, dataRef }
 }
 
 export function useMotionZones() {

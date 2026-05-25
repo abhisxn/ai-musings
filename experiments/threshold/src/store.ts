@@ -35,8 +35,8 @@ interface ThresholdState {
   theme: 'dark' | 'light' | 'acid' | 'heatmap'
   setTheme: (val: 'dark' | 'light' | 'acid' | 'heatmap') => void
 
-  sourceMode: 'pixel' | 'ai'
-  setSourceMode: (val: 'pixel' | 'ai') => void
+  sourceMode: 'pixel' | 'demo'
+  setSourceMode: (val: 'pixel' | 'demo') => void
 
   showGrid: boolean
   setShowGrid: (val: boolean) => void
@@ -46,8 +46,6 @@ interface ThresholdState {
   setAudioEnabled: (val: boolean) => void
   audioReactive: boolean
   setAudioReactive: (val: boolean) => void
-  soundType: 'sine' | 'chimes' | 'bells' | 'pulse'
-  setSoundType: (val: 'sine' | 'chimes' | 'bells' | 'pulse') => void
   volume: number
   setVolume: (val: number) => void
 
@@ -106,8 +104,6 @@ export const useStore = create<ThresholdState>((set) => ({
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
   audioReactive: true,
   setAudioReactive: (audioReactive) => set({ audioReactive }),
-  soundType: 'chimes',
-  setSoundType: (soundType) => set({ soundType }),
   volume: -12,
   setVolume: (volume) => set({ volume }),
 
