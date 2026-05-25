@@ -140,30 +140,17 @@ export function useSampler() {
 
 export function useMotionZones() {
   const initialized = useStore(state => state.initialized)
-  const setCurrentGesture = useStore(state => state.setCurrentGesture)
-  const setCurrentMode = useStore(state => state.setCurrentMode)
   const videoElement = useStore(state => state.videoElement)
-  const currentGesture = useStore(state => state.currentGesture)
+  const setZoneEnergy = useStore(state => state.setZoneEnergy)
   const [statusText, setStatusText] = useState<string>('waiting for camera...')
-
-  // Gesture → Mode mapping
-  const gestureToMode: Record<string, 'glitch' | 'bloom' | 'bass'> = {
-    'jazz-hands': 'glitch',
-    'peace-sign': 'bloom',
-    'fist-pump': 'bass',
-  }
 
   useEffect(() => {
     if (!videoElement || !initialized) return
 
     let isActive = true
     let frameId: number
-    let lockedUntil = 0
-    const LOCK_DURATION = 3000
     const ZONE_THRESHOLD = 0.15
-    const CONSECUTIVE_FRAMES = 5
     const IDLE_THRESHOLD = ZONE_THRESHOLD * 0.5
-    const motionBuffer: number[] = []
     let prevZoneData: Uint8Array | null = null
     const canvas = document.createElement('canvas')
     canvas.width = 64
@@ -211,39 +198,16 @@ export function useMotionZones() {
         }
 
         const avgDeltas = zoneDeltas.map((sum, i) => sum / zoneCounts[i])
-        const now = Date.now()
+        const maxDelta = Math.max(...avgDeltas)
+        const maxZone = avgDeltas.indexOf(maxDelta)
 
-        if (now < lockedUntil) {
-          setStatusText(`LOCKED ${Math.ceil((lockedUntil - now) / 1000)}s`)
+        setZoneEnergy(avgDeltas.map(d => Math.min(1, d * 3)) as [number, number, number])
+
+        if (maxDelta < IDLE_THRESHOLD) {
+          setStatusText('idle')
         } else {
-          const maxDelta = Math.max(...avgDeltas)
-          const maxZone = avgDeltas.indexOf(maxDelta)
-
-          motionBuffer.push(maxZone)
-          if (motionBuffer.length > CONSECUTIVE_FRAMES) {
-            motionBuffer.shift()
-          }
-
-          if (motionBuffer.length >= CONSECUTIVE_FRAMES) {
-            const allSame = motionBuffer.every(v => v === motionBuffer[0])
-            if (allSame && avgDeltas[maxZone] > ZONE_THRESHOLD) {
-              const zoneGestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
-              const gesture = zoneGestures[motionBuffer[0]]
-              if (gesture) {
-                setCurrentGesture(gesture)
-                setCurrentMode(gestureToMode[gesture] || null)
-                lockedUntil = now + LOCK_DURATION
-                setStatusText(`TRIGGER: ${gestureToMode[gesture]?.toUpperCase() || gesture}`)
-              }
-            }
-          }
-
-          if (maxDelta < IDLE_THRESHOLD) {
-            setStatusText('idle')
-          } else {
-            const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
-            setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
-          }
+          const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
+          setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
         }
       } catch (e) {
         // frame skip
@@ -254,27 +218,7 @@ export function useMotionZones() {
 
     detect()
     return () => { isActive = false; cancelAnimationFrame(frameId) }
-  }, [videoElement, initialized, setCurrentGesture, setCurrentMode])
-
-  // Auto-demo mode: cycle gestures if no motion detected for 15s
-  useEffect(() => {
-    if (!initialized) return
-    let timer: ReturnType<typeof setTimeout>
-    const gestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
-    let i = 0
-
-    const cycle = () => {
-      if (!currentGesture) {
-        setCurrentGesture(gestures[i % gestures.length])
-        setCurrentMode(gestureToMode[gestures[i % gestures.length]] || null)
-        i++
-      }
-      timer = setTimeout(cycle, 8000)
-    }
-
-    timer = setTimeout(cycle, 15000)
-    return () => clearTimeout(timer)
-  }, [initialized, currentGesture, setCurrentGesture, setCurrentMode])
+  }, [videoElement, initialized])
 
   return { statusText }
 }

@@ -69,6 +69,9 @@ interface ThresholdState {
   currentMode: 'glitch' | 'bloom' | 'bass' | null
   setCurrentMode: (mode: 'glitch' | 'bloom' | 'bass' | null) => void
 
+  zoneEnergy: [number, number, number]
+  setZoneEnergy: (energy: [number, number, number]) => void
+
   hallucinatedControls: HallucinatedControl[]
   spawnHallucinatedControls: (controls: HallucinatedControl[]) => void
   
@@ -139,6 +142,9 @@ export const useStore = create<ThresholdState>((set) => ({
 
   currentMode: null,
   setCurrentMode: (mode) => set({ currentMode: mode }),
+
+  zoneEnergy: [0, 0, 0] as [number, number, number],
+  setZoneEnergy: (zoneEnergy) => set({ zoneEnergy }),
 
   hallucinatedControls: [],
   spawnHallucinatedControls: (controls) => set({ hallucinatedControls: controls }),
