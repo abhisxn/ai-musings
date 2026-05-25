@@ -47,3 +47,13 @@ export const MOOD_CONFIGS: Record<Mood, MoodConfig> = {
     textureType: 'rumble',
   },
 }
+
+export function getPhaseTempo(mood: Mood, phase: 'calm' | 'active' | 'climax'): number {
+  const [min, max] = MOOD_CONFIGS[mood].tempoRange
+  switch (phase) {
+    case 'calm': return min
+    case 'active': return min + (max - min) * 0.5
+    case 'climax': return max
+  }
+}
+
