@@ -3,6 +3,7 @@ node_modules/
 out/
 .DS_Store
 *.local
-node_modules
 .vscode/
 tsconfig.tsbuildinfo
+graphify-out/
+.superpowers/
