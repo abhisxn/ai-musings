@@ -2,23 +2,44 @@
 
 ## Folder Structure
 ai-musings/
-├── .context/           ← project brain (never delete, always update)
-├── CLAUDE.md           ← Claude Code entry point
-├── GEMINI.md           ← Gemini CLI entry point
-├── AGENTS.md           ← universal project brief
+├── .context/              ← project brain (never delete, always update)
+├── CLAUDE.md              ← Claude Code routing (never store facts here)
+├── GEMINI.md              ← Gemini CLI routing (never store facts here)
+├── AGENTS.md              ← Universal routing (never store facts here)
 ├── app/
-│   └── musings/
-│       └── [slug]/
-│           └── page.tsx    ← Next.js route per experiment
+│   ├── experiments/
+│   │   ├── page.tsx           ← gallery page
+│   │   └── [slug]/
+│   │       └── page.tsx       ← experiment viewer route
+│   ├── layout.tsx
+│   ├── page.tsx               ← redirects to /experiments
+│   └── globals.css
+├── components/
+│   ├── experiment/            ← ExperimentFrame, ExperimentLayout, ExperimentView
+│   ├── gallery/               ← ExperimentCard, ExperimentGrid
+│   └── ui/                    ← Badge, Card
 ├── experiments/
 │   └── [slug]/
-│       ├── meta.ts         ← experiment metadata
-│       ├── index.tsx       ← experiment component
-│       ├── sketch.js       ← p5.js or vanilla logic (if applicable)
-│       └── README.md       ← design POV + build notes
+│       ├── meta.ts            ← experiment metadata (single source of truth)
+│       ├── index.tsx          ← experiment React component
+│       ├── src/               ← experiment-specific logic (if needed)
+│       ├── threshold.html     ← single-file vanilla experiment (if applicable)
+│       ├── README.md          ← design POV + build notes
+│       └── .context/          ← BRIEF.md, STACK.md, LOG.md
+├── lib/
+│   ├── experiments.ts         ← experiment registry (getAllExperiments etc.)
+│   └── types.ts               ← ExperimentMeta interface
 ├── shared/
-│   └── components/         ← reusable UI (nav, wrappers, etc.)
+│   ├── audio.js               ← shared audio utilities
+│   ├── camera.js              ← shared camera utilities
+│   └── hud.css                ← shared HUD styles
+├── docs/
+│   ├── adr/                   ← Architecture Decision Records
+│   └── plans/                 ← implementation plans
+├── scripts/
+│   └── sync-experiments.ts    ← prebuild: syncs HTML files to public/
 ├── public/
+│   └── experiments/           ← synced HTML experiment files (generated)
 └── package.json
 
 
