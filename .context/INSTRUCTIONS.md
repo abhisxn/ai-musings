@@ -30,6 +30,7 @@ ai-musings/
 │   ├── experiments.ts         ← experiment registry (getAllExperiments etc.)
 │   └── types.ts               ← ExperimentMeta interface
 ├── shared/
+│   ├── components/            ← shared React components
 │   ├── audio.js               ← shared audio utilities
 │   ├── camera.js              ← shared camera utilities
 │   └── hud.css                ← shared HUD styles
@@ -74,7 +75,7 @@ Use CDN imports for p5.js, Three.js, Tone.js in single-file experiments.
 1. Create folder: `experiments/[slug]/`
 2. Create `experiments/[slug]/README.md` with design POV
 3. Create `experiments/[slug]/index.tsx` with skeleton
-4. Create `app/musings/[slug]/page.tsx` importing the component
+4. Create `app/experiments/[slug]/page.tsx` importing the component
 5. Test locally with `npm run dev`
 6. Push → Vercel deploys automatically
 
