@@ -81,12 +81,36 @@ Use CDN imports for p5.js, Three.js, Tone.js in single-file experiments.
 
 ## Context Hygiene Rules (Multi-Model)
 
-These rules apply regardless of which AI tool is being used (Claude, Gemini, Kilocode, etc.):
+These rules apply regardless of which AI tool is being used (Claude, Gemini, Copilot, etc.):
 
-1. After any task, append a dated line to the nearest LOG.md (project or experiment level).
+1. After any session, append a dated line to the nearest `LOG.md` (project or experiment level).
    Format: `[YYYY-MM-DD] [SECTION] Done — [decision or note]`
 2. `experiments/[slug]/meta.ts` is the only source of truth for structured facts (tags, status, series, type, date). Never duplicate these in markdown.
 3. `BRIEF.md` is written once at experiment creation. Only update it if the concept pivots significantly.
 4. `STACK.md` is updated when a tech decision changes — not after every session.
 5. `CLAUDE.md`, `GEMINI.md`, `AGENTS.md` are routing files only — never store facts in them.
-6. When switching AI tools mid-experiment, read LOG.md first to understand the current state.
+6. When switching AI tools mid-experiment, read `LOG.md` first to understand current state.
+7. Architecture decisions go in `docs/adr/NNNN-title.md` when a non-obvious choice is made that future-you or an AI would otherwise re-litigate. Use the lightweight ADR format.
+8. Skills in `.claude/skills/` are project-scoped Claude patterns. Skills in `.agents/skills/` are Copilot CLI patterns. Never duplicate across both.
+9. `graphify-out/`, `out/`, `.superpowers/` are generated or ephemeral — never edit manually, never commit.
+10. AI memory (`~/.claude/projects/.../memory/`) captures cross-session facts not derivable from code. Enrich it when something non-obvious is learned.
+
+## ADR Format
+
+Save to `docs/adr/NNNN-title.md`. Keep it short — value is in *why*, not comprehensive coverage.
+
+```markdown
+# NNNN — Title
+
+**Status:** accepted | superseded by NNNN | deprecated
+**Date:** YYYY-MM-DD
+
+## Decision
+One paragraph. What was decided.
+
+## Why
+Constraints, tradeoffs, what was rejected.
+
+## Consequences
+What this makes easier. What it makes harder.
+```
