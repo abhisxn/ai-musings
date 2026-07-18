@@ -213,8 +213,12 @@ export function useGestureTracking() {
         el.cancelVideoFrameCallback(rvfcHandle)
       }
       if (rafHandle !== null) cancelAnimationFrame(rafHandle)
+      // Don't call worker.terminate() here - it aborts the worker
+      // synchronously and discards the in-flight 'close' message, so
+      // handleClose() (which releases the MediaPipe/WASM/GPU context) would
+      // never run. Let the worker close itself via self.close() inside
+      // handleClose() after it finishes cleanup.
       worker?.postMessage({ type: 'close' })
-      worker?.terminate()
       setGestureTrackingStatus('idle')
     }
   }, [initialized, videoElement, setHandTracking, setGestureTrackingStatus])
