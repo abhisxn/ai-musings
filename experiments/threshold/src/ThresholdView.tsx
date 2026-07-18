@@ -9,7 +9,9 @@ import { useControls, folder } from 'leva'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
-import { useEffect, useRef, useState } from 'react'
+import { useGestureTracking } from './vision/useGestureTracking'
+import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import * as Tone from 'tone'
 import { Mood } from './types'
@@ -74,6 +76,7 @@ export default function ThresholdView() {
     currentMood, setCurrentMood,
     sessionEnergy, currentPhase,
     zoneEnergy,
+    handTracking,
     soundTexture, setSoundTexture,
   } = useStore()
 
@@ -81,7 +84,45 @@ export default function ThresholdView() {
   const { dataRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
+  const { status: gestureStatus } = useGestureTracking()
   useEnergyAccumulator()
+
+  // Ambient edge-panel glow: while gesture tracking is active and a hand is
+  // being tracked, derive the legacy 3-zone [left, center, right] shape from
+  // wrist position instead of the pixel-diff `zoneEnergy` the store still
+  // holds (that value is frozen/fallback-only once `useMotionZones` demotes
+  // itself - see hooks.ts). Falls back to the store's `zoneEnergy` (driven by
+  // `useMotionZones`) whenever gesture tracking isn't active.
+  const displayZoneEnergy = useMemo(() => {
+    if (gestureStatus === 'active') {
+      return wristPositionToZoneEnergy(handTracking.wrist, handTracking.detected)
+    }
+    return zoneEnergy
+  }, [gestureStatus, handTracking.wrist, handTracking.detected, zoneEnergy])
+
+  // Live pinch-distance control: once a hand has been seen at least once
+  // while gesture tracking is active, pinchDistance becomes the primary
+  // control for `threshold` (the Leva slider remains a manual fallback/debug
+  // override the rest of the time, and can still be dragged - it'll just get
+  // overridden on the next tracked frame).
+  const hasDetectedHandRef = useRef(false)
+  useEffect(() => {
+    if (handTracking.detected) hasDetectedHandRef.current = true
+  }, [handTracking.detected])
+
+  useEffect(() => {
+    if (gestureStatus === 'active' && hasDetectedHandRef.current) {
+      setThreshold(handTracking.pinchDistance)
+    }
+  }, [gestureStatus, handTracking.pinchDistance, setThreshold])
+
+  const displayStatusText = gestureStatus === 'active'
+    ? (handTracking.detected
+        ? `HAND${handTracking.gesture ? ` ${handTracking.gesture.toUpperCase()}` : ''} ${Math.round(handTracking.confidence * 100)}%`
+        : 'no hand detected')
+    : gestureStatus === 'failed'
+      ? `${statusText} (gesture tracking unavailable)`
+      : statusText
 
   const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.3, levels: 6 })
   const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.0005, 0.0005))
@@ -323,24 +364,24 @@ export default function ThresholdView() {
 
       {/* Ambient Edge Panels */}
       <div className="absolute inset-0 pointer-events-none z-10">
-        <div 
+        <div
           className="absolute left-0 top-0 bottom-0 w-[3px] transition-all duration-300"
-          style={{ 
-            background: `linear-gradient(to bottom, #ff00ff00, #ff00ff${Math.round(zoneEnergy[0] * 40).toString(16).padStart(2, '0')}, #ff00ff00)`,
+          style={{
+            background: `linear-gradient(to bottom, #ff00ff00, #ff00ff${Math.round(displayZoneEnergy[0] * 40).toString(16).padStart(2, '0')}, #ff00ff00)`,
             opacity: 0.6,
           }}
         />
-        <div 
+        <div
           className="absolute top-0 left-0 right-0 h-[2px] transition-all duration-300"
-          style={{ 
-            background: `linear-gradient(to right, #00ffff00, #00ffff${Math.round(zoneEnergy[1] * 60).toString(16).padStart(2, '0')}, #00ffff00)`,
+          style={{
+            background: `linear-gradient(to right, #00ffff00, #00ffff${Math.round(displayZoneEnergy[1] * 60).toString(16).padStart(2, '0')}, #00ffff00)`,
             opacity: 0.5,
           }}
         />
-        <div 
+        <div
           className="absolute bottom-0 left-0 right-0 h-[3px] transition-all duration-300"
-          style={{ 
-            background: `linear-gradient(to right, #ff440000, #ff4400${Math.round(zoneEnergy[2] * 50).toString(16).padStart(2, '0')}, #ff440000)`,
+          style={{
+            background: `linear-gradient(to right, #ff440000, #ff4400${Math.round(displayZoneEnergy[2] * 50).toString(16).padStart(2, '0')}, #ff440000)`,
             opacity: 0.5,
           }}
         />
@@ -364,7 +405,7 @@ export default function ThresholdView() {
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
         <div className="text-[9px] font-mono tracking-[0.2em] opacity-30 text-[#00ff41]">
-          {statusText}
+          {displayStatusText}
         </div>
       </div>
 

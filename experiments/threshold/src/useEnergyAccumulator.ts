@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useStore } from './store'
 import { Phase } from './types'
+import { wristDeltaMagnitude, type WristPosition } from './vision/wrist-mapping'
 
 const CHARGE_RATE = 2
 const DRAIN_RATE = 0.5
@@ -22,6 +23,7 @@ export function useEnergyAccumulator() {
     let isActive = true
     let frameId: number
     let prevFrame: Uint8Array | null = null
+    let prevWrist: WristPosition | null = null
     const canvas = document.createElement('canvas')
     canvas.width = 64
     canvas.height = 48
@@ -29,8 +31,41 @@ export function useEnergyAccumulator() {
 
     let energy = 0
 
+    const accumulate = (motionMagnitude: number) => {
+      energy += motionMagnitude * CHARGE_RATE * (1 / 60)
+      energy -= (1 - motionMagnitude) * DRAIN_RATE * (1 / 60)
+      energy = Math.max(0, Math.min(100, energy))
+
+      let phase: Phase
+      if (energy < 35) phase = 'calm'
+      else if (energy < 70) phase = 'active'
+      else phase = 'climax'
+
+      if (phase === 'active' && energy < 25) phase = 'calm'
+      if (phase === 'climax' && energy < 65) phase = 'active'
+
+      setSessionEnergy(energy)
+      setCurrentPhase(phase)
+    }
+
     const loop = () => {
       if (!isActive) return
+
+      // When real hand-tracking is active, re-source motion magnitude from
+      // frame-to-frame wrist displacement instead of raw pixel-diff - a much
+      // more direct signal of intentional hand motion. `getState()` (not a
+      // reactive subscription) so this per-frame read doesn't re-trigger the
+      // effect on every hand-tracking update.
+      const { gestureTrackingStatus, handTracking } = useStore.getState()
+      if (gestureTrackingStatus === 'active' && handTracking.detected) {
+        const motionMagnitude = wristDeltaMagnitude(handTracking.wrist, prevWrist)
+        prevWrist = handTracking.wrist
+        prevFrame = null // re-seed pixel-diff baseline if hand tracking later drops out
+        accumulate(motionMagnitude)
+        frameId = requestAnimationFrame(loop)
+        return
+      }
+
       if (videoElement.readyState < 2) {
         frameId = requestAnimationFrame(loop)
         return
@@ -58,20 +93,7 @@ export function useEnergyAccumulator() {
         }
         const motionMagnitude = Math.min(1, totalDelta / (64 * 48 * 255) * 10)
 
-        energy += motionMagnitude * CHARGE_RATE * (1 / 60)
-        energy -= (1 - motionMagnitude) * DRAIN_RATE * (1 / 60)
-        energy = Math.max(0, Math.min(100, energy))
-
-        let phase: Phase
-        if (energy < 35) phase = 'calm'
-        else if (energy < 70) phase = 'active'
-        else phase = 'climax'
-
-        if (phase === 'active' && energy < 25) phase = 'calm'
-        if (phase === 'climax' && energy < 65) phase = 'active'
-
-        setSessionEnergy(energy)
-        setCurrentPhase(phase)
+        accumulate(motionMagnitude)
       } catch (e) {
         // frame skip
       }
