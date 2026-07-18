@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { HandTracking, Mood, Phase } from './types'
+import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 
 export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
 
@@ -68,6 +68,9 @@ interface ThresholdState {
   // Hand Tracking (MediaPipe)
   handTracking: HandTracking
   setHandTracking: (handTracking: HandTracking) => void
+
+  gestureTrackingStatus: GestureTrackingStatus
+  setGestureTrackingStatus: (status: GestureTrackingStatus) => void
 
   soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
   setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
@@ -138,6 +141,9 @@ export const useStore = create<ThresholdState>((set) => ({
     confidence: 0,
   },
   setHandTracking: (handTracking) => set({ handTracking }),
+
+  gestureTrackingStatus: 'idle' as GestureTrackingStatus,
+  setGestureTrackingStatus: (gestureTrackingStatus) => set({ gestureTrackingStatus }),
 
   soundTexture: 'off' as 'off' | 'glitch' | 'bloom' | 'bass',
   setSoundTexture: (soundTexture) => set({ soundTexture }),

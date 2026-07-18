@@ -138,14 +138,27 @@ export function useSampler() {
   return { dataRef }
 }
 
+/**
+ * Legacy pixel-diff motion detector. Demoted to fallback-only: it only
+ * actually runs its detection loop when `useGestureTracking` hasn't (yet, or
+ * ever) produced a working hand-tracking signal - i.e. while the gesture
+ * worker is still loading, or has permanently failed to init. Once gesture
+ * tracking is `active`, this hook is a no-op (zero dependencies, kept as the
+ * safety net per the plan).
+ */
 export function useMotionZones() {
   const initialized = useStore(state => state.initialized)
   const videoElement = useStore(state => state.videoElement)
   const setZoneEnergy = useStore(state => state.setZoneEnergy)
+  const gestureTrackingStatus = useStore(state => state.gestureTrackingStatus)
   const [statusText, setStatusText] = useState<string>('waiting for camera...')
 
   useEffect(() => {
     if (!videoElement || !initialized) return
+    if (gestureTrackingStatus === 'active') {
+      setStatusText('gesture tracking active')
+      return
+    }
 
     let isActive = true
     let frameId: number
@@ -218,7 +231,7 @@ export function useMotionZones() {
 
     detect()
     return () => { isActive = false; cancelAnimationFrame(frameId) }
-  }, [videoElement, initialized])
+  }, [videoElement, initialized, gestureTrackingStatus])
 
   return { statusText }
 }

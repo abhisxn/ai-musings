@@ -6,6 +6,7 @@ import { Grid } from '@react-three/drei'
 import * as THREE from 'three'
 import { useStore } from './store'
 import { generateBlueNoiseTexture } from './blue-noise'
+import { wristYToExtrusionDrift } from './vision/wrist-mapping'
 
 export function Scene({ 
   pixelDataRef, 
@@ -25,7 +26,16 @@ export function Scene({
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentPhase } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentPhase, handTracking, gestureTrackingStatus } = useStore()
+
+  // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
+  // value; when gesture tracking is active, wrist height adds a small drift
+  // on top - same signal that drives the ambient glow in ThresholdView, now
+  // also proving out on the volumetric depth.
+  const effectiveExtrusion = useMemo(() => {
+    if (gestureTrackingStatus !== 'active') return extrusion
+    return extrusion + wristYToExtrusionDrift(handTracking.wrist, handTracking.detected)
+  }, [extrusion, gestureTrackingStatus, handTracking.wrist, handTracking.detected])
 
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   
@@ -148,8 +158,8 @@ useFrame((state) => {
         }
         prevStates[id] = isActive ? 1 : 0
 
-        const zExtrusion = (brightness * extrusion)
-        const audioHeight = isActive ? (audioIntensity * extrusion) : 0
+        const zExtrusion = (brightness * effectiveExtrusion)
+        const audioHeight = isActive ? (audioIntensity * effectiveExtrusion) : 0
         const finalZ = Math.max(0.05, zExtrusion + audioHeight)
         const modeZ = finalZ
 
