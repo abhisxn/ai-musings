@@ -33,10 +33,38 @@ import {
   GestureRecognizer,
   type GestureRecognizerResult,
 } from '@mediapipe/tasks-vision'
+// Relative (not the `@/*` alias) so this resolves under both the Next.js
+// webpack build and the plain vitest/Node test runner, which doesn't share
+// Next's path-alias config.
+import rootPackageJson from '../../../../package.json'
 
-// Version pinned to match the installed @mediapipe/tasks-vision package.
-const DEFAULT_WASM_BASE_PATH =
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
+// `@mediapipe/tasks-vision`'s own package.json isn't importable here: its
+// "exports" map only exposes the bundle entrypoints and a handful of wasm
+// files, not "./package.json" - so we can't read the *actually-resolved*
+// installed version directly (verified: both `tsc` and webpack's exports-map
+// resolution reject that subpath). Instead we derive the CDN version segment
+// from *our own* package.json's dependency entry, which is the single place
+// this project pins the version. This still collapses what used to be two
+// independently-editable literals (the dependency range and the hardcoded
+// CDN URL) into one - bump the version in package.json and the CDN URL
+// follows automatically - it just doesn't protect against the WASM drifting
+// out of sync with whatever `npm update` resolves *within* the caret range
+// without touching package.json. If that residual gap matters, pin the
+// dependency with an exact version (no `^`) instead of a range.
+function resolveMediapipeVisionVersion(): string {
+  const raw = (rootPackageJson as { dependencies?: Record<string, string> }).dependencies?.[
+    '@mediapipe/tasks-vision'
+  ]
+  const match = raw?.match(/\d+\.\d+\.\d+/)
+  if (!match) {
+    throw new Error(
+      `Could not resolve @mediapipe/tasks-vision version from package.json (got "${raw}")`
+    )
+  }
+  return match[0]
+}
+
+const DEFAULT_WASM_BASE_PATH = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${resolveMediapipeVisionVersion()}/wasm`
 const DEFAULT_MODEL_ASSET_PATH =
   'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task'
 
@@ -93,6 +121,14 @@ export interface ResultMessage {
 
 export interface ErrorMessage {
   type: 'error'
+  /**
+   * Which stage the failure happened in - the main-thread consumer needs
+   * this to decide policy: an `init` failure means the model/WASM never
+   * loaded, so it should permanently fall back to a legacy detector; a
+   * `frame` failure is a one-off glitch on an already-running recognizer,
+   * so it can just keep going.
+   */
+  phase: 'init' | 'frame'
   message: string
 }
 
@@ -103,10 +139,19 @@ export function toErrorMessage(err: unknown): string {
   if (err instanceof Error) return err.message
   if (typeof err === 'string') return err
   try {
-    return JSON.stringify(err)
+    const json = JSON.stringify(err)
+    // JSON.stringify returns `undefined` (not the string "undefined") for
+    // values like `undefined`, functions, and symbols - fall back rather
+    // than violate this function's `string` return type.
+    return json !== undefined ? json : String(err)
   } catch {
     return String(err)
   }
+}
+
+/** Build the `error` message posted back for a given failure phase. Exported for unit testing. */
+export function toErrorWorkerMessage(phase: 'init' | 'frame', err: unknown): ErrorMessage {
+  return { type: 'error', phase, message: toErrorMessage(err) }
 }
 
 /** Pure transform from the MediaPipe result shape to our wire format. Exported for unit testing. */
@@ -171,7 +216,7 @@ async function handleInit(msg: InitMessage): Promise<void> {
   } catch (err) {
     // Model load failure (slow network, WASM unsupported, etc.) - report back
     // rather than throw, so the main thread can fall back to a legacy detector.
-    ctx?.postMessage({ type: 'error', message: toErrorMessage(err) })
+    ctx?.postMessage(toErrorWorkerMessage('init', err))
   }
 }
 
@@ -206,7 +251,7 @@ function handleFrame(msg: FrameMessage): void {
     const result = recognizer.recognizeForVideo(canvas, timestamp)
     ctx?.postMessage({ type: 'result', hands: toHandGestureResults(result), timestamp })
   } catch (err) {
-    ctx?.postMessage({ type: 'error', message: toErrorMessage(err) })
+    ctx?.postMessage(toErrorWorkerMessage('frame', err))
   } finally {
     inferring = false
   }

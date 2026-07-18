@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 import type { GestureRecognizerResult } from '@mediapipe/tasks-vision'
-import { toErrorMessage, toHandGestureResults } from '../gesture-worker'
+import { toErrorMessage, toErrorWorkerMessage, toHandGestureResults } from '../gesture-worker'
 
 // Note: the worker's message-handling side (self.onmessage wiring, actual
 // MediaPipe model loading/inference) is not unit-tested here - it needs a
@@ -110,5 +110,45 @@ describe('toErrorMessage', () => {
 
   it('stringifies other thrown values rather than throwing', () => {
     expect(toErrorMessage({ code: 42 })).toBe('{"code":42}')
+  })
+
+  it('falls back to String() for undefined, where JSON.stringify would return undefined', () => {
+    expect(toErrorMessage(undefined)).toBe('undefined')
+    expect(typeof toErrorMessage(undefined)).toBe('string')
+  })
+
+  it('falls back to String() for a function, where JSON.stringify would return undefined', () => {
+    const fn = function boom() {}
+    const result = toErrorMessage(fn)
+    expect(typeof result).toBe('string')
+    expect(result).toBe(String(fn))
+  })
+
+  it('falls back to String() for a Symbol, where JSON.stringify would throw', () => {
+    const sym = Symbol('boom')
+    const result = toErrorMessage(sym)
+    expect(typeof result).toBe('string')
+    expect(result).toBe('Symbol(boom)')
+  })
+})
+
+describe('toErrorWorkerMessage', () => {
+  it('tags init-phase failures so the consumer can permanently fall back to a legacy detector', () => {
+    const msg = toErrorWorkerMessage('init', new Error('WASM unsupported'))
+    expect(msg).toEqual({ type: 'error', phase: 'init', message: 'WASM unsupported' })
+  })
+
+  it('tags frame-phase failures so the consumer can treat them as a one-off glitch', () => {
+    const msg = toErrorWorkerMessage('frame', new Error('recognizeForVideo failed'))
+    expect(msg).toEqual({ type: 'error', phase: 'frame', message: 'recognizeForVideo failed' })
+  })
+
+  it('distinguishes init vs frame for the same underlying error', () => {
+    const err = new Error('same failure')
+    const initMsg = toErrorWorkerMessage('init', err)
+    const frameMsg = toErrorWorkerMessage('frame', err)
+    expect(initMsg.phase).toBe('init')
+    expect(frameMsg.phase).toBe('frame')
+    expect(initMsg.phase).not.toBe(frameMsg.phase)
   })
 })
