@@ -8,8 +8,10 @@ import { Scene } from './Scene'
 import { useControls, folder } from 'leva'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio } from './audio'
+import { useEnergyAccumulator } from './useEnergyAccumulator'
 import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
+import * as Tone from 'tone'
 import { Mood } from './types'
 
 if (typeof window !== 'undefined') {
@@ -71,13 +73,15 @@ export default function ThresholdView() {
     moodEnabled, setMoodEnabled,
     currentMood, setCurrentMood,
     sessionEnergy, currentPhase,
-    zoneEnergy
+    zoneEnergy,
+    soundTexture, setSoundTexture,
   } = useStore()
 
   const { videoRef } = useWebcam()
   const { dataRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
+  useEnergyAccumulator()
 
   const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.3, levels: 6 })
   const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.0005, 0.0005))
@@ -97,6 +101,39 @@ export default function ThresholdView() {
     setShowOnboarding(false)
     localStorage.setItem('threshold_onboarding_done', 'true')
   }
+
+  const quantizedEnergy = Math.round(sessionEnergy / 5) * 5
+
+  useEffect(() => {
+    if (!moodEnabled) {
+      setPpBloom({ threshold: 0.5, intensity: 0.3, levels: 6 })
+      setPpChromatic(new THREE.Vector2(0.0005, 0.0005))
+      setPpNoise(0.01)
+      setPpVignette(0.8)
+      return
+    }
+    const e = quantizedEnergy / 100  // 0–1
+    switch (currentPhase) {
+      case 'calm':
+        setPpBloom({ threshold: 0.4, intensity: 0.6, levels: 6 })
+        setPpChromatic(new THREE.Vector2(0.001, 0.001))
+        setPpNoise(0.02)
+        setPpVignette(0.85)
+        break
+      case 'active':
+        setPpBloom({ threshold: 0.3, intensity: 1.2 + e * 0.8, levels: 7 })
+        setPpChromatic(new THREE.Vector2(0.002 + e * 0.002, 0.002 + e * 0.002))
+        setPpNoise(0.05)
+        setPpVignette(0.7)
+        break
+      case 'climax':
+        setPpBloom({ threshold: 0.2, intensity: 2.5 + e * 2.0, levels: 8 })
+        setPpChromatic(new THREE.Vector2(0.005 + e * 0.003, 0.005 + e * 0.003))
+        setPpNoise(0.1)
+        setPpVignette(0.55)
+        break
+    }
+  }, [moodEnabled, currentPhase, quantizedEnergy])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -155,12 +192,21 @@ export default function ThresholdView() {
 
   useControls('Audio', {
     main: folder({
-      enabled: { value: audioEnabled, onChange: setAudioEnabled },
+      enabled: {
+        value: audioEnabled,
+        onChange: (val: boolean) => {
+          if (val) { Tone.start().catch(() => {}) }
+          setAudioEnabled(val)
+        }
+      },
       reactive: { value: audioReactive, onChange: setAudioReactive },
     }),
     settings: folder({
-      volume: { value: volume, min: -60, max: 0, step: 1, onChange: setVolume },
-    })
+      volume: { value: volume, min: 0, max: 100, step: 1, onChange: setVolume },
+    }),
+    texture: folder({
+      soundscape: { value: soundTexture, options: { 'OFF': 'off', 'BLOOM — bells/pads': 'bloom', 'GLITCH — noise/fx': 'glitch', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
+    }),
   })
 
   if (!initialized) {
@@ -358,7 +404,7 @@ export default function ThresholdView() {
         </button>
       </div>
 
-      <Canvas shadows gl={{ antialias: false }}>
+      <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
         <AnimatedCamera />
         <color attach="background" args={['#050505']} />
         <EffectComposer>

@@ -13,3 +13,4 @@
 2026-05-01 — Task complete: App-wide refactoring and Threshold isolation. Consolidated 'content/' into 'experiments/', renamed routing to '/musings/experiments/', and encapsulated Threshold logic in 'src/'.
 [2026-04-30] [FULL BUILD] Done — Next.js 15 static export builds cleanly, all routes verified
 [2026-06-01] [CONTEXT SYSTEM] Done — Repo-as-brain tier system implemented; ADRs seeded; memory enriched; INSTRUCTIONS.md updated to match reality
+[2026-07-18] [DEV PORT] Done — Enabled PORT environment variable support in package.json dev script, falling back to 3002

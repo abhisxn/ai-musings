@@ -158,7 +158,7 @@ useFrame((state) => {
         const bx = Math.floor((x / resolution) * 128)
         const by = Math.floor((y / resolution) * 128)
         const noiseIdx = by * 128 + bx
-        const modulatedThreshold = threshold + (blueNoise[noiseIdx] / 255) * ditherIntensity
+        const modulatedThreshold = threshold + ((blueNoise[noiseIdx] / 255) - 0.5) * ditherIntensity
         const isActive = brightness > modulatedThreshold
         const wasActive = prevStates[id] === 1
 
@@ -277,15 +277,31 @@ useFrame((state) => {
       spectralGeometry.attributes.color.needsUpdate = true
     }
 
+    let breathMultiplier = 1.0
+    if (moodEnabled) {
+      const t = state.clock.elapsedTime
+      switch (currentPhase) {
+        case 'calm':
+          breathMultiplier = 1.2 + Math.sin(t * 0.8) * 0.6   // slow pulse 0.6→1.8
+          break
+        case 'active':
+          breathMultiplier = 1.0 + Math.sin(t * 2.0) * 0.15  // faster, subtle
+          break
+        case 'climax':
+          breathMultiplier = 1.0 + Math.sin(t * 4.0) * 0.08  // fast tremor
+          break
+      }
+    }
+
     const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef]
     meshRefs.forEach(ref => {
       if (ref.current) {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = theme === 'heatmap'
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
-          if (currentMode) {
+          if (currentMode || moodEnabled) {
             mat.emissive.copy(emissiveColor)
-            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale
+            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale * breathMultiplier
             mat.color.copy(emissiveColor)
             mat.roughness = targetRoughness
             mat.metalness = targetMetalness

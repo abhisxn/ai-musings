@@ -2,7 +2,7 @@ import { ExperimentMeta } from '@/lib/types'
 
 const meta: ExperimentMeta = {
   slug: 'threshold',
-  title: 'Threshold v3',
+  title: 'Threshold v5',
   description: 'Volumetric terminal instrument. AI depth estimation.',
   date: '2026-04-30',
   type: 'react',

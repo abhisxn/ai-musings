@@ -80,6 +80,9 @@ interface ThresholdState {
   
   audioProfile: string | null
   setAudioProfile: (profile: string | null) => void
+
+  soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
+  setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -107,7 +110,7 @@ export const useStore = create<ThresholdState>((set) => ({
   viewMode: 'flat',
   setViewMode: (viewMode) => set({ viewMode }),
 
-  renderMode: 'radio',
+  renderMode: 'dots' as RenderMode,
   setRenderMode: (renderMode) => set({ renderMode }),
   
   theme: 'dark',
@@ -133,7 +136,7 @@ export const useStore = create<ThresholdState>((set) => ({
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
   audioReactive: true,
   setAudioReactive: (audioReactive) => set({ audioReactive }),
-  volume: -12,
+  volume: 75,
   setVolume: (volume) => set({ volume }),
 
   // AI Composer State (NEW)
@@ -154,4 +157,7 @@ export const useStore = create<ThresholdState>((set) => ({
   
   audioProfile: null,
   setAudioProfile: (profile) => set({ audioProfile: profile }),
+
+  soundTexture: 'off' as 'off' | 'glitch' | 'bloom' | 'bass',
+  setSoundTexture: (soundTexture) => set({ soundTexture }),
 }))

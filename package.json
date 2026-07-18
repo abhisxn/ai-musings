@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p ${PORT:-3002}",
     "prebuild": "npx tsx scripts/sync-experiments.ts",
     "build": "next build",
     "start": "next start",
