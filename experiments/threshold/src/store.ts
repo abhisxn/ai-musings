@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { GestureType, HallucinatedControl, Mood, Phase } from './types'
+import { HandTracking, Mood, Phase } from './types'
 
 export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
 
@@ -62,24 +62,12 @@ interface ThresholdState {
   volume: number
   setVolume: (val: number) => void
 
-  // AI Composer State (NEW)
-  currentGesture: GestureType | null
-  setCurrentGesture: (gesture: GestureType | null) => void
-
-  currentMode: 'glitch' | 'bloom' | 'bass' | null
-  setCurrentMode: (mode: 'glitch' | 'bloom' | 'bass' | null) => void
-
   zoneEnergy: [number, number, number]
   setZoneEnergy: (energy: [number, number, number]) => void
 
-  hallucinatedControls: HallucinatedControl[]
-  spawnHallucinatedControls: (controls: HallucinatedControl[]) => void
-  
-  currentShader: string | null
-  setCurrentShader: (shader: string | null) => void
-  
-  audioProfile: string | null
-  setAudioProfile: (profile: string | null) => void
+  // Hand Tracking (MediaPipe)
+  handTracking: HandTracking
+  setHandTracking: (handTracking: HandTracking) => void
 
   soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
   setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
@@ -139,24 +127,17 @@ export const useStore = create<ThresholdState>((set) => ({
   volume: 75,
   setVolume: (volume) => set({ volume }),
 
-  // AI Composer State (NEW)
-  currentGesture: null,
-  setCurrentGesture: (gesture) => set({ currentGesture: gesture }),
-
-  currentMode: null,
-  setCurrentMode: (mode) => set({ currentMode: mode }),
-
   zoneEnergy: [0, 0, 0] as [number, number, number],
   setZoneEnergy: (zoneEnergy) => set({ zoneEnergy }),
 
-  hallucinatedControls: [],
-  spawnHallucinatedControls: (controls) => set({ hallucinatedControls: controls }),
-  
-  currentShader: null,
-  setCurrentShader: (shader) => set({ currentShader: shader }),
-  
-  audioProfile: null,
-  setAudioProfile: (profile) => set({ audioProfile: profile }),
+  handTracking: {
+    detected: false,
+    wrist: null,
+    pinchDistance: 0,
+    gesture: null,
+    confidence: 0,
+  },
+  setHandTracking: (handTracking) => set({ handTracking }),
 
   soundTexture: 'off' as 'off' | 'glitch' | 'bloom' | 'bass',
   setSoundTexture: (soundTexture) => set({ soundTexture }),

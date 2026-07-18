@@ -26,8 +26,7 @@ export function Scene({
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentPhase } = useStore()
-  const { currentGesture, currentMode, hallucinatedControls, currentShader } = useStore()
-  
+
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   
   const count = resolution * resolution
@@ -111,27 +110,6 @@ useFrame((state) => {
           targetMetalness = 0.8
           break
       }
-    } else {
-      switch (currentMode) {
-        case 'glitch':
-          emissiveColor = new THREE.Color('#ff00ff')
-          emissiveScale = 3.0
-          targetRoughness = 0.2
-          targetMetalness = 0.8
-          break
-        case 'bloom':
-          emissiveColor = new THREE.Color('#00ffff')
-          emissiveScale = 2.0
-          targetRoughness = 0.6
-          targetMetalness = 0.3
-          break
-        case 'bass':
-          emissiveColor = new THREE.Color('#ff4400')
-          emissiveScale = 4.0
-          targetRoughness = 0.3
-          targetMetalness = 0.7
-          break
-      }
     }
 
     let audioIntensity = 0
@@ -173,15 +151,8 @@ useFrame((state) => {
         const zExtrusion = (brightness * extrusion)
         const audioHeight = isActive ? (audioIntensity * extrusion) : 0
         const finalZ = Math.max(0.05, zExtrusion + audioHeight)
-        const time = state.clock.elapsedTime
-        let modeZ = finalZ
-        if (currentMode === 'glitch') {
-          modeZ = finalZ + Math.sin(time * 10 + id * 0.1) * 0.3
-        } else if (currentMode === 'bass') {
-          const beat = 0.5 + 0.5 * Math.sin(time * 4)
-          modeZ = finalZ * (0.5 + beat * 0.5)
-        }
-        
+        const modeZ = finalZ
+
         const posX = ((resolution - x) - resolution / 2) * spacing
         const posY = (y - resolution / 2) * -spacing
         
@@ -299,7 +270,7 @@ useFrame((state) => {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = theme === 'heatmap'
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
-          if (currentMode || moodEnabled) {
+          if (moodEnabled) {
             mat.emissive.copy(emissiveColor)
             mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale * breathMultiplier
             mat.color.copy(emissiveColor)

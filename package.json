@@ -11,7 +11,8 @@
     "prebuild": "npx tsx scripts/sync-experiments.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
@@ -38,6 +39,7 @@
     "postcss": "^8.5.12",
     "tailwindcss": "^3.4.19",
     "tsx": "^4.21.0",
-    "typescript": "^5.8.0"
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.10"
   }
 }
