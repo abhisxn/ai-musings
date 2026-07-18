@@ -46,12 +46,16 @@ function clamp(value: number, min: number, max: number): number {
  * the closest the fingertips are expected to get (pinched) and 1 is the
  * farthest apart they're expected to spread. Values outside [min, max] are
  * clamped rather than extrapolated.
+ *
+ * If maxDistance <= minDistance (a misconfigured calibration), returns 0
+ * rather than dividing by zero/negative and producing NaN or Infinity.
  */
 export function normalizePinchDistance(
   rawDistance: number,
   minDistance: number = DEFAULT_MIN_PINCH_DISTANCE,
   maxDistance: number = DEFAULT_MAX_PINCH_DISTANCE
 ): number {
+  if (maxDistance <= minDistance) return 0
   const clamped = clamp(rawDistance, minDistance, maxDistance)
   return (clamped - minDistance) / (maxDistance - minDistance)
 }
@@ -89,6 +93,10 @@ export function resolveGesture(
  * this frame. Unlike discrete gestures, continuous values hold their last
  * known value under low confidence or an out-of-frame hand rather than
  * snapping to zero — that snap would read as visual jitter downstream.
+ *
+ * Callers own seeding the initial "previous" value (e.g. the store's
+ * `pinchDistance: 0` default serves as the first previous value before any
+ * frame has been resolved).
  */
 export function resolveContinuousValue(
   current: number,

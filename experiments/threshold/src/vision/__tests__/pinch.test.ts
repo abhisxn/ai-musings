@@ -54,6 +54,18 @@ describe('normalizePinchDistance', () => {
     expect(result).toBeGreaterThanOrEqual(0)
     expect(result).toBeLessThanOrEqual(1)
   })
+
+  it('returns 0 instead of dividing by zero when maxDistance equals minDistance', () => {
+    expect(normalizePinchDistance(0.1, 0.05, 0.05)).toBe(0)
+  })
+
+  it('returns 0 instead of producing a negative result when maxDistance is below minDistance', () => {
+    expect(normalizePinchDistance(0.1, 0.3, 0.02)).toBe(0)
+  })
+
+  it('clamps a negative raw distance to the minimum, even though the real call path never produces one', () => {
+    expect(normalizePinchDistance(-5, 0.02, 0.3)).toBe(0)
+  })
 })
 
 describe('derivePinchGesture', () => {
