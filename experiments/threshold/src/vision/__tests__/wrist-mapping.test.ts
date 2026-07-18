@@ -1,5 +1,5 @@
 /// <reference types="vitest/globals" />
-import { wristPositionToZoneEnergy, wristDeltaMagnitude } from '../wrist-mapping'
+import { wristPositionToZoneEnergy, wristDeltaMagnitude, wristYToExtrusionDrift } from '../wrist-mapping'
 
 describe('wristPositionToZoneEnergy', () => {
   it('returns all zeros when no hand is detected', () => {
@@ -76,5 +76,35 @@ describe('wristDeltaMagnitude', () => {
     const a = { x: 0.5, y: 0.5, z: 0 }
     const b = { x: 0.5, y: 0.5, z: 0.9 }
     expect(wristDeltaMagnitude(a, b)).toBe(0)
+  })
+})
+
+describe('wristYToExtrusionDrift', () => {
+  it('returns 0 when no hand is detected', () => {
+    expect(wristYToExtrusionDrift(null, false)).toBe(0)
+    expect(wristYToExtrusionDrift({ x: 0.5, y: 0, z: 0 }, false)).toBe(0)
+  })
+
+  it('returns 0 when detected but wrist is null', () => {
+    expect(wristYToExtrusionDrift(null, true)).toBe(0)
+  })
+
+  it('returns 0 drift when wrist is vertically centered', () => {
+    expect(wristYToExtrusionDrift({ x: 0.5, y: 0.5, z: 0 }, true)).toBeCloseTo(0)
+  })
+
+  it('drifts toward +MAX when the wrist is raised to the top of frame', () => {
+    const drift = wristYToExtrusionDrift({ x: 0.5, y: 0, z: 0 }, true)
+    expect(drift).toBeCloseTo(2)
+  })
+
+  it('drifts toward -MAX when the wrist is lowered to the bottom of frame', () => {
+    const drift = wristYToExtrusionDrift({ x: 0.5, y: 1, z: 0 }, true)
+    expect(drift).toBeCloseTo(-2)
+  })
+
+  it('clamps drift at +MAX/-MAX for out-of-range y values', () => {
+    expect(wristYToExtrusionDrift({ x: 0.5, y: -1, z: 0 }, true)).toBe(2)
+    expect(wristYToExtrusionDrift({ x: 0.5, y: 2, z: 0 }, true)).toBe(-2)
   })
 })

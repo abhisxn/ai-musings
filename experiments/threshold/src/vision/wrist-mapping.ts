@@ -1,14 +1,15 @@
 /**
  * Pure functions bridging raw hand-tracking output (a single 2D/3D wrist
- * position, normalized to [0, 1] image space) to the two places
- * `ThresholdView`/`useEnergyAccumulator` used to source from pixel-diff
- * motion detection:
+ * position, normalized to [0, 1] image space) to the places
+ * `ThresholdView`/`Scene`/`useEnergyAccumulator` used to source from
+ * pixel-diff motion detection:
  *
  *   - the 3-zone ambient edge-panel glow (`zoneEnergy`)
+ *   - the volumetric extrusion drift (base value still Leva/`extrusion`)
  *   - the session-arc energy accumulator's per-frame `motionMagnitude`
  *
- * No store/React/browser dependency, so both are unit-testable in isolation
- * (same pattern as `pinch.ts`).
+ * No store/React/browser dependency, so all three are unit-testable in
+ * isolation (same pattern as `pinch.ts`).
  */
 
 export interface WristPosition {
@@ -70,4 +71,34 @@ export function wristDeltaMagnitude(
   const distance = Math.sqrt(dx * dx + dy * dy)
 
   return Math.max(0, Math.min(1, distance * SCALE))
+}
+
+/**
+ * Maps a single wrist position's normalized y-coordinate to a small additive
+ * drift for the volumetric extrusion depth. This is deliberately additive,
+ * not a replacement: the Leva `extrusion` slider stays the base value, and
+ * the caller (`Scene`) adds this on top - e.g. `extrusion + drift` -
+ * matching the "small drift on top of the base value" framing used for
+ * extrusion, as opposed to the direct-override pattern used for
+ * pinchDistance -> threshold.
+ *
+ * `wrist.y` is normalized image-space [0, 1] with 0 at the top of frame.
+ * Raising the hand (smaller y) drifts extrusion up toward +MAX_EXTRUSION_DRIFT;
+ * lowering it drifts down toward -MAX_EXTRUSION_DRIFT. A centered hand
+ * (y = 0.5) contributes no drift.
+ *
+ * Returns 0 when no hand is detected/tracked.
+ */
+const MAX_EXTRUSION_DRIFT = 2
+
+export function wristYToExtrusionDrift(
+  wrist: WristPosition | null,
+  detected: boolean
+): number {
+  if (!detected || !wrist) return 0
+
+  const centered = 0.5 - wrist.y // range roughly [-0.5, 0.5], positive = hand raised
+  const drift = centered * 2 * MAX_EXTRUSION_DRIFT // scale to [-MAX, +MAX]
+
+  return Math.max(-MAX_EXTRUSION_DRIFT, Math.min(MAX_EXTRUSION_DRIFT, drift))
 }
