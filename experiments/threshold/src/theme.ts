@@ -28,15 +28,27 @@ export function getTheme(theme: ThresholdTheme): ThemePalette {
   return THEMES[theme]
 }
 
-export function getGradientColor(theme: ThresholdTheme, brightness: number): THREE.Color {
-  const palette = THEMES[theme]
-  const stops = palette.gradient
+// Gradient stops pre-converted to THREE.Color once (per theme) so the hot
+// per-cell path avoids hex-string parsing + allocations on every call.
+const THEME_STOPS = Object.fromEntries(
+  (Object.keys(THEMES) as ThresholdTheme[]).map((k) => [
+    k,
+    THEMES[k].gradient.map((h) => new THREE.Color(h)),
+  ]),
+) as Record<ThresholdTheme, THREE.Color[]>
+
+// `target` lets hot-path callers pass a reusable scratch THREE.Color (zero
+// per-call allocation). Omit it to get a fresh Color (existing API / tests).
+export function getGradientColor(
+  theme: ThresholdTheme,
+  brightness: number,
+  target: THREE.Color = new THREE.Color(),
+): THREE.Color {
+  const stops = THEME_STOPS[theme]
   const b = Math.min(1, Math.max(0, brightness))
-  if (stops.length === 1) return new THREE.Color(stops[0])
+  if (stops.length === 1) return target.copy(stops[0])
   const t = b * (stops.length - 1)
   const i = Math.min(stops.length - 2, Math.floor(t))
   const frac = t - i
-  const a = new THREE.Color(stops[i])
-  const c = new THREE.Color(stops[i + 1])
-  return a.lerp(c, frac)
+  return target.copy(stops[i]).lerp(stops[i + 1], frac)
 }

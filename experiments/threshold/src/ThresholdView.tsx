@@ -83,6 +83,30 @@ export default function ThresholdView() {
 
   const palette = getTheme(theme)
 
+  // Leva brutalist theme — memoized on `palette` (a stable THEMES singleton
+  // reference, so this only re-builds when the actual theme changes) so Leva
+  // doesn't re-apply theming on every unrelated store-driven re-render.
+  const levaTheme = useMemo(() => ({
+    colors: {
+      elevation1: palette.background,
+      elevation2: palette.background,
+      elevation3: palette.background,
+      accent1: palette.accent,
+      accent2: palette.accent,
+      accent3: palette.accent,
+      highlight1: palette.accent,
+      highlight2: palette.accent,
+      highlight3: palette.accent,
+      folderWidgetColor: palette.accent,
+      folderTextColor: palette.accent,
+      vivid1: palette.accent,
+      toolTipBackground: palette.background,
+      toolTipText: palette.accent,
+    },
+    radii: { xs: '0px', sm: '0px', lg: '0px' },
+    borderWidths: { root: '1px', input: '1px', focus: '1px', hover: '1px', active: '1px', folder: '1px' },
+  }), [palette])
+
   const { videoRef } = useWebcam()
   const { dataRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
@@ -322,8 +346,9 @@ export default function ThresholdView() {
 
   if (showOnboarding) {
     return (
-      <div 
-        className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#050505]/95 font-mono cursor-pointer"
+      <div
+        className="absolute inset-0 z-50 flex flex-col items-center justify-center font-mono cursor-pointer"
+        style={{ background: `${palette.background}f2` }}
         onClick={dismissOnboarding}
       >
         <div className="text-center max-w-lg px-8">
@@ -358,10 +383,10 @@ export default function ThresholdView() {
   }
 
   return (
-    <div className="w-full h-full bg-[#050505] relative overflow-hidden">
+    <div className="w-full h-full relative overflow-hidden" style={{ background: palette.background }}>
       {gestureStatus === 'failed' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-          <div className="mt-4 px-4 py-2 bg-[#050505]/95 border-2 border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md">
+          <div className="mt-4 px-4 py-2 border-2 border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md" style={{ background: `${palette.background}f2` }}>
             GESTURE TRACKING UNAVAILABLE — hand-model failed to load (likely a blocked network request). Falling back to basic motion detection; fist/palm/pinch gestures won&apos;t register.
           </div>
         </div>
@@ -456,26 +481,7 @@ export default function ThresholdView() {
       <Leva
         titleBar={{ title: 'THRESHOLD' }}
         flat
-        theme={{
-          colors: {
-            elevation1: palette.background,
-            elevation2: palette.background,
-            elevation3: palette.background,
-            accent1: palette.accent,
-            accent2: palette.accent,
-            accent3: palette.accent,
-            highlight1: palette.accent,
-            highlight2: palette.accent,
-            highlight3: palette.accent,
-            folderWidgetColor: palette.accent,
-            folderTextColor: palette.accent,
-            vivid1: palette.accent,
-            toolTipBackground: palette.background,
-            toolTipText: palette.accent,
-          },
-          radii: { xs: '0px', sm: '0px', lg: '0px' },
-          borderWidths: { root: '1px', input: '1px', focus: '1px', hover: '1px', active: '1px', folder: '1px' },
-        }}
+        theme={levaTheme}
       />
       <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
         <AnimatedCamera />

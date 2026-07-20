@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Grid } from '@react-three/drei'
 import * as THREE from 'three'
@@ -49,6 +49,18 @@ export function Scene({
 
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
+  // Reusable scratch color for the hot per-cell getGradientColor path — avoids
+  // a per-cell THREE.Color allocation (consumed immediately by setColorAt /
+  // spectral color attr, never retained).
+  const cellColorScratch = useMemo(() => new THREE.Color(), [])
+
+  // Stable array of instanced-mesh refs shared by the material-effect and the
+  // per-frame loop.
+  const meshRefs = useMemo(
+    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, linesMeshRef, asciiMeshRef, pixelMeshRef],
+    [],
+  )
+
   // Chrome color: UI / grid / emissive glow only. Per-cell diffuse is now
   // always driven by `getGradientColor(theme, brightness)` via instanceColor,
   // so the mesh material base color is white and instanceColor tints it.
@@ -56,6 +68,31 @@ export function Scene({
     if (moodEnabled) return PHASE_COLORS[currentPhase]
     return getTheme(theme).accent
   }, [theme, moodEnabled, currentPhase])
+
+  // Constant material props (base color, emissive color, roughness, metalness)
+  // only change on theme/mood/phase/resolution — set them here, not per-frame.
+  // Only emissiveIntensity (audio + breath driven) stays in useFrame.
+  useEffect(() => {
+    let targetRoughness = 0.4
+    let targetMetalness = 0.6
+    if (moodEnabled) {
+      if (currentPhase === 'calm') { targetRoughness = 0.6; targetMetalness = 0.3 }
+      else if (currentPhase === 'active') { targetRoughness = 0.4; targetMetalness = 0.6 }
+      else { targetRoughness = 0.2; targetMetalness = 0.8 }
+    }
+    meshRefs.forEach(ref => {
+      if (ref.current?.material instanceof THREE.MeshStandardMaterial) {
+        const mat = ref.current.material
+        // White base so instanceColor (per-cell gradient) reads true.
+        // ascii has no instanceColor (glyph atlas + alphaTest), so its
+        // material.color tints glyphs directly — keep it chrome-themed.
+        mat.color.set(ref.current === asciiMeshRef.current ? chromeColor : '#ffffff')
+        mat.emissive.set(chromeColor)
+        mat.roughness = targetRoughness
+        mat.metalness = targetMetalness
+      }
+    })
+  }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs])
 
   // Shared dither atlas — single repeat across every mesh that uses it
   // (pixel / dots / radio ring / lines). A shared repeat keeps the reskin
@@ -100,25 +137,17 @@ useFrame((state) => {
     if (!pixelDataRef.current) return
 
     let emissiveScale = 1.0
-    let targetRoughness = 0.4
-    let targetMetalness = 0.6
 
     if (moodEnabled) {
       switch (currentPhase) {
         case 'calm':
           emissiveScale = 0.5
-          targetRoughness = 0.6
-          targetMetalness = 0.3
           break
         case 'active':
           emissiveScale = 1.5
-          targetRoughness = 0.4
-          targetMetalness = 0.6
           break
         case 'climax':
           emissiveScale = 3.0
-          targetRoughness = 0.2
-          targetMetalness = 0.8
           break
       }
     }
@@ -203,11 +232,13 @@ useFrame((state) => {
         dummy.updateMatrix()
         
         // Per-cell diffuse color: every theme resolves from its own gradient.
-        const cellColor = getGradientColor(theme, brightness)
-        if (blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
-        if (pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
-        if (dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
-        if (linesMeshRef.current && renderMode === 'lines') linesMeshRef.current.setColorAt(id, cellColor)
+        // ascii has no instanceColor (glyph atlas tints via material.color), so
+        // skip the gradient call there.
+        const cellColor = renderMode === 'ascii' ? null : getGradientColor(theme, brightness, cellColorScratch)
+        if (cellColor && blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
+        if (cellColor && pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
+        if (cellColor && dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
+        if (cellColor && linesMeshRef.current && renderMode === 'lines') linesMeshRef.current.setColorAt(id, cellColor)
         
         if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setMatrixAt(id, dummy.matrix)
@@ -215,7 +246,7 @@ useFrame((state) => {
         if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'lines' && linesMeshRef.current) linesMeshRef.current.setMatrixAt(id, dummy.matrix)
         
-        if (renderMode === 'radio' && radioRingRef.current && radioDotRef.current) {
+        if (renderMode === 'radio' && radioRingRef.current && radioDotRef.current && cellColor) {
            // Outer Ring
            dummy.rotation.x = Math.PI / 2
            dummy.position.set(posX, posY, viewMode === 'flat' ? 0 : modeZ / 2)
@@ -236,7 +267,7 @@ useFrame((state) => {
         }
 
         // Spectral Point Cloud (House of Cards style)
-        if (renderMode === 'spectral' && spectralGeometry) {
+        if (renderMode === 'spectral' && spectralGeometry && cellColor) {
           const positions = spectralGeometry.attributes.position.array as Float32Array
           const colors = spectralGeometry.attributes.color.array as Float32Array
           
@@ -274,26 +305,17 @@ useFrame((state) => {
       }
     }
 
-    const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, linesMeshRef, asciiMeshRef, pixelMeshRef]
+    // Only per-frame material state lives here: emissiveIntensity (audio +
+    // breath driven) and the instanceColor/instanceMatrix dirty flags.
+    // Constant props (color/emissive/roughness/metalness) are set in the
+    // useEffect above, keyed on theme/mood/phase/resolution.
+    const baseEmissive = (theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)
     meshRefs.forEach(ref => {
       if (ref.current) {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
-          // White base so instanceColor (per-cell gradient) reads true.
-          // ascii has no instanceColor (glyph atlas + alphaTest), so its
-          // material.color tints glyphs directly — keep it chrome-themed.
-          mat.color.set(ref.current === asciiMeshRef.current ? chromeColor : '#ffffff')
-          mat.emissive.set(chromeColor)
-          if (moodEnabled) {
-            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale * breathMultiplier
-            mat.roughness = targetRoughness
-            mat.metalness = targetMetalness
-          } else {
-            mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4))
-            mat.roughness = 0.4
-            mat.metalness = 0.6
-          }
+          mat.emissiveIntensity = moodEnabled ? baseEmissive * emissiveScale * breathMultiplier : baseEmissive
         }
         ref.current.instanceMatrix.needsUpdate = true
       }
