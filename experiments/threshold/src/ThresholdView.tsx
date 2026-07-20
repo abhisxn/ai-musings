@@ -324,25 +324,25 @@ export default function ThresholdView() {
         <div className="text-center max-w-lg px-8">
           <div className="mb-8">
             <div className="flex justify-center gap-4 mb-6">
-              <div className="w-16 h-24 border border-[#ff00ff44] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#ff00ff] tracking-[0.2em] animate-pulse">TEXTURE</span>
+              <div className="w-16 h-24 border border-[#00ff4144] rounded flex items-center justify-center">
+                <span className="text-[8px] text-[#00ff41] tracking-[0.2em] animate-pulse">FIST</span>
               </div>
               <div className="w-16 h-24 border border-[#00ffff44] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse">MELODY</span>
+                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse">OPEN PALM</span>
               </div>
               <div className="w-16 h-24 border border-[#ff440044] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse">RHYTHM</span>
+                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse">PINCH</span>
               </div>
             </div>
           </div>
-          
-          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41]">MOVE TO AWAKEN</h2>
+
+          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41]">SHOW YOUR HAND TO AWAKEN</h2>
           <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
-            LEFT → TEXTURE &nbsp;|&nbsp; CENTER → MELODY &nbsp;|&nbsp; RIGHT → RHYTHM
+            MOVE HAND → DRIVES HUE, DEPTH &amp; CAMERA
           </p>
           <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
-            MOVE MORE → DEEPER EXPERIENCE<br />
-            STAND STILL → IT BREATHES
+            MAKE A FIST / OPEN PALM / PINCH FINGERS → TRIGGERS A MOMENT<br />
+            NO HAND DETECTED → FALLS BACK TO AMBIENT MOTION
           </p>
           <p className="text-[8px] opacity-30 mt-8">
             CLICK ANYWHERE TO START
@@ -354,6 +354,13 @@ export default function ThresholdView() {
 
   return (
     <div className="w-full h-full bg-[#050505] relative overflow-hidden">
+      {gestureStatus === 'failed' && (
+        <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
+          <div className="mt-4 px-4 py-2 bg-[#050505]/95 border border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md">
+            GESTURE TRACKING UNAVAILABLE — hand-model failed to load (likely a blocked network request). Falling back to basic motion detection; fist/palm/pinch gestures won&apos;t register.
+          </div>
+        </div>
+      )}
       <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none z-10">
         <div className="absolute top-8 left-8 border-l border-t border-[#00ff41]/40 w-10 h-10" />
