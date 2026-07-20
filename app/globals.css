@@ -95,3 +95,9 @@
   @apply pointer-events-none fixed inset-0 z-40;
   box-shadow: inset 0 0 150px rgba(0,0,0,0.8);
 }
+
+/* Leva brutalist-mono override — Leva exposes no font-family theme token */
+[class*="leva-"] {
+  font-family: monospace !important;
+  text-transform: uppercase !important;
+}
