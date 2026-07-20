@@ -5,7 +5,8 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore } from './store'
 import { Scene } from './Scene'
-import { useControls, folder } from 'leva'
+import { useControls, folder, Leva } from 'leva'
+import { getTheme, PHASE_COLORS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
@@ -79,6 +80,8 @@ export default function ThresholdView() {
     handTracking,
     soundTexture, setSoundTexture,
   } = useStore()
+
+  const palette = getTheme(theme)
 
   const { videoRef } = useWebcam()
   const { dataRef } = useSampler()
@@ -180,7 +183,7 @@ export default function ThresholdView() {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      const modeList = ['radio', 'dots', 'blocks', 'particles', 'ascii', 'pixel', 'spectral'] as const
+      const modeList = ['radio', 'dots', 'blocks', 'lines', 'ascii', 'pixel', 'spectral'] as const
       if (e.code === 'Space') {
         e.preventDefault()
         const current = useStore.getState().viewMode
@@ -218,7 +221,7 @@ export default function ThresholdView() {
       dithering: { value: ditherIntensity, min: 0, max: 1, step: 0.01, onChange: setDitherIntensity },
     }),
     render: folder({
-      mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'particles', 'ascii', 'spectral'], onChange: setRenderMode },
+      mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'lines', 'ascii', 'spectral'], onChange: setRenderMode },
       theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
       mood: { value: moodEnabled, onChange: setMoodEnabled },
     })
@@ -252,9 +255,9 @@ export default function ThresholdView() {
 
   if (!initialized) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-full bg-[#050505] text-[#00ff41] font-mono p-10">
-        <div className="border border-[#00ff41] p-10 text-center max-w-md">
-          <h1 className="text-3xl mb-4 tracking-[0.2em]">THRESHOLD V5</h1>
+      <div className="flex flex-col items-center justify-center w-full h-full font-mono p-10" style={{ background: palette.background, color: palette.accent }}>
+        <div className="border p-10 text-center max-w-md" style={{ borderColor: palette.accent }}>
+          <h1 className="text-3xl mb-4 tracking-[0.3em] font-bold">THRESHOLD V5</h1>
           <p className="text-xs opacity-50 mb-8 leading-relaxed tracking-widest">
             VOLUMETRIC TERMINAL INSTRUMENT<br />
             MOVEMENT → EXPERIENCE
@@ -265,12 +268,13 @@ export default function ThresholdView() {
             <button
               onClick={() => setMoodEnabled(!moodEnabled)}
               className={`w-12 h-6 rounded-full transition-colors ${
-                moodEnabled ? 'bg-[#00ff41]' : 'bg-[#333]'
+                moodEnabled ? '' : 'bg-[#333]'
               }`}
+              style={moodEnabled ? { background: palette.accent } : undefined}
             >
-              <div className={`w-5 h-5 rounded-full bg-[#050505] transition-transform ${
+              <div className={`w-5 h-5 rounded-full transition-transform ${
                 moodEnabled ? 'translate-x-[26px]' : 'translate-x-[2px]'
-              }`} />
+              }`} style={{ background: palette.background }} />
             </button>
             <span className="text-[10px] tracking-[0.2em] opacity-60">FREE</span>
           </div>
@@ -289,11 +293,11 @@ export default function ThresholdView() {
                     key={m}
                     onClick={() => setCurrentMood(m)}
                     className={`px-3 py-2 text-[9px] tracking-[0.2em] transition-all ${
-                      currentMood === m ? 'text-[#050505]' : 'opacity-50'
+                      currentMood === m ? '' : 'opacity-50'
                     }`}
                     style={{
                       border: `1px solid ${c.color}`,
-                      color: currentMood === m ? '#050505' : c.color,
+                      color: currentMood === m ? palette.background : c.color,
                       background: currentMood === m ? c.color : 'transparent',
                     }}
                   >
@@ -306,7 +310,8 @@ export default function ThresholdView() {
 
           <button 
             onClick={() => setInitialized(true)}
-            className="bg-[#00ff41] text-[#050505] px-10 py-3 text-sm tracking-[0.3em] hover:scale-105 transition-transform"
+            className="px-10 py-3 text-sm tracking-[0.3em] font-bold hover:scale-105 transition-transform"
+            style={{ background: palette.accent, color: palette.background }}
           >
             INITIALIZE
           </button>
@@ -324,19 +329,19 @@ export default function ThresholdView() {
         <div className="text-center max-w-lg px-8">
           <div className="mb-8">
             <div className="flex justify-center gap-4 mb-6">
-              <div className="w-16 h-24 border border-[#00ff4144] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#00ff41] tracking-[0.2em] animate-pulse">FIST</span>
+              <div className="w-16 h-24 border border-[#00ff4144] flex items-center justify-center">
+                <span className="text-[8px] text-[#00ff41] tracking-[0.2em] animate-pulse font-bold">FIST</span>
               </div>
-              <div className="w-16 h-24 border border-[#00ffff44] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse">OPEN PALM</span>
+              <div className="w-16 h-24 border border-[#00ffff44] flex items-center justify-center">
+                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse font-bold">OPEN PALM</span>
               </div>
-              <div className="w-16 h-24 border border-[#ff440044] rounded flex items-center justify-center">
-                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse">PINCH</span>
+              <div className="w-16 h-24 border border-[#ff440044] flex items-center justify-center">
+                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse font-bold">PINCH</span>
               </div>
             </div>
           </div>
 
-          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41]">SHOW YOUR HAND TO AWAKEN</h2>
+          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41] font-bold">SHOW YOUR HAND TO AWAKEN</h2>
           <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
             MOVE HAND → DRIVES HUE, DEPTH &amp; CAMERA
           </p>
@@ -356,17 +361,17 @@ export default function ThresholdView() {
     <div className="w-full h-full bg-[#050505] relative overflow-hidden">
       {gestureStatus === 'failed' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-          <div className="mt-4 px-4 py-2 bg-[#050505]/95 border border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md">
+          <div className="mt-4 px-4 py-2 bg-[#050505]/95 border-2 border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md">
             GESTURE TRACKING UNAVAILABLE — hand-model failed to load (likely a blocked network request). Falling back to basic motion detection; fist/palm/pinch gestures won&apos;t register.
           </div>
         </div>
       )}
       <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="absolute top-8 left-8 border-l border-t border-[#00ff41]/40 w-10 h-10" />
-        <div className="absolute top-8 right-8 border-r border-t border-[#00ff41]/40 w-10 h-10" />
-        <div className="absolute bottom-8 left-8 border-l border-b border-[#00ff41]/40 w-10 h-10" />
-        <div className="absolute bottom-8 right-8 border-r border-b border-[#00ff41]/40 w-10 h-10" />
+        <div className="absolute top-8 left-8 border-l border-t w-10 h-10" style={{ borderColor: palette.accentDim }} />
+        <div className="absolute top-8 right-8 border-r border-t w-10 h-10" style={{ borderColor: palette.accentDim }} />
+        <div className="absolute bottom-8 left-8 border-l border-b w-10 h-10" style={{ borderColor: palette.accentDim }} />
+        <div className="absolute bottom-8 right-8 border-r border-b w-10 h-10" style={{ borderColor: palette.accentDim }} />
       </div>
 
       {/* Ambient Edge Panels */}
@@ -411,7 +416,7 @@ export default function ThresholdView() {
 
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
-        <div className="text-[9px] font-mono tracking-[0.2em] opacity-30 text-[#00ff41]">
+        <div className="text-[9px] font-mono tracking-[0.2em] opacity-30" style={{ color: palette.accent }}>
           {displayStatusText}
         </div>
       </div>
@@ -424,11 +429,7 @@ export default function ThresholdView() {
               className="absolute bottom-0 w-full rounded-full transition-all duration-500"
               style={{
                 height: `${sessionEnergy}%`,
-                background: currentPhase === 'calm' 
-                  ? '#00ff41' 
-                  : currentPhase === 'active' 
-                    ? '#ffff00' 
-                    : '#ff4444',
+                background: PHASE_COLORS[currentPhase],
                 opacity: moodEnabled ? 1 : 0.15,
               }}
             />
@@ -443,18 +444,37 @@ export default function ThresholdView() {
           onClick={() => setMoodEnabled(!moodEnabled)}
           className="text-[8px] tracking-[0.2em] px-3 py-1 transition-all pointer-events-auto"
           style={{
-            border: `1px solid ${moodEnabled ? '#00ff41' : '#333'}`,
-            color: moodEnabled ? '#00ff41' : '#555',
-            background: moodEnabled ? '#00ff4111' : 'transparent',
+            border: `1px solid ${moodEnabled ? palette.accent : '#333'}`,
+            color: moodEnabled ? palette.accent : '#555',
+            background: moodEnabled ? `${palette.accent}11` : 'transparent',
           }}
         >
           {moodEnabled ? 'ARC' : 'ARC OFF'}
         </button>
       </div>
 
+      <Leva
+        titleBar={{ title: 'THRESHOLD' }}
+        flat
+        theme={{
+          colors: {
+            elevation1: palette.background,
+            elevation2: palette.background,
+            elevation3: palette.background,
+            accent1: palette.accent,
+            accent2: palette.accent,
+            accent3: palette.accent,
+            highlight1: palette.accent,
+            highlight2: palette.accent,
+            highlight3: palette.accent,
+          },
+          radii: { xs: '0px', sm: '0px', lg: '0px' },
+          borderWidths: { root: '1px', input: '1px', focus: '1px', hover: '1px', active: '1px', folder: '1px' },
+        }}
+      />
       <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
         <AnimatedCamera />
-        <color attach="background" args={['#050505']} />
+        <color attach="background" args={[palette.background]} />
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={ppBloom.levels} mipmapBlur />
           <ChromaticAberration offset={ppChromatic} />
@@ -463,7 +483,7 @@ export default function ThresholdView() {
           <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
         </EffectComposer>
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color={theme === 'acid' ? '#ccff00' : '#00ff41'} />
+        <pointLight position={[10, 10, 10]} intensity={1} color={getTheme(theme).accent} />
         <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
       </Canvas>
     </div>
