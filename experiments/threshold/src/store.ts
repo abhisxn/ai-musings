@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 
-export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
+export type RenderMode = 'radio' | 'dots' | 'blocks' | 'lines' | 'ascii' | 'pixel' | 'spectral'
 
 interface ThresholdState {
   // UI / Global
