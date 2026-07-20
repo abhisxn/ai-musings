@@ -467,6 +467,11 @@ export default function ThresholdView() {
             highlight1: palette.accent,
             highlight2: palette.accent,
             highlight3: palette.accent,
+            folderWidgetColor: palette.accent,
+            folderTextColor: palette.accent,
+            vivid1: palette.accent,
+            toolTipBackground: palette.background,
+            toolTipText: palette.accent,
           },
           radii: { xs: '0px', sm: '0px', lg: '0px' },
           borderWidths: { root: '1px', input: '1px', focus: '1px', hover: '1px', active: '1px', folder: '1px' },
@@ -483,7 +488,7 @@ export default function ThresholdView() {
           <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
         </EffectComposer>
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color={getTheme(theme).accent} />
+        <pointLight position={[10, 10, 10]} intensity={1} color={palette.accent} />
         <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
       </Canvas>
     </div>

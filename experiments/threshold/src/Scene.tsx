@@ -281,7 +281,9 @@ useFrame((state) => {
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
           // White base so instanceColor (per-cell gradient) reads true.
-          mat.color.set('#ffffff')
+          // ascii has no instanceColor (glyph atlas + alphaTest), so its
+          // material.color tints glyphs directly — keep it chrome-themed.
+          mat.color.set(ref.current === asciiMeshRef.current ? chromeColor : '#ffffff')
           mat.emissive.set(chromeColor)
           if (moodEnabled) {
             mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale * breathMultiplier
@@ -362,7 +364,7 @@ useFrame((state) => {
 
       <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ascii'}>
         <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial map={asciiAtlas} transparent color="#ffffff" emissive={chromeColor} alphaTest={0.4} />
+        <meshStandardMaterial map={asciiAtlas} transparent color={chromeColor} emissive={chromeColor} alphaTest={0.4} />
       </instancedMesh>
     </>
   )
