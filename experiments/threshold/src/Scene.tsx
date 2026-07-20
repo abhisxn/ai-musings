@@ -7,6 +7,8 @@ import * as THREE from 'three'
 import { useStore } from './store'
 import { generateBlueNoiseTexture } from './blue-noise'
 import { wristYToExtrusionDrift } from './vision/wrist-mapping'
+import { getGradientColor, getTheme, PHASE_COLORS } from './theme'
+import { generateDitherAtlas, generateHalftoneDotAtlas, generateSpectralSprite } from './dither'
 
 export function Scene({ 
   pixelDataRef, 
@@ -23,6 +25,7 @@ export function Scene({
   const radioRingRef = useRef<THREE.InstancedMesh>(null)
   const radioDotRef = useRef<THREE.InstancedMesh>(null)
   const dotsMeshRef = useRef<THREE.InstancedMesh>(null)
+  const linesMeshRef = useRef<THREE.InstancedMesh>(null)
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
@@ -46,30 +49,29 @@ export function Scene({
 
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
-  const color = useMemo(() => {
-    if (moodEnabled) {
-      const phaseColors: Record<string, string> = {
-        calm: '#00ff41',
-        active: '#ffff00',
-        climax: '#ff4444',
-      }
-      return phaseColors[currentPhase] || '#00ff41'
-    }
-    switch (theme) {
-      case 'acid': return '#ccff00'
-      case 'light': return '#ffffff'
-      case 'heatmap': return '#ff003c' // Base for heatmap logic
-      default: return '#00ff41'
-    }
+  // Chrome color: UI / grid / emissive glow only. Per-cell diffuse is now
+  // always driven by `getGradientColor(theme, brightness)` via instanceColor,
+  // so the mesh material base color is white and instanceColor tints it.
+  const chromeColor = useMemo(() => {
+    if (moodEnabled) return PHASE_COLORS[currentPhase]
+    return getTheme(theme).accent
   }, [theme, moodEnabled, currentPhase])
 
-  // House of Cards Spectral Palette (Blue -> Cyan -> Green -> Yellow -> Red)
-  const getHeatmapColor = (b: number) => {
-    const r = b < 0.5 ? 0 : Math.min(255, (b - 0.5) * 2 * 255)
-    const g = b < 0.5 ? Math.min(255, b * 2 * 255) : Math.min(255, (1 - b) * 2 * 255)
-    const b_val = b > 0.5 ? 0 : Math.min(255, (0.5 - b) * 2 * 255)
-    return new THREE.Color(`rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b_val)})`)
-  }
+  // Shared dither atlas — single repeat across every mesh that uses it
+  // (pixel / dots / radio ring / lines). A shared repeat keeps the reskin
+  // simple and avoids per-mesh texture clones; per-mesh tiling can be tuned
+  // later if a mode needs a different grain density.
+  const ditherAtlas = useMemo(() => {
+    const t = generateDitherAtlas(4)
+    t.repeat.set(8, 8)
+    return t
+  }, [])
+  const halftoneDotAtlas = useMemo(() => {
+    const t = generateHalftoneDotAtlas(64)
+    t.repeat.set(4, 4)
+    return t
+  }, [])
+  const spectralSprite = useMemo(() => generateSpectralSprite(64), [])
 
   const spectralRef = useRef<THREE.Points>(null)
   const spectralGeometry = useMemo(() => {
@@ -97,7 +99,6 @@ export function Scene({
 useFrame((state) => {
     if (!pixelDataRef.current) return
 
-    let emissiveColor = new THREE.Color(color)
     let emissiveScale = 1.0
     let targetRoughness = 0.4
     let targetMetalness = 0.6
@@ -167,6 +168,7 @@ useFrame((state) => {
         const posY = (y - resolution / 2) * -spacing
         
         const s = isActive ? 0.4 : 0.1
+        const pSize = 0.4
         
         dummy.rotation.set(0, 0, 0)
         dummy.position.set(posX, posY, 0)
@@ -175,9 +177,10 @@ useFrame((state) => {
         if (viewMode === 'flat') {
           if (renderMode === 'ascii' || renderMode === 'pixel') {
             dummy.scale.set(spacing * s, spacing * s, 1)
-          } else if (renderMode === 'dots' || renderMode === 'particles') {
-            const pSize = renderMode === 'dots' ? 0.4 : 0.1
+          } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * s * pSize, spacing * s * pSize, spacing * s * pSize)
+          } else if (renderMode === 'lines') {
+            dummy.scale.set(spacing * 0.15, spacing * s * (0.5 + brightness), 1)
           } else if (renderMode === 'radio') {
             // Radio is handled below
           } else {
@@ -188,9 +191,10 @@ useFrame((state) => {
           dummy.position.set(posX, posY, modeZ / 2)
           if (renderMode === 'ascii' || renderMode === 'pixel') {
             dummy.scale.set(spacing * s, spacing * s, 1)
-          } else if (renderMode === 'dots' || renderMode === 'particles') {
-            const pSize = renderMode === 'dots' ? 0.4 : 0.1
+          } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * 0.9 * pSize, spacing * 0.9 * pSize, spacing * 0.9 * pSize)
+          } else if (renderMode === 'lines') {
+            dummy.scale.set(spacing * 0.15, Math.max(0.05, brightness) * spacing * 4, spacing * 0.15)
           } else {
             dummy.scale.set(spacing * 0.9, spacing * 0.9, modeZ)
           }
@@ -198,18 +202,18 @@ useFrame((state) => {
         
         dummy.updateMatrix()
         
-        // Heatmap Color logic for Instanced Meshes
-        if (theme === 'heatmap') {
-          const hmColor = getHeatmapColor(brightness)
-          if (blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, hmColor)
-          if (pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, hmColor)
-          if (dotsMeshRef.current && (renderMode === 'dots' || renderMode === 'particles')) dotsMeshRef.current.setColorAt(id, hmColor)
-        }
+        // Per-cell diffuse color: every theme resolves from its own gradient.
+        const cellColor = getGradientColor(theme, brightness)
+        if (blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
+        if (pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
+        if (dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
+        if (linesMeshRef.current && renderMode === 'lines') linesMeshRef.current.setColorAt(id, cellColor)
         
         if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'ascii' && asciiMeshRef.current) asciiMeshRef.current.setMatrixAt(id, dummy.matrix)
-        if ((renderMode === 'dots' || renderMode === 'particles') && dotsMeshRef.current) dotsMeshRef.current.setMatrixAt(id, dummy.matrix)
+        if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setMatrixAt(id, dummy.matrix)
+        if (renderMode === 'lines' && linesMeshRef.current) linesMeshRef.current.setMatrixAt(id, dummy.matrix)
         
         if (renderMode === 'radio' && radioRingRef.current && radioDotRef.current) {
            // Outer Ring
@@ -220,6 +224,7 @@ useFrame((state) => {
            dummy.scale.set(spacing * 0.8, ringScale, spacing * 0.8)
            dummy.updateMatrix()
            radioRingRef.current.setMatrixAt(id, dummy.matrix)
+           radioRingRef.current.setColorAt(id, cellColor)
            
            // Inner Dot
            const dotSize = isActive ? 0.4 : 0.01
@@ -227,11 +232,7 @@ useFrame((state) => {
            dummy.scale.set(spacing * dotSize, dotHeight, spacing * dotSize)
            dummy.updateMatrix()
            radioDotRef.current.setMatrixAt(id, dummy.matrix)
-
-           if (theme === 'heatmap') {
-             const hmColor = getHeatmapColor(brightness)
-             radioDotRef.current.setColorAt(id, hmColor)
-           }
+           radioDotRef.current.setColorAt(id, cellColor)
         }
 
         // Spectral Point Cloud (House of Cards style)
@@ -244,11 +245,10 @@ useFrame((state) => {
           positions[id * 3 + 1] = posY + (isActive ? shimmer : 0)
           positions[id * 3 + 2] = viewMode === 'flat' ? 0 : (modeZ + shimmer)
           
-          const hmColor = theme === 'heatmap' ? getHeatmapColor(brightness) : new THREE.Color(color)
           const boost = isActive ? 2.5 : 0.3
-          colors[id * 3] = hmColor.r * boost
-          colors[id * 3 + 1] = hmColor.g * boost
-          colors[id * 3 + 2] = hmColor.b * boost
+          colors[id * 3] = cellColor.r * boost
+          colors[id * 3 + 1] = cellColor.g * boost
+          colors[id * 3 + 2] = cellColor.b * boost
         }
       }
     }
@@ -274,23 +274,21 @@ useFrame((state) => {
       }
     }
 
-    const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef]
+    const meshRefs = [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, linesMeshRef, asciiMeshRef, pixelMeshRef]
     meshRefs.forEach(ref => {
       if (ref.current) {
-        if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = theme === 'heatmap'
+        if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
+          // White base so instanceColor (per-cell gradient) reads true.
+          mat.color.set('#ffffff')
+          mat.emissive.set(chromeColor)
           if (moodEnabled) {
-            mat.emissive.copy(emissiveColor)
             mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)) * emissiveScale * breathMultiplier
-            mat.color.copy(emissiveColor)
             mat.roughness = targetRoughness
             mat.metalness = targetMetalness
           } else {
             mat.emissiveIntensity = ((theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4))
-            if (theme === 'heatmap') mat.color.set('#fff')
-            else mat.color.set(color)
-            mat.emissive.set(color)
             mat.roughness = 0.4
             mat.metalness = 0.6
           }
@@ -308,7 +306,7 @@ useFrame((state) => {
         fadeStrength={10} 
         cellSize={0.5} 
         sectionSize={2.5} 
-        sectionColor={color} 
+        sectionColor={chromeColor} 
         sectionThickness={1.0} 
         cellColor="#1a1a1a" 
         cellThickness={0.8} 
@@ -320,6 +318,8 @@ useFrame((state) => {
       <points ref={spectralRef} geometry={spectralGeometry} visible={renderMode === 'spectral'}>
         <pointsMaterial 
           size={0.1} 
+          map={spectralSprite}
+          alphaTest={0.1}
           vertexColors 
           transparent 
           opacity={1.0} 
@@ -331,33 +331,38 @@ useFrame((state) => {
 
       <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible={renderMode === 'blocks'}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color={color} emissive={color} roughness={0.4} metalness={0.6} />
+        <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
       </instancedMesh>
 
       {/* High-fidelity Radio Components */}
       <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
         <torusGeometry args={[0.5, 0.05, 16, 32]} />
-        <meshStandardMaterial color="#111" emissive={color} emissiveIntensity={0.5} />
+        <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} />
       </instancedMesh>
       
       <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
         <cylinderGeometry args={[0.5, 0.5, 1, 32]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} />
+        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} />
       </instancedMesh>
 
       <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'pixel'}>
         <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} transparent opacity={0.9} />
+        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent opacity={0.9} />
       </instancedMesh>
 
-      <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'dots' || renderMode === 'particles'}>
+      <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'dots'}>
         <sphereGeometry args={[1, 8, 8]} />
-        <meshStandardMaterial color={color} emissive={color} roughness={0.1} metalness={0.8} />
+        <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
+      </instancedMesh>
+
+      <instancedMesh key={`lines-${resolution}`} ref={linesMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'lines'}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
       </instancedMesh>
 
       <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ascii'}>
         <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial map={asciiAtlas} transparent color={color} emissive={color} alphaTest={0.4} />
+        <meshStandardMaterial map={asciiAtlas} transparent color="#ffffff" emissive={chromeColor} alphaTest={0.4} />
       </instancedMesh>
     </>
   )
