@@ -13,6 +13,17 @@ const PHASE_VOLUMES: Record<Phase, { atmos: number; melody: number; rhythm: numb
   climax: { atmos: 0, melody: -4, rhythm: -6, texture: -8 },
 }
 
+export async function ensureAudioContext(): Promise<boolean> {
+  const state = () => Tone.context.state
+  if (state() === 'running') return true
+  await Tone.start().catch(() => {})
+  const deadline = Date.now() + 2000
+  while (state() !== 'running' && Date.now() < deadline) {
+    await new Promise<void>(res => setTimeout(res, 50))
+  }
+  return state() === 'running'
+}
+
 export function useAudio() {
   const { audioEnabled, volume, moodEnabled, currentMood, currentPhase } = useStore()
   const soundTexture = useStore(state => state.soundTexture)
@@ -22,7 +33,7 @@ export function useAudio() {
   const markovRef = useRef<MarkovMelody | null>(null)
   const atmosRef = useRef<Tone.ToneAudioNode[]>([])
   const melodyRef = useRef<{ synth: Tone.PolySynth; loop: Tone.Loop } | null>(null)
-  const rhythmRef = useRef<{ gain: Tone.Gain; loop: Tone.Loop } | null>(null)
+  const rhythmRef = useRef<{ synth: Tone.MembraneSynth; gain: Tone.Gain; loop: Tone.Loop } | null>(null)
   const textureRef = useRef<{ noise: Tone.Noise; gain: Tone.Gain } | null>(null)
   const texturePadRef = useRef<{ synth: any; fx: Tone.ToneAudioNode[] } | null>(null)
   const textureVoiceRef = useRef<{ synth: any; fx: Tone.ToneAudioNode[] } | null>(null)
@@ -132,9 +143,7 @@ export function useAudio() {
 
   useEffect(() => {
     const setup = async () => {
-      if (Tone.context.state !== 'running') {
-        await Promise.race([Tone.start(), new Promise<void>(res => setTimeout(res, 500))])
-      }
+      await ensureAudioContext()
       if (!analyzerRef.current) {
         analyzerRef.current = new Tone.Analyser('fft', 64)
       }
@@ -153,6 +162,7 @@ export function useAudio() {
       melodyRef.current?.synth.dispose()
       melodyRef.current?.loop.dispose()
       rhythmRef.current?.loop.dispose()
+      rhythmRef.current?.synth.dispose()
       rhythmRef.current?.gain.dispose()
       textureRef.current?.noise.dispose()
       textureRef.current?.gain.dispose()
@@ -173,9 +183,7 @@ export function useAudio() {
     disposeTexture()
     if (!audioEnabled || soundTexture === 'off' || !masterReady || !masterGainRef.current) return
     const setup = async () => {
-      if (Tone.context.state !== 'running') {
-        await Promise.race([Tone.start(), new Promise<void>(res => setTimeout(res, 500))])
-      }
+      await ensureAudioContext()
       if (cancelled) return
       const master = masterGainRef.current!
       if (soundTexture === 'glitch') buildGlitchTexture(master)
@@ -198,9 +206,7 @@ export function useAudio() {
     }
 
     const build = async () => {
-      if (Tone.context.state !== 'running') {
-        await Promise.race([Tone.start(), new Promise<void>(res => setTimeout(res, 500))])
-      }
+      await ensureAudioContext()
       const master = masterGainRef.current!
       const mood = currentMood as Mood
       const phase = currentPhase as Phase
@@ -212,6 +218,7 @@ export function useAudio() {
       melodyRef.current?.synth.dispose()
       melodyRef.current?.loop.dispose()
       rhythmRef.current?.loop.dispose()
+      rhythmRef.current?.synth.dispose()
       rhythmRef.current?.gain.dispose()
       textureRef.current?.noise.dispose()
       textureRef.current?.gain.dispose()
@@ -278,18 +285,17 @@ export function useAudio() {
       if (vols.rhythm > -60) {
         const rhythmGain = new Tone.Gain(Tone.dbToGain(vols.rhythm))
         rhythmGain.connect(master)
+        const rhythmSynth = new Tone.MembraneSynth({
+          pitchDecay: 0.01, octaves: 2,
+          envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
+        }).connect(rhythmGain)
         const rhythmLoop = new Tone.Loop(time => {
           if (Math.random() > 0.3) {
-            const synth = new Tone.MembraneSynth({
-              pitchDecay: 0.01, octaves: 2,
-              envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
-            }).connect(rhythmGain)
-            synth.triggerAttackRelease('C1', '32n', time)
-            setTimeout(() => synth.dispose(), 500)
+            rhythmSynth.triggerAttackRelease('C1', '32n', time)
           }
         }, '2n')
         rhythmLoop.start()
-        rhythmRef.current = { gain: rhythmGain, loop: rhythmLoop }
+        rhythmRef.current = { synth: rhythmSynth, gain: rhythmGain, loop: rhythmLoop }
       }
 
       // Layer 4: Texture
