@@ -5,6 +5,7 @@ import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
 import { useStore, RENDER_MODES, THEMES_LIST } from './store'
 import { Scene } from './Scene'
+import OnboardingOverlay from './OnboardingOverlay'
 import { useControls, folder, Leva } from 'leva'
 import { getTheme, PHASE_COLORS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
@@ -281,7 +282,7 @@ export default function ThresholdView() {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full font-mono p-10" style={{ background: palette.background, color: palette.accent }}>
         <div className="border p-10 text-center max-w-md" style={{ borderColor: palette.accent }}>
-          <h1 className="text-3xl mb-4 tracking-[0.3em] font-bold">THRESHOLD V5</h1>
+          <h1 className="text-3xl mb-4 tracking-[0.3em] font-bold">THRESHOLD V6</h1>
           <p className="text-xs opacity-50 mb-8 leading-relaxed tracking-widest">
             VOLUMETRIC TERMINAL INSTRUMENT<br />
             MOVEMENT → EXPERIENCE
@@ -345,42 +346,18 @@ export default function ThresholdView() {
   }
 
   if (showOnboarding) {
+    // Mount the (hidden) webcam element here too so camera permission +
+    // gesture tracking activate during the walkthrough — step 3 needs the
+    // live `handTracking` signal to light up the practice swatches. The
+    // heavy 3D Canvas stays unmounted until onboarding is dismissed.
     return (
-      <div
-        className="absolute inset-0 z-50 flex flex-col items-center justify-center font-mono cursor-pointer"
-        style={{ background: `${palette.background}f2` }}
-        onClick={dismissOnboarding}
-      >
-        <div className="text-center max-w-lg px-8">
-          <div className="mb-8">
-            <div className="flex justify-center gap-4 mb-6">
-              <div className="w-16 h-24 border border-[#00ff4144] flex items-center justify-center">
-                <span className="text-[8px] text-[#00ff41] tracking-[0.2em] animate-pulse font-bold">FIST</span>
-              </div>
-              <div className="w-16 h-24 border border-[#00ffff44] flex items-center justify-center">
-                <span className="text-[8px] text-[#00ffff] tracking-[0.2em] animate-pulse font-bold">OPEN PALM</span>
-              </div>
-              <div className="w-16 h-24 border border-[#ff440044] flex items-center justify-center">
-                <span className="text-[8px] text-[#ff4400] tracking-[0.2em] animate-pulse font-bold">PINCH</span>
-              </div>
-            </div>
-          </div>
-
-          <h2 className="text-lg tracking-[0.3em] mb-2 text-[#00ff41] font-bold">SHOW YOUR HAND TO AWAKEN</h2>
-          <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
-            MOVE HAND → DRIVES HUE, DEPTH &amp; CAMERA
-          </p>
-          <p className="text-[10px] opacity-50 mb-6 leading-relaxed">
-            MAKE A FIST / OPEN PALM / PINCH FINGERS → TRIGGERS A MOMENT<br />
-            NO HAND DETECTED → FALLS BACK TO AMBIENT MOTION
-          </p>
-          <p className="text-[8px] opacity-30 mt-8">
-            CLICK ANYWHERE TO START
-          </p>
-        </div>
+      <div className="w-full h-full relative overflow-hidden" style={{ background: palette.background }}>
+        <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
+        <OnboardingOverlay palette={palette} onDismiss={dismissOnboarding} />
       </div>
     )
   }
+
 
   return (
     <div className="w-full h-full relative overflow-hidden" style={{ background: palette.background }}>
@@ -475,6 +452,19 @@ export default function ThresholdView() {
           }}
         >
           {moodEnabled ? 'ARC' : 'ARC OFF'}
+        </button>
+      </div>
+
+      {/* Persistent onboarding replay (?) — reopens the walkthrough anytime. */}
+      <div className="absolute bottom-6 right-20 z-20">
+        <button
+          onClick={() => setShowOnboarding(true)}
+          aria-label="Replay onboarding walkthrough"
+          title="Replay onboarding"
+          className="hud-replay text-[10px] tracking-[0.1em] w-7 h-7 flex items-center justify-center transition-opacity hover:opacity-100 pointer-events-auto"
+          style={{ border: `1px solid ${palette.accent}`, color: palette.accent, opacity: 0.4 }}
+        >
+          ?
         </button>
       </div>
 
