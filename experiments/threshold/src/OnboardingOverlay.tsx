@@ -118,7 +118,7 @@ export default function OnboardingOverlay({ palette, onDismiss }: OnboardingOver
           <button
             type="button"
             onClick={onDismiss}
-            className="hud-body text-[10px] tracking-[0.25em] opacity-50 hover:opacity-100 transition-opacity"
+            className="hud-body tracking-[0.25em] opacity-50 hover:opacity-100 transition-opacity"
           >
             SKIP
           </button>
@@ -128,7 +128,7 @@ export default function OnboardingOverlay({ palette, onDismiss }: OnboardingOver
               type="button"
               onClick={() => setStep((s) => Math.max(0, s - 1))}
               disabled={step === 0}
-              className="hud-body px-4 py-2 text-[10px] tracking-[0.25em] border transition-opacity disabled:opacity-20"
+              className="hud-body px-4 py-2 tracking-[0.25em] border transition-opacity disabled:opacity-20"
               style={{ borderColor: palette.accent }}
             >
               BACK
@@ -137,7 +137,7 @@ export default function OnboardingOverlay({ palette, onDismiss }: OnboardingOver
               <button
                 type="button"
                 onClick={onDismiss}
-                className="hud-display px-8 py-2 text-[11px] tracking-[0.3em] font-bold transition-transform hover:scale-105"
+                className="hud-display px-8 py-2 tracking-[0.3em] font-bold transition-transform hover:scale-105"
                 style={{ background: palette.accent, color: palette.background }}
               >
                 START
@@ -146,7 +146,7 @@ export default function OnboardingOverlay({ palette, onDismiss }: OnboardingOver
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(ONBOARDING_STEP_COUNT - 1, s + 1))}
-                className="hud-display px-8 py-2 text-[11px] tracking-[0.3em] font-bold transition-transform hover:scale-105"
+                className="hud-display px-8 py-2 tracking-[0.3em] font-bold transition-transform hover:scale-105"
                 style={{ background: palette.accent, color: palette.background }}
               >
                 NEXT
@@ -173,7 +173,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
     return (
       <div className="text-center flex flex-col gap-4">
         <h2 className="hud-heading text-xl tracking-[0.35em] font-bold">THRESHOLD</h2>
-        <p className="hud-body text-[11px] leading-relaxed tracking-[0.15em] opacity-80">
+        <p className="hud-body leading-relaxed tracking-[0.15em] opacity-80">
           A VOLUMETRIC TERMINAL INSTRUMENT. YOUR WEBCAM TURNS MOTION INTO A LIVING
           AUDIOVISUAL FIELD — DEPTH, HUE AND THE CAMERA ITSELF RESPOND TO WHERE
           YOUR HAND MOVES.
@@ -186,7 +186,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
     return (
       <div className="text-center flex flex-col gap-4">
         <h2 className="hud-heading text-base tracking-[0.3em] font-bold">CAMERA &amp; GESTURE</h2>
-        <p className="hud-body text-[11px] leading-relaxed tracking-[0.15em] opacity-80">
+        <p className="hud-body leading-relaxed tracking-[0.15em] opacity-80">
           THRESHOLD TRACKS ONE HAND IN REAL TIME VIA YOUR WEBCAM. ALLOW CAMERA
           ACCESS WHEN THE BROWSER ASKS. IF THE HAND MODEL CAN&apos;T LOAD, IT FALLS
           BACK TO AMBIENT MOTION DETECTION SO THE FIELD STILL REACTS.
@@ -200,7 +200,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
       <div className="flex flex-col items-center gap-6">
         <div className="text-center flex flex-col gap-2">
           <h2 className="hud-heading text-base tracking-[0.3em] font-bold">TRY THE GESTURES</h2>
-          <p className="hud-body text-[11px] leading-relaxed tracking-[0.15em] opacity-80">
+          <p className="hud-body leading-relaxed tracking-[0.15em] opacity-80">
             MAKE EACH SHAPE FOR YOUR CAMERA. THE MATCHING SWATCH LIGHTS UP WHEN
             IT&apos;S DETECTED.
           </p>
@@ -216,13 +216,13 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
                 data-active={active}
                 style={{ ['--swatch' as string]: sw.color } as React.CSSProperties}
               >
-                <span className="text-[9px] tracking-[0.2em] font-bold">{sw.label}</span>
+                <span className="tracking-[0.2em] font-bold">{sw.label}</span>
               </div>
             )
           })}
         </div>
 
-        <div className="hud-body text-[10px] tracking-[0.2em] opacity-70 text-center min-h-[16px]">
+        <div className="hud-body tracking-[0.2em] opacity-70 text-center min-h-[16px]">
           {statusLine}
         </div>
       </div>
@@ -234,7 +234,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
       <div className="flex flex-col gap-5">
         <div className="text-center flex flex-col gap-2">
           <h2 className="hud-heading text-base tracking-[0.3em] font-bold">GESTURE CONTROLS</h2>
-          <p className="hud-body text-[11px] leading-relaxed tracking-[0.15em] opacity-80">
+          <p className="hud-body leading-relaxed tracking-[0.15em] opacity-80">
             EACH GESTURE FIRES ONCE AS YOU ENTER IT:
           </p>
         </div>
@@ -244,13 +244,13 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
             return (
               <div key={g.gesture} className="flex items-center gap-4">
                 <span
-                  className="hud-swatch w-28 py-2 text-center text-[10px] tracking-[0.2em] font-bold border"
+                  className="hud-swatch w-28 py-2 text-center tracking-[0.2em] font-bold border"
                   style={{ ['--swatch' as string]: sw?.color ?? accent } as React.CSSProperties}
                 >
                   {g.gesture}
                 </span>
-                <span className="hud-body text-[10px] tracking-[0.15em] opacity-80">→</span>
-                <span className="hud-body text-[10px] tracking-[0.15em] opacity-80">{g.action.toUpperCase()}</span>
+                <span className="hud-body tracking-[0.15em] opacity-80">→</span>
+                <span className="hud-body tracking-[0.15em] opacity-80">{g.action.toUpperCase()}</span>
               </div>
             )
           })}
@@ -269,16 +269,16 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
           {KEYBOARD_SHORTCUTS.map((k) => (
             <div key={k.keys} className="flex items-center gap-4">
               <span
-                className="hud-display w-24 py-2 text-center text-[10px] tracking-[0.2em] font-bold border"
+                className="hud-display w-24 py-2 text-center tracking-[0.2em] font-bold border"
                 style={{ borderColor: accent }}
               >
                 {k.keys}
               </span>
-              <span className="hud-body text-[10px] tracking-[0.15em] opacity-80">{k.action.toUpperCase()}</span>
+              <span className="hud-body tracking-[0.15em] opacity-80">{k.action.toUpperCase()}</span>
             </div>
           ))}
         </div>
-        <p className="hud-body text-[9px] tracking-[0.15em] opacity-50 text-center">
+        <p className="hud-body tracking-[0.15em] opacity-50 text-center">
           THEMES CYCLE VIA THE OPEN PALM GESTURE OR THE VISUALS PANEL.
         </p>
       </div>
@@ -289,7 +289,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
   return (
     <div className="text-center flex flex-col gap-4">
       <h2 className="hud-heading text-xl tracking-[0.35em] font-bold">READY</h2>
-      <p className="hud-body text-[11px] leading-relaxed tracking-[0.15em] opacity-80">
+      <p className="hud-body leading-relaxed tracking-[0.15em] opacity-80">
         YOU&apos;RE CALIBRATED. HIT START TO ENTER THE FIELD. REPLAY THIS
         WALKTHROUGH ANY TIME WITH THE ? ICON.
       </p>
