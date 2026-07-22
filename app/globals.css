@@ -101,35 +101,3 @@
   font-family: monospace !important;
   text-transform: uppercase !important;
 }
-
-/* ── Threshold onboarding HUD hooks (Phase 3 Track C placeholders) ──
-   Track E2 owns the final visual treatment. These are thin placeholders
-   wired to per-instance CSS variables (--hud-bg, --hud-accent, --swatch) so
-   the overlay is legible now and fully restylable later without touching
-   component markup. Do NOT add heavy visual rules here — that's Track E2. */
-.hud-onboarding {
-  background: var(--hud-bg, #050505);
-  color: var(--hud-accent, #00ff41);
-}
-.hud-body {
-  color: var(--hud-accent, #00ff41);
-}
-.hud-heading {
-  color: var(--hud-accent, #00ff41);
-}
-.hud-display {
-  color: var(--hud-accent, #00ff41);
-}
-.hud-swatch {
-  border-color: var(--swatch, var(--hud-accent, #00ff41));
-  color: var(--swatch, var(--hud-accent, #00ff41));
-}
-.hud-swatch[data-active="true"] {
-  background: var(--swatch, var(--hud-accent, #00ff41));
-  color: var(--hud-bg, #050505);
-  box-shadow: 0 0 18px var(--swatch, var(--hud-accent, #00ff41));
-}
-.hud-replay {
-  border-color: var(--hud-accent, #00ff41);
-  color: var(--hud-accent, #00ff41);
-}
