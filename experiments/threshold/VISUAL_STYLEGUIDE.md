@@ -15,8 +15,9 @@ elevated (custom easing, transform/opacity-only motion, z-index discipline),
 but the look stays raw and monospaced — no glassmorphism, no soft pastels, no
 premium blur.
 
-- **Type:** `Share Tech Mono` (the only font; inherited from the global body —
-  no per-experiment font dependency). Typography lives in
+- **Type:** `Share Tech Mono` (the only font; set explicitly by the shared
+  `hud*` rule in `src/threshold.module.css` — no per-experiment font
+  dependency). Typography lives in
   `src/threshold.module.css` as CSS Modules classes.
 - **Palette:** driven by `src/theme.ts` (`getTheme`): `background`, `accent`,
   `accentDim`, `gradient`. Session-arc phase colors from `PHASE_COLORS`
@@ -25,10 +26,15 @@ premium blur.
 
 ## Typography scale
 
-All six classes live in `src/threshold.module.css` and set **size /
-letter-spacing / weight only** (font-family is inherited). Replace ad-hoc
-`text-[8/9/10px]` / `xs` / `sm` / `lg` / `3xl` Tailwind utilities with these.
-Layout-only props (padding, opacity, color) may still use Tailwind.
+All six classes live in `src/threshold.module.css` and share a single rule
+that sets `font-family: 'Share Tech Mono', 'Courier New', monospace` and
+`text-transform: uppercase`; each class then sets **size / letter-spacing /
+weight** (and `line-height`). Replace ad-hoc `text-[8/9/10px]` / `xs` / `sm` /
+`lg` / `3xl` Tailwind utilities with these. Layout-only props (padding,
+opacity, color) may still use Tailwind. Note: the shared `text-transform:
+uppercase` force-uppercases all descendants — use an inline
+`style={{ textTransform: 'none' }}` override on any element that should
+render mixed-case prose (e.g. the failed-state banner).
 
 | Class         | Size | Tracking | Weight | Used for                                              |
 | ------------- | ---- | -------- | ------ | ----------------------------------------------------- |
@@ -52,7 +58,7 @@ Layout-only props (padding, opacity, color) may still use Tailwind.
   detected and tracking is active. Pulses through the per-gesture swatch
   color (fist green / open-palm cyan / pinch orange) on each gesture edge via
   the `reticlePulsing` class (`thReticlePulse` keyframe, transform +
-  opacity + box-shadow only).
+  opacity only).
 - **Signal-strength bar.** The status label is separated from the confidence
   value; 5 segments render with `Math.ceil(confidence * 5)` lit in
   `palette.accent` and the rest dim (`palette.accentDim`). The numeric percent
@@ -93,7 +99,8 @@ image. Do not reorder without coordinating across tracks.
 - Custom cubic-beziers for chrome motion (e.g.
   `cubic-bezier(0.32, 0.72, 0, 1)` on the reticle pulse); no `linear`/`ease`
   for organic motion.
-- **z-index discipline:** overlay chrome `z-10`, reticle `z-12` (within the
-  overlay context), controls `z-20`, banners `z-40`, modals `z-50`. No
+- **z-index discipline:** overlay chrome `z-10`, reticle `z-20` (shares
+  the status-bar/depth-meter/mood-button plane, within the overlay
+  context), controls `z-20`, banners `z-40`, modals `z-50`. No
   arbitrary `z-[9999]`.
 - `will-change` only on actively-animating elements.

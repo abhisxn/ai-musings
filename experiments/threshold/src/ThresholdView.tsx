@@ -450,7 +450,7 @@ export default function ThresholdView() {
     <div className="w-full h-full relative overflow-hidden" style={{ background: palette.background }}>
       {gestureStatus === 'failed' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-          <div className={`mt-4 px-4 py-2 border-2 border-[#ff4400] text-[#ff4400] ${styles.hudCaption} text-center max-w-md`} style={{ background: `${palette.background}f2` }}>
+          <div className={`mt-4 px-4 py-2 border-2 border-[#ff4400] text-[#ff4400] ${styles.hudCaption} text-center max-w-md`} style={{ background: `${palette.background}f2`, textTransform: 'none' }}>
             GESTURE TRACKING UNAVAILABLE — hand-model failed to load (likely a blocked network request). Falling back to basic motion detection; fist/palm/pinch gestures won&apos;t register.
           </div>
         </div>

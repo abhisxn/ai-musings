@@ -136,7 +136,6 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  will-change: transform;
 }
 
 .reticleCrossH,
@@ -176,6 +175,7 @@
 
 .reticlePulsing {
   animation: thReticlePulse 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+  will-change: transform;
 }
 
 @keyframes thReticlePulse {
