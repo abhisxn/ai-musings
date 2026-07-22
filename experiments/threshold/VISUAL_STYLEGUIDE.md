@@ -51,7 +51,7 @@ Layout-only props (padding, opacity, color) may still use Tailwind.
   to match the self-view webcam — no 3D projection). Shown only when a hand is
   detected and tracking is active. Pulses through the per-gesture swatch
   color (fist green / open-palm cyan / pinch orange) on each gesture edge via
-  the `reticlePulsing` class (`thresholdReticlePulse` keyframe, transform +
+  the `reticlePulsing` class (`thReticlePulse` keyframe, transform +
   opacity + box-shadow only).
 - **Signal-strength bar.** The status label is separated from the confidence
   value; 5 segments render with `Math.ceil(confidence * 5)` lit in
@@ -61,7 +61,7 @@ Layout-only props (padding, opacity, color) may still use Tailwind.
   is held for ~200ms (read by Track E1's Glitch post-fx) and toggles the
   `.glitchActive` module class onto the status-bar text — a standalone
   (programmatic, not `:hover`) rule reproducing the global `.glitch-text:hover`
-  look (`text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff` + `thresholdGlitch`
+  look (`text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff` + `thGlitch`
   keyframes), self-contained in the module.
 - **Neon-glow.** `.neonGlow { box-shadow: 0 0 8px currentColor }` on the
   depth-meter fill and the mood-toggle button — extends the existing
