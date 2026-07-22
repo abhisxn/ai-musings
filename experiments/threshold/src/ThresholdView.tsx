@@ -8,13 +8,12 @@ import { Scene } from './Scene'
 import { useControls, folder, Leva } from 'leva'
 import { getTheme, PHASE_COLORS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
-import { useAudio } from './audio'
+import { useAudio, ensureAudioContext } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import * as Tone from 'tone'
 import { Mood } from './types'
 
 if (typeof window !== 'undefined') {
@@ -263,7 +262,7 @@ export default function ThresholdView() {
       enabled: {
         value: audioEnabled,
         onChange: (val: boolean) => {
-          if (val) { Tone.start().catch(() => {}) }
+          if (val) { void ensureAudioContext() }
           setAudioEnabled(val)
         }
       },
