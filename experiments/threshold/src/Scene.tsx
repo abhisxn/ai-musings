@@ -49,6 +49,17 @@ export function Scene({
 
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
+  // Stable per-cell phosphor-flicker offsets (±3%), seeded ONCE per resolution
+  // change so the flicker is deterministic per cell rather than a per-frame
+  // Math.random() storm. emissiveIntensity is a shared material property (one
+  // value per instanced mesh, not per instance), so the per-frame loop samples
+  // a rotating index from this seeded array to produce a stable shimmer.
+  const flickerOffsets = useMemo(() => {
+    const arr = new Float32Array(count)
+    for (let i = 0; i < count; i++) arr[i] = (Math.random() * 2 - 1) * 0.03
+    return arr
+  }, [count])
+
   // Reusable scratch color for the hot per-cell getGradientColor path — avoids
   // a per-cell THREE.Color allocation (consumed immediately by setColorAt /
   // spectral color attr, never retained).
@@ -310,12 +321,18 @@ useFrame((state) => {
     // Constant props (color/emissive/roughness/metalness) are set in the
     // useEffect above, keyed on theme/mood/phase/resolution.
     const baseEmissive = (theme === 'dark' ? 0.8 : 0.3) + (audioIntensity * 4)
+    // Stable phosphor flicker: sample one seeded per-cell offset via a
+    // time-rotating index (~24Hz) so the shared material emissiveIntensity
+    // shimmers without a per-frame Math.random() storm. ±3%, clamped >= 0.
+    const flickerIdx = Math.floor(state.clock.elapsedTime * 24) % count
+    const flicker = flickerOffsets[flickerIdx] ?? 0
     meshRefs.forEach(ref => {
       if (ref.current) {
         if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true
         if (ref.current.material instanceof THREE.MeshStandardMaterial) {
           const mat = ref.current.material
-          mat.emissiveIntensity = moodEnabled ? baseEmissive * emissiveScale * breathMultiplier : baseEmissive
+          const flickered = Math.max(0, baseEmissive * (1 + flicker))
+          mat.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
         }
         ref.current.instanceMatrix.needsUpdate = true
       }
