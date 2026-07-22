@@ -14,9 +14,10 @@ import { useEnergyAccumulator } from './useEnergyAccumulator'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { useGestureControls } from './useGestureControls'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import * as THREE from 'three'
 import { Mood } from './types'
+import styles from './threshold.module.css'
 
 if (typeof window !== 'undefined') {
   ;(window as any).__threshold = { useStore }
@@ -25,6 +26,14 @@ if (typeof window !== 'undefined') {
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
+
+/** Per-gesture reticle pulse swatch colors (mirrors the onboarding swatches):
+ *  fist → green, open_palm → cyan, pinch → orange. */
+const GESTURE_RETICLE_COLORS: Record<string, string> = {
+  fist: '#00ff41',
+  open_palm: '#00ffff',
+  pinch: '#ff4400',
+}
 
 function AnimatedCamera() {
   const viewMode = useStore(state => state.viewMode)
@@ -70,7 +79,7 @@ function SessionTimer() {
   }, [initialized])
 
   return (
-    <div className="text-[9px] font-mono tracking-[0.2em] opacity-30">
+    <div className={`${styles.hudCaption} opacity-30`}>
       {String(Math.floor(elapsed / 60)).padStart(2, '0')}:{String(elapsed % 60).padStart(2, '0')}
     </div>
   )
@@ -98,6 +107,8 @@ export default function ThresholdView() {
     zoneEnergy,
     handTracking,
     gestureTrackingStatus,
+    gestureGlitchActive,
+    setGestureGlitchActive,
     soundTexture, setSoundTexture,
   } = useStore()
 
@@ -168,13 +179,57 @@ export default function ThresholdView() {
     }
   }, [gestureStatus, handTracking.pinchDistance, setThreshold])
 
-  const displayStatusText = gestureStatus === 'active'
-    ? (handTracking.detected
-        ? `HAND${handTracking.gesture ? ` ${handTracking.gesture.toUpperCase()}` : ''} ${Math.round(handTracking.confidence * 100)}%`
-        : 'no hand detected')
-    : gestureStatus === 'failed'
-      ? `${statusText} (gesture tracking unavailable)`
-      : statusText
+  // Status label + confidence, separated so the signal-strength bar can drive
+  // its segments from the numeric value while the label renders as text.
+  const statusInfo = useMemo(() => {
+    if (gestureStatus === 'active') {
+      if (handTracking.detected) {
+        return {
+          label: `HAND${handTracking.gesture ? ` ${handTracking.gesture.toUpperCase()}` : ''}`,
+          confidence: handTracking.confidence,
+        }
+      }
+      return { label: 'no hand detected', confidence: null as number | null }
+    }
+    if (gestureStatus === 'failed') {
+      return { label: `${statusText} (gesture tracking unavailable)`, confidence: null as number | null }
+    }
+    return { label: statusText, confidence: null as number | null }
+  }, [gestureStatus, handTracking.detected, handTracking.gesture, handTracking.confidence, statusText])
+
+  const [reticlePulseColor, setReticlePulseColor] = useState<string | null>(null)
+  const glitchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const reticleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // VHS glitch + reticle pulse: fire on each handTracking.gesture edge. The
+  // store's `gesture` field is one-shot (non-null only on the frame a gesture
+  // is entered), so this early-returns on the null transition — letting the
+  // ref-held timeout survive and hold the flag for its full duration.
+  //   - setGestureGlitchActive(true) for ~200ms → read by Track E1's Glitch
+  //     post-fx AND toggles the .glitchActive text effect on the status bar.
+  //   - reticlePulseColor set to the per-gesture swatch for ~450ms.
+  useEffect(() => {
+    if (!handTracking.gesture) return
+    setGestureGlitchActive(true)
+    setReticlePulseColor(GESTURE_RETICLE_COLORS[handTracking.gesture] ?? palette.accent)
+    if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current)
+    if (reticleTimeoutRef.current) clearTimeout(reticleTimeoutRef.current)
+    glitchTimeoutRef.current = setTimeout(() => {
+      setGestureGlitchActive(false)
+      glitchTimeoutRef.current = null
+    }, 200)
+    reticleTimeoutRef.current = setTimeout(() => {
+      setReticlePulseColor(null)
+      reticleTimeoutRef.current = null
+    }, 450)
+  }, [handTracking.gesture, setGestureGlitchActive, palette.accent])
+
+  useEffect(() => () => {
+    if (glitchTimeoutRef.current) clearTimeout(glitchTimeoutRef.current)
+    if (reticleTimeoutRef.current) clearTimeout(reticleTimeoutRef.current)
+  }, [])
+
+  const showReticle = gestureStatus === 'active' && handTracking.detected && !!handTracking.wrist
 
   const [ppBloom, setPpBloom] = useState({ threshold: 0.5, intensity: 0.3, levels: 6 })
   const [ppChromatic, setPpChromatic] = useState(new THREE.Vector2(0.0005, 0.0005))
@@ -314,14 +369,14 @@ export default function ThresholdView() {
     return (
       <div className="flex flex-col items-center justify-center w-full h-full font-mono p-10" style={{ background: palette.background, color: palette.accent }}>
         <div className="border p-10 text-center max-w-md" style={{ borderColor: palette.accent }}>
-          <h1 className="text-3xl mb-4 tracking-[0.3em] font-bold">THRESHOLD V6</h1>
-          <p className="text-xs opacity-50 mb-8 leading-relaxed tracking-widest">
+          <h1 className={`${styles.hudDisplay} mb-4`}>THRESHOLD V6</h1>
+          <p className={`${styles.hudBody} opacity-50 mb-8 leading-relaxed`}>
             VOLUMETRIC TERMINAL INSTRUMENT<br />
             MOVEMENT → EXPERIENCE
           </p>
           
           <div className="flex items-center justify-center gap-3 mb-6">
-            <span className="text-[10px] tracking-[0.2em] opacity-60">ARC</span>
+            <span className={`${styles.hudCaption} opacity-60`}>ARC</span>
             <button
               onClick={() => setMoodEnabled(!moodEnabled)}
               className={`w-12 h-6 rounded-full transition-colors ${
@@ -333,7 +388,7 @@ export default function ThresholdView() {
                 moodEnabled ? 'translate-x-[26px]' : 'translate-x-[2px]'
               }`} style={{ background: palette.background }} />
             </button>
-            <span className="text-[10px] tracking-[0.2em] opacity-60">FREE</span>
+            <span className={`${styles.hudCaption} opacity-60`}>FREE</span>
           </div>
           
           {moodEnabled && (
@@ -349,7 +404,7 @@ export default function ThresholdView() {
                   <button
                     key={m}
                     onClick={() => setCurrentMood(m)}
-                    className={`px-3 py-2 text-[9px] tracking-[0.2em] transition-all ${
+                    className={`px-3 py-2 ${styles.hudMicro} transition-all ${
                       currentMood === m ? '' : 'opacity-50'
                     }`}
                     style={{
@@ -367,7 +422,7 @@ export default function ThresholdView() {
 
           <button 
             onClick={() => setInitialized(true)}
-            className="px-10 py-3 text-sm tracking-[0.3em] font-bold hover:scale-105 transition-transform"
+            className={`px-10 py-3 ${styles.hudLabel} hover:scale-105 transition-transform`}
             style={{ background: palette.accent, color: palette.background }}
           >
             INITIALIZE
@@ -395,17 +450,35 @@ export default function ThresholdView() {
     <div className="w-full h-full relative overflow-hidden" style={{ background: palette.background }}>
       {gestureStatus === 'failed' && (
         <div className="absolute top-0 left-0 right-0 z-40 flex justify-center pointer-events-none">
-          <div className="mt-4 px-4 py-2 border-2 border-[#ff4400] text-[#ff4400] text-[10px] font-mono tracking-[0.15em] text-center max-w-md" style={{ background: `${palette.background}f2` }}>
+          <div className={`mt-4 px-4 py-2 border-2 border-[#ff4400] text-[#ff4400] ${styles.hudCaption} text-center max-w-md`} style={{ background: `${palette.background}f2` }}>
             GESTURE TRACKING UNAVAILABLE — hand-model failed to load (likely a blocked network request). Falling back to basic motion detection; fist/palm/pinch gestures won&apos;t register.
           </div>
         </div>
       )}
       <video ref={videoRef} autoPlay playsInline muted className="fixed opacity-0 pointer-events-none" />
       <div className="absolute inset-0 pointer-events-none z-10">
-        <div className="absolute top-8 left-8 border-l border-t w-10 h-10" style={{ borderColor: palette.accentDim }} />
-        <div className="absolute top-8 right-8 border-r border-t w-10 h-10" style={{ borderColor: palette.accentDim }} />
-        <div className="absolute bottom-8 left-8 border-l border-b w-10 h-10" style={{ borderColor: palette.accentDim }} />
-        <div className="absolute bottom-8 right-8 border-r border-b w-10 h-10" style={{ borderColor: palette.accentDim }} />
+        <div className={`${styles.bracket} ${styles.bracketTL}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketTR}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketBL}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketBR}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+
+        {/* Targeting reticle — tracks handTracking.wrist (normalized 0-1 image
+            space, x mirrored to match the self-view webcam). Pulses through the
+            per-gesture swatch color on each gesture edge. */}
+        {showReticle && handTracking.wrist && (
+          <div
+            className={styles.reticle}
+            style={{
+              left: `${(1 - handTracking.wrist.x) * 100}%`,
+              top: `${handTracking.wrist.y * 100}%`,
+              '--reticle-color': reticlePulseColor ?? palette.accent,
+            } as CSSProperties}
+          >
+            <div className={`${styles.reticleRing} ${reticlePulseColor ? styles.reticlePulsing : ''}`} />
+            <div className={styles.reticleCrossH} />
+            <div className={styles.reticleCrossV} />
+          </div>
+        )}
       </div>
 
       {/* Ambient Edge Panels */}
@@ -450,20 +523,36 @@ export default function ThresholdView() {
 
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
-        <div className="text-[9px] font-mono tracking-[0.2em] opacity-30" style={{ color: palette.accent }}>
-          {displayStatusText}
+        <div
+          className={`${styles.hudCaption} ${gestureGlitchActive ? styles.glitchActive : ''} opacity-30`}
+          style={{ color: palette.accent }}
+          title={statusInfo.confidence != null ? `${Math.round(statusInfo.confidence * 100)}%` : undefined}
+        >
+          <span>{statusInfo.label}</span>
+          {statusInfo.confidence != null && (
+            <span className={styles.signalBar} aria-hidden="true">
+              {Array.from({ length: 5 }, (_, i) => (
+                <span
+                  key={i}
+                  className={styles.signalSeg}
+                  style={{ background: i < Math.ceil(statusInfo.confidence * 5) ? palette.accent : palette.accentDim }}
+                />
+              ))}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Depth meter + Timer (bottom-left) */}
       <div className="absolute bottom-6 left-6 z-20 pointer-events-none flex items-end gap-3">
         <div className="flex flex-col items-center gap-1">
-          <div className="w-[3px] h-20 bg-[#1a1a1a] rounded-full relative overflow-hidden">
+          <div className="w-[3px] h-20 bg-[#1a1a1a] rounded-full relative">
             <div 
-              className="absolute bottom-0 w-full rounded-full transition-all duration-500"
+              className={`absolute bottom-0 w-full rounded-full transition-all duration-500 ${styles.neonGlow}`}
               style={{
                 height: `${sessionEnergy}%`,
                 background: PHASE_COLORS[currentPhase],
+                color: PHASE_COLORS[currentPhase],
                 opacity: moodEnabled ? 1 : 0.15,
               }}
             />
@@ -476,7 +565,7 @@ export default function ThresholdView() {
       <div className="absolute bottom-6 right-6 z-20">
         <button
           onClick={() => setMoodEnabled(!moodEnabled)}
-          className="text-[8px] tracking-[0.2em] px-3 py-1 transition-all pointer-events-auto"
+          className={`${styles.hudMicro} ${styles.neonGlow} px-3 py-1 transition-all pointer-events-auto`}
           style={{
             border: `1px solid ${moodEnabled ? palette.accent : '#333'}`,
             color: moodEnabled ? palette.accent : '#555',

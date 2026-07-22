@@ -1,0 +1,184 @@
+.hudMicro,
+.hudCaption,
+.hudBody,
+.hudLabel,
+.hudHeading,
+.hudDisplay {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+.hudMicro {
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.hudCaption {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.hudBody {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.hudLabel {
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hudHeading {
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hudDisplay {
+  font-size: 32px;
+  letter-spacing: 0.3em;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tickH,
+.tickV {
+  position: absolute;
+  pointer-events: none;
+}
+
+.tickH {
+  width: 40px;
+  height: 5px;
+  --tick: var(--th-tick, #00ff4166);
+  background-image: linear-gradient(
+    to right,
+    transparent 9.5px, var(--tick) 9.5px, var(--tick) 10.5px, transparent 10.5px,
+    transparent 19.5px, var(--tick) 19.5px, var(--tick) 20.5px, transparent 20.5px,
+    transparent 29.5px, var(--tick) 29.5px, var(--tick) 30.5px, transparent 30.5px
+  );
+}
+
+.tickV {
+  width: 5px;
+  height: 40px;
+  --tick: var(--th-tick, #00ff4166);
+  background-image: linear-gradient(
+    to bottom,
+    transparent 9.5px, var(--tick) 9.5px, var(--tick) 10.5px, transparent 10.5px,
+    transparent 19.5px, var(--tick) 19.5px, var(--tick) 20.5px, transparent 20.5px,
+    transparent 29.5px, var(--tick) 29.5px, var(--tick) 30.5px, transparent 30.5px
+  );
+}
+
+.reticle {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.reticleCrossH {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.reticleCrossV {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.reticleRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%);
+  border: 1px solid #00ff41;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.reticlePulse {
+  animation: thReticlePulse 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+}
+
+@keyframes thReticlePulse {
+  0% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+.glitchActive {
+  text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff;
+  animation: thGlitch 0.18s steps(2, end) infinite;
+  will-change: transform;
+}
+
+@keyframes thGlitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    transform: translate(2px, -1px);
+  }
+  60% {
+    transform: translate(-1px, 2px);
+  }
+  80% {
+    transform: translate(1px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.neonGlow {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.signalSeg {
+  width: 6px;
+  height: 8px;
+}
+
+.signalTrack {
+  display: flex;
+  gap: 2px;
+  margin-top: 4px;
+}
