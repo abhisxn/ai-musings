@@ -114,10 +114,6 @@ export default function ThresholdView() {
 
   const palette = getTheme(theme)
 
-  // Track E2 owns writing gestureGlitchActive; Track E1 only reads it to fire
-  // a short Glitch post-fx burst on gesture edges.
-  const gestureGlitchActive = useStore(s => s.gestureGlitchActive)
-
   // Leva brutalist theme — memoized on `palette` (a stable THEMES singleton
   // reference, so this only re-builds when the actual theme changes) so Leva
   // doesn't re-apply theming on every unrelated store-driven re-render.
