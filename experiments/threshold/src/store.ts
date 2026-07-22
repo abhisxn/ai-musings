@@ -1,7 +1,11 @@
 import { create } from 'zustand'
 import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 
-export type RenderMode = 'radio' | 'dots' | 'blocks' | 'lines' | 'ascii' | 'pixel' | 'spectral'
+export const RENDER_MODES = ['radio', 'dots', 'blocks', 'lines', 'ascii', 'pixel', 'spectral'] as const
+export type RenderMode = (typeof RENDER_MODES)[number]
+
+export const THEMES_LIST = ['dark', 'light', 'acid', 'heatmap'] as const
+export type Theme = (typeof THEMES_LIST)[number]
 
 interface ThresholdState {
   // UI / Global
@@ -35,8 +39,8 @@ interface ThresholdState {
   renderMode: RenderMode
   setRenderMode: (val: RenderMode) => void
   
-  theme: 'dark' | 'light' | 'acid' | 'heatmap'
-  setTheme: (val: 'dark' | 'light' | 'acid' | 'heatmap') => void
+  theme: Theme
+  setTheme: (val: Theme) => void
 
   sourceMode: 'pixel' | 'demo'
   setSourceMode: (val: 'pixel' | 'demo') => void

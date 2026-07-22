@@ -3,7 +3,7 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
-import { useStore } from './store'
+import { useStore, RENDER_MODES, THEMES_LIST } from './store'
 import { Scene } from './Scene'
 import { useControls, folder, Leva } from 'leva'
 import { getTheme, PHASE_COLORS } from './theme'
@@ -207,7 +207,7 @@ export default function ThresholdView() {
     const handleKey = (e: KeyboardEvent) => {
       if (e.repeat) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
-      const modeList = ['radio', 'dots', 'blocks', 'lines', 'ascii', 'pixel', 'spectral'] as const
+      const modeList = RENDER_MODES
       if (e.code === 'Space') {
         e.preventDefault()
         const current = useStore.getState().viewMode
@@ -245,8 +245,8 @@ export default function ThresholdView() {
       dithering: { value: ditherIntensity, min: 0, max: 1, step: 0.01, onChange: setDitherIntensity },
     }),
     render: folder({
-      mode: { value: renderMode, options: ['pixel', 'radio', 'blocks', 'dots', 'lines', 'ascii', 'spectral'], onChange: setRenderMode },
-      theme: { value: theme, options: ['dark', 'light', 'acid', 'heatmap'], onChange: setTheme },
+      mode: { value: renderMode, options: [...RENDER_MODES], onChange: setRenderMode },
+      theme: { value: theme, options: [...THEMES_LIST], onChange: setTheme },
       mood: { value: moodEnabled, onChange: setMoodEnabled },
     })
   })
