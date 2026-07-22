@@ -2,7 +2,7 @@
 
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
-import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette } from '@react-three/postprocessing'
+import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette, HueSaturation, DepthOfField, Glitch } from '@react-three/postprocessing'
 import { useStore, RENDER_MODES, THEMES_LIST } from './store'
 import { Scene } from './Scene'
 import OnboardingOverlay from './OnboardingOverlay'
@@ -39,6 +39,24 @@ function AnimatedCamera() {
   })
 
   return <PerspectiveCamera ref={cameraRef} makeDefault fov={50} />
+}
+
+// Existing warm pointLight with a slow positional drift (±0.5 units, ~0.1Hz).
+// Lights are JSX props so the position can't be cheaply animated declarively;
+// we mutate the light via ref in a dedicated useFrame instead.
+function DriftingPointLight({ basePosition, ...props }: { basePosition: [number, number, number] } & Record<string, any>) {
+  const ref = useRef<THREE.PointLight>(null)
+  useFrame((state) => {
+    if (!ref.current) return
+    const t = state.clock.elapsedTime
+    const f = 0.1
+    ref.current.position.set(
+      basePosition[0] + Math.sin(t * f) * 0.5,
+      basePosition[1] + Math.cos(t * f * 0.9) * 0.5,
+      basePosition[2] + Math.sin(t * f * 0.7) * 0.5,
+    )
+  })
+  return <pointLight ref={ref} position={basePosition} {...props} />
 }
 
 function SessionTimer() {
@@ -84,6 +102,10 @@ export default function ThresholdView() {
   } = useStore()
 
   const palette = getTheme(theme)
+
+  // Track E2 owns writing gestureGlitchActive; Track E1 only reads it to fire
+  // a short Glitch post-fx burst on gesture edges.
+  const gestureGlitchActive = useStore(s => s.gestureGlitchActive)
 
   // Leva brutalist theme — memoized on `palette` (a stable THEMES singleton
   // reference, so this only re-builds when the actual theme changes) so Leva
@@ -488,13 +510,21 @@ export default function ThresholdView() {
         <color attach="background" args={[palette.background]} />
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={ppBloom.levels} mipmapBlur />
+          <HueSaturation hue={0} saturation={0.15} />
           <ChromaticAberration offset={ppChromatic} />
+          {/* focusDistance constant 0.02 (camera-lerp target isn't exposed to
+              the composer; 0.02 keeps the near volumetric field sharp and lets
+              the far edge bloom into bokeh). bokehScale ~2.5. */}
+          <DepthOfField focusDistance={0.02} bokehScale={2.5} />
+          <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
           <Scanline opacity={ppScanline} density={2} />
           <Noise opacity={ppNoise} />
           <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
         </EffectComposer>
         <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1} color={palette.accent} />
+        <DriftingPointLight basePosition={[10, 10, 10]} intensity={1} color={palette.accent} />
+        <directionalLight position={[-8, 6, -10]} intensity={0.4} color={palette.accent} />
+        <fog attach="fog" args={[palette.background, 15, 45]} />
         <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
       </Canvas>
     </div>
