@@ -11,6 +11,7 @@ import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
 import { useGestureTracking } from './vision/useGestureTracking'
+import { useGestureControls } from './useGestureControls'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -77,6 +78,7 @@ export default function ThresholdView() {
     sessionEnergy, currentPhase,
     zoneEnergy,
     handTracking,
+    gestureTrackingStatus,
     soundTexture, setSoundTexture,
   } = useStore()
 
@@ -111,6 +113,7 @@ export default function ThresholdView() {
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
   const { status: gestureStatus } = useGestureTracking()
+  useGestureControls()
   useEnergyAccumulator()
 
   // Ambient edge-panel glow: while gesture tracking is active and a hand is
@@ -273,6 +276,14 @@ export default function ThresholdView() {
     }),
     texture: folder({
       soundscape: { value: soundTexture, options: { 'OFF': 'off', 'BLOOM — bells/pads': 'bloom', 'GLITCH — noise/fx': 'glitch', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
+    }),
+  })
+
+  // Read-only monitor: reflects the last fired one-shot gesture + the worker
+  // status. No `onChange` — it never mutates store state.
+  useControls('Gesture', {
+    hand: folder({
+      last: { value: `${handTracking.gesture ?? 'idle'}  ·  ${gestureTrackingStatus}` },
     }),
   })
 
