@@ -76,6 +76,11 @@ interface ThresholdState {
   gestureTrackingStatus: GestureTrackingStatus
   setGestureTrackingStatus: (status: GestureTrackingStatus) => void
 
+  // Transient VHS-glitch trigger: flipped true briefly on each hand-gesture edge.
+  // Owned/written by Track E2 (UI chrome); read by Track E1 (Glitch post-fx).
+  gestureGlitchActive: boolean
+  setGestureGlitchActive: (val: boolean) => void
+
   soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
   setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
 }
@@ -148,6 +153,9 @@ export const useStore = create<ThresholdState>((set) => ({
 
   gestureTrackingStatus: 'idle' as GestureTrackingStatus,
   setGestureTrackingStatus: (gestureTrackingStatus) => set({ gestureTrackingStatus }),
+
+  gestureGlitchActive: false,
+  setGestureGlitchActive: (gestureGlitchActive) => set({ gestureGlitchActive }),
 
   soundTexture: 'off' as 'off' | 'glitch' | 'bloom' | 'bass',
   setSoundTexture: (soundTexture) => set({ soundTexture }),
