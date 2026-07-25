@@ -7,6 +7,7 @@
     --color-bg: #120f0d;
     --color-fg: #f2ede6;
     --color-accent: #f0a020;
+    --color-on-accent: #1c1917;
     --color-secondary: #2fb8a8;
 
     --color-surface-1: rgba(255, 255, 255, 0.03);
@@ -37,6 +38,7 @@
   [data-theme="light"] {
     --color-bg: #f7f3ec;
     --color-fg: #1c1917;
+    --color-on-accent: #1c1917;
 
     --color-surface-1: rgba(28, 25, 23, 0.03);
     --color-surface-2: rgba(28, 25, 23, 0.05);
@@ -60,7 +62,7 @@
 
   ::selection {
     background: var(--color-accent);
-    color: var(--color-bg);
+    color: var(--color-on-accent);
   }
 }
 
