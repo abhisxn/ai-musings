@@ -215,6 +215,30 @@ and executed, not to the design itself:
 - Phased task list, scoped per track, following the existing
   Phase 3/4 track-lettering convention (Track A, B, C...) recorded in
   `experiments/threshold/.context/LOG.md` and `GLOSSARY.md`.
+- **Docs consolidation** (final step, after merge to `main`): Threshold's
+  design/planning docs are currently scattered outside its own folder —
+  `docs/superpowers/specs/2026-07-22-threshold-phase4-sprint-design.md`,
+  `docs/superpowers/specs/2026-07-26-threshold-phase5-sprint-design.md`
+  (this doc), `docs/plans/2026-07-22-threshold-phase3-sprint-design.md`,
+  and `docs/plans/2026-07-22-threshold-phase3-sprint-plan.md` all live
+  under top-level `docs/`, while AI Musings is a gallery of many
+  independent experiments (confirmed pattern:
+  `docs/superpowers/specs/2026-07-22-per-experiment-isolation-design.md`).
+  Move all four into a new `experiments/threshold/docs/` folder
+  (preserving filenames, `git mv` to keep history), update any relative
+  links between them, and leave `experiments/threshold/.context/`
+  (`BRIEF.md`/`STACK.md`/`LOG.md`) untouched — those follow the
+  repo-wide routing-file convention and stay put.
+  `GLOSSARY.md`/`README.md`/`VISUAL_STYLEGUIDE.md` already live inside
+  `experiments/threshold/` and need no move. The Phase 5 implementation
+  plan document itself (once written by `writing-plans`) should be
+  authored directly at `experiments/threshold/docs/` rather than
+  `docs/plans/`, to stop the scatter from recurring.
+- **Human smoke test**: once all tracks are merged to `main`, start the
+  local dev server (`npm run dev`) so the user can manually test the
+  full set of Phase 5 changes in-browser before considering the sprint
+  done. This is the final step of the plan, after the merge and docs
+  consolidation.
 
 ## Open questions for implementation time
 
