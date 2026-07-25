@@ -122,15 +122,7 @@ export function Scene({
   }, [])
   const spectralSprite = useMemo(() => generateSpectralSprite(64), [])
 
-  const spectralRef = useRef<THREE.Points>(null)
-  const spectralGeometry = useMemo(() => {
-    const geo = new THREE.BufferGeometry()
-    const pos = new Float32Array(count * 3)
-    const colors = new Float32Array(count * 3)
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3))
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-    return geo
-  }, [count])
+  const spectralRef = useRef<THREE.InstancedMesh>(null)
 
   // Per-instance glyph index for the ascii atlas (0..9 = '@%#*+=-:. ').
   // Sized to the instance count; values are written per-cell in useFrame
@@ -198,6 +190,17 @@ useFrame((state) => {
         let sum = 0
         for (let j = 0; j < 8; j++) sum += fftData[j]
         audioIntensity = (sum / 8) / 255
+      }
+    }
+
+    // Spectral mode is audio-native: populate fftData whenever audio is
+    // enabled (independent of audioReactive) so the FFT-driven bars always
+    // have fresh data. audioReactive above still gates audioIntensity for
+    // emissive/extrusion effects on other modes.
+    if (audioEnabled && !audioReactive && analyzerRef.current) {
+      const analyser = analyzerRef.current.analyser || analyzerRef.current
+      if (analyser.getByteFrequencyData) {
+        analyser.getByteFrequencyData(fftData)
       }
     }
 
@@ -309,27 +312,29 @@ useFrame((state) => {
           if (cellColor) radioRingRef.current.setColorAt(id, cellColor)
         }
 
-        // Spectral Point Cloud (House of Cards style)
-        if (renderMode === 'spectral' && spectralGeometry && cellColor) {
-          const positions = spectralGeometry.attributes.position.array as Float32Array
-          const colors = spectralGeometry.attributes.color.array as Float32Array
-          
-          const shimmer = (Math.random() - 0.5) * 0.02
-          positions[id * 3] = posX + (isActive ? shimmer : 0)
-          positions[id * 3 + 1] = posY + (isActive ? shimmer : 0)
-          positions[id * 3 + 2] = viewMode === 'flat' ? 0 : (modeZ + shimmer)
-          
-          const boost = isActive ? 2.5 : 0.3
-          colors[id * 3] = cellColor.r * boost
-          colors[id * 3 + 1] = cellColor.g * boost
-          colors[id * 3 + 2] = cellColor.b * boost
+        // Spectral: FFT-bin-driven bars. Each column samples one FFT bin;
+        // bar height and color track bin magnitude (audio-native, not
+        // brightness-mirroring like other modes).
+        if (renderMode === 'spectral' && spectralRef.current && fftData) {
+          const binIdx = Math.floor((x / resolution) * fftData.length)
+          const binValue = fftData[binIdx] / 255
+          const barHeight = binValue * extrusion * 4
+          dummy.position.set(posX, posY, finalZ + barHeight / 2)
+          dummy.scale.set(spacing * 0.9, spacing * 0.9, Math.max(0.01, barHeight))
+          dummy.rotation.set(0, 0, 0)
+          dummy.updateMatrix()
+          spectralRef.current.setMatrixAt(id, dummy.matrix)
+          const spectralColor = moodEnabled
+            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, binValue, cellColorScratch)
+            : getGradientColor(theme, binValue, cellColorScratch)
+          spectralRef.current.setColorAt(id, spectralColor)
         }
       }
     }
     
     if (renderMode === 'spectral' && spectralRef.current) {
-      spectralGeometry.attributes.position.needsUpdate = true
-      spectralGeometry.attributes.color.needsUpdate = true
+      spectralRef.current.instanceMatrix.needsUpdate = true
+      if (spectralRef.current.instanceColor) spectralRef.current.instanceColor.needsUpdate = true
     }
     if (renderMode === 'ascii') {
       aGlyphIndex.needsUpdate = true
@@ -391,19 +396,10 @@ useFrame((state) => {
       />
 
 
-      <points ref={spectralRef} geometry={spectralGeometry} visible={renderMode === 'spectral'}>
-        <pointsMaterial 
-          size={0.1} 
-          map={spectralSprite}
-          alphaTest={0.1}
-          vertexColors 
-          transparent 
-          opacity={1.0} 
-          blending={THREE.AdditiveBlending} 
-          sizeAttenuation={true}
-          depthWrite={false}
-        />
-      </points>
+      <instancedMesh key={`spectral-${resolution}`} ref={spectralRef} args={[null as any, null as any, count]} visible={renderMode === 'spectral'}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshStandardMaterial color="#ffffff" map={spectralSprite} emissive={chromeColor} emissiveIntensity={1.5} transparent alphaTest={0.1} blending={THREE.AdditiveBlending} depthWrite={false} />
+      </instancedMesh>
 
       <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible={renderMode === 'blocks'}>
         <boxGeometry args={[1, 1, 1]} />
