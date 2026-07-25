@@ -22,12 +22,24 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+const cardVariants = {
+  rest: { scale: 1 },
+  hover: { scale: 1.02, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
+}
+
+const imageVariants = {
+  rest: { opacity: 0.85, scale: 1.02 },
+  hover: { opacity: 1, scale: 1.06, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
+}
+
 export function ExperimentCard({ experiment }: ExperimentCardProps) {
   return (
     <Link href={`/experiments/${experiment.slug}`} className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card">
       <motion.div
         className="h-full"
-        whileHover={{ scale: 1.02, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } }}
+        initial="rest"
+        whileHover="hover"
+        variants={cardVariants}
         whileTap={{ scale: 0.99 }}
       >
         <Card className="h-full flex flex-col gap-4 overflow-hidden">
@@ -37,8 +49,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
                 src={experiment.thumbnail}
                 alt={experiment.title}
                 className="w-full h-full object-cover"
-                initial={{ opacity: 0.85, scale: 1.02 }}
-                whileHover={{ opacity: 1, scale: 1.06, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+                variants={imageVariants}
               />
             </div>
           ) : (

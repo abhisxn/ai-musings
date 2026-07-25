@@ -71,7 +71,7 @@ export function ExperimentGrid({ experiments, tags, series }: ExperimentGridProp
           <button
             type="button"
             onClick={() => { setActiveTag(null); setActiveSeries(null); }}
-            className="t-caption text-accent hover:opacity-80 transition-opacity"
+            className="t-caption text-accent hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card"
           >
             Reset filters
           </button>
