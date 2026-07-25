@@ -19,7 +19,7 @@ export function Badge({ label, onClick, active = false }: BadgeProps) {
         type="button"
         aria-pressed={active}
         onClick={onClick}
-        className={`${baseClasses} cursor-pointer`}
+        className={`${baseClasses} cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-pill`}
       >
         {label}
       </button>

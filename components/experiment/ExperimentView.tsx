@@ -24,7 +24,7 @@ export function ExperimentView({ meta }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-center h-full text-zinc-600 text-sm font-mono">
+      <div className="flex items-center justify-center h-full text-fg/60 t-body3">
       [ experiment component "{meta.slug}" not yet connected ]
     </div>
   )

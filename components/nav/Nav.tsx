@@ -24,7 +24,7 @@ export function Nav() {
       >
         <Link
           href="/experiments"
-          className="font-display text-base sm:text-lg tracking-tight text-fg hover:text-accent transition-colors"
+          className="font-display text-base sm:text-lg tracking-tight text-fg hover:text-accent transition-colors rounded-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           AI&nbsp;<span className="text-accent">Musings</span>
         </Link>
@@ -34,7 +34,7 @@ export function Nav() {
             <li key={l.href}>
               <Link
                 href={l.href}
-                className="px-3 py-1.5 rounded-pill text-fg/80 hover:text-fg hover:bg-surface-2 transition-colors"
+                className="px-3 py-1.5 rounded-pill text-fg/80 hover:text-fg hover:bg-surface-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
               >
                 {l.label}
               </Link>
@@ -49,7 +49,7 @@ export function Nav() {
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="sm:hidden relative w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors"
+            className="sm:hidden relative w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             <motion.span
               animate={{ rotate: open ? 45 : 0, y: open ? 0 : -4 }}
@@ -85,7 +85,7 @@ export function Nav() {
                 <Link
                   href={l.href}
                   onClick={() => setOpen(false)}
-                  className="block px-4 py-3 rounded-btn text-fg/90 hover:text-fg hover:bg-surface-3 transition-colors font-display"
+                  className="block px-4 py-3 rounded-btn text-fg/90 hover:text-fg hover:bg-surface-3 transition-colors font-display focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                 >
                   {l.label}
                 </Link>

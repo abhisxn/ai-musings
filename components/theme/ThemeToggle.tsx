@@ -17,7 +17,7 @@ export function ThemeToggle() {
         type="button"
         disabled
         aria-hidden="true"
-        className="w-9 h-9 inline-flex items-center justify-center rounded-btn"
+        className="w-9 h-9 inline-flex items-center justify-center rounded-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
       />
     )
   }
@@ -30,7 +30,7 @@ export function ThemeToggle() {
       type="button"
       aria-label={`Switch to ${next} theme`}
       onClick={() => setTheme(next)}
-      className="w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors duration-200"
+      className="w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
     >
       {isDark ? (
         <svg

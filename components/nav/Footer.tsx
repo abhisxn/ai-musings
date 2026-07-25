@@ -18,7 +18,7 @@ export function Footer() {
         </span>
         <Link
           href="/experiments"
-          className="hover:text-accent transition-colors"
+          className="hover:text-accent transition-colors rounded-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
         >
           AI Musings
         </Link>

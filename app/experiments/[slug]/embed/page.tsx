@@ -21,7 +21,7 @@ export default async function ExperimentEmbedPage({ params }: Props) {
       {meta.type === 'iframe' && meta.iframeSrc ? (
         <ExperimentFrame src={meta.iframeSrc} title={meta.title} />
       ) : (
-        <div className="flex items-center justify-center h-full text-zinc-600 text-sm font-mono">
+        <div className="flex items-center justify-center h-full text-fg/60 t-body3">
           [ react component not yet connected ]
         </div>
       )}
