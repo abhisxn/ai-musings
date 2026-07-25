@@ -108,3 +108,30 @@ describe('wristYToExtrusionDrift', () => {
     expect(wristYToExtrusionDrift({ x: 0.5, y: 2, z: 0 }, true)).toBe(-2)
   })
 })
+
+import { wristProximityWarp } from '../wrist-mapping'
+
+describe('wristProximityWarp', () => {
+  it('returns 0 when no hand is detected', () => {
+    expect(wristProximityWarp(5, 5, null, false)).toBe(0)
+  })
+
+  it('returns 0 when the wrist is farther than the warp radius', () => {
+    const wrist = { x: 0, y: 0, z: 0 }
+    expect(wristProximityWarp(20, 20, wrist, true)).toBe(0)
+  })
+
+  it('returns maximum warp strength at zero distance', () => {
+    const wrist = { x: 5, y: 5, z: 0 }
+    expect(wristProximityWarp(5, 5, wrist, true)).toBeCloseTo(3, 5)
+  })
+
+  it('falls off linearly with distance within the warp radius', () => {
+    const wrist = { x: 0, y: 0, z: 0 }
+    const atRadius = wristProximityWarp(6, 0, wrist, true)
+    const halfway = wristProximityWarp(3, 0, wrist, true)
+    expect(atRadius).toBeCloseTo(0, 5)
+    expect(halfway).toBeCloseTo(1.5, 5)
+    expect(halfway).toBeGreaterThan(atRadius)
+  })
+})

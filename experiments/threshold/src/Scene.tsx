@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { useStore } from './store'
 import { Phase } from './types'
 import { generateBlueNoiseTexture } from './blue-noise'
-import { wristYToExtrusionDrift } from './vision/wrist-mapping'
+import { wristYToExtrusionDrift, wristProximityWarp } from './vision/wrist-mapping'
 import { getGradientColor, getMoodGradientColor, getTheme, PHASE_COLORS } from './theme'
 import { MOOD_CONFIGS } from './mood-config'
 import { generateDitherAtlas, generateHalftoneDotAtlas, generateSpectralSprite } from './dither'
@@ -229,13 +229,27 @@ useFrame((state) => {
         }
         prevStates[id] = isActive ? 1 : 0
 
+        const posX = (x - resolution / 2 + 0.5) * spacing
+        const posY = (y - resolution / 2 + 0.5) * spacing
+
+        const proximityWarp =
+          gestureTrackingStatus === 'active' && handTracking.detected && handTracking.wrist
+            ? wristProximityWarp(
+                x,
+                y,
+                {
+                  x: handTracking.wrist.x * (resolution - 1),
+                  y: handTracking.wrist.y * (resolution - 1),
+                  z: handTracking.wrist.z,
+                },
+                handTracking.detected,
+              )
+            : 0
+
         const zExtrusion = (brightness * effectiveExtrusion)
         const audioHeight = isActive ? (audioIntensity * effectiveExtrusion) : 0
-        const finalZ = Math.max(0.05, zExtrusion + audioHeight)
+        const finalZ = Math.max(0.05, zExtrusion + audioHeight) + proximityWarp
         const modeZ = finalZ
-
-        const posX = ((resolution - x) - resolution / 2) * spacing
-        const posY = (y - resolution / 2) * -spacing
         
         const s = isActive ? 0.4 : 0.1
         const pSize = 0.4

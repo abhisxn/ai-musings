@@ -102,3 +102,23 @@ export function wristYToExtrusionDrift(
 
   return Math.max(-MAX_EXTRUSION_DRIFT, Math.min(MAX_EXTRUSION_DRIFT, drift))
 }
+
+const WARP_RADIUS = 6
+const WARP_STRENGTH = 3
+
+// Grid cells near the tracked wrist push toward the viewer; falls off linearly
+// to 0 at WARP_RADIUS so the effect stays local to the hand instead of
+// warping the whole grid.
+export function wristProximityWarp(
+  cellX: number,
+  cellY: number,
+  wrist: WristPosition | null,
+  detected: boolean,
+): number {
+  if (!detected || !wrist) return 0
+  const dx = cellX - wrist.x
+  const dy = cellY - wrist.y
+  const dist = Math.sqrt(dx * dx + dy * dy)
+  if (dist >= WARP_RADIUS) return 0
+  return (1 - dist / WARP_RADIUS) * WARP_STRENGTH
+}
