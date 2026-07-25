@@ -8,6 +8,7 @@ import type { RenderMode, Theme } from './store'
 import { buildLevaSyncPayload } from './levaSync'
 import { Scene } from './Scene'
 import OnboardingOverlay from './OnboardingOverlay'
+import { SessionHud } from './SessionHud'
 import { useControls, folder, Leva } from 'leva'
 import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
@@ -485,6 +486,14 @@ export default function ThresholdView() {
             <div className={styles.reticleCrossV} />
           </div>
         )}
+
+        <SessionHud
+          renderMode={renderMode}
+          theme={theme}
+          moodEnabled={moodEnabled}
+          currentMood={currentMood}
+          soundTexture={soundTexture}
+        />
       </div>
 
       {/* Ambient Edge Panels */}
