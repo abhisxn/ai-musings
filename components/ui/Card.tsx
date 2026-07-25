@@ -9,19 +9,13 @@ export function Card({ children, className = '', onClick }: CardProps) {
     <div
       onClick={onClick}
       className={`
-        relative border border-zinc-800/50 bg-black/40 backdrop-blur-sm p-4 transition-all duration-300
-        group hover:border-neon-green/50 hover:shadow-[0_0_20px_rgba(0,255,0,0.05)]
-        ${onClick ? 'cursor-crosshair' : ''}
+        ring-1 ring-border-1 bg-surface-1 p-1.5 rounded-card transition-all duration-300
+        hover:ring-border-2 hover:shadow-[0_0_24px_theme(colors.accent/0.12)]
+        ${onClick ? 'cursor-pointer' : ''}
         ${className}
       `}
     >
-      {/* ASCII Corners */}
-      <div className="absolute -top-px -left-px w-2 h-2 border-t border-l border-zinc-700 group-hover:border-neon-green" />
-      <div className="absolute -top-px -right-px w-2 h-2 border-t border-r border-zinc-700 group-hover:border-neon-green" />
-      <div className="absolute -bottom-px -left-px w-2 h-2 border-b border-l border-zinc-700 group-hover:border-neon-green" />
-      <div className="absolute -bottom-px -right-px w-2 h-2 border-b border-r border-zinc-700 group-hover:border-neon-green" />
-      
-      <div className="relative z-10">
+      <div className="bg-surface-2 rounded-[calc(var(--radius-card)-0.5rem)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] p-4">
         {children}
       </div>
     </div>
