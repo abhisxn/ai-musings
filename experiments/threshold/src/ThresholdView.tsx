@@ -236,6 +236,7 @@ export default function ThresholdView() {
   const [ppScanline, setPpScanline] = useState(0.05)
   const [ppVignette, setPpVignette] = useState(0.8)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [showCameraBackground, setShowCameraBackground] = useState(true)
 
   useEffect(() => {
     if (initialized && !localStorage.getItem('threshold_onboarding_done')) {
@@ -521,20 +522,20 @@ export default function ThresholdView() {
         />
       </div>
 
-      {/* Webcam PIP */}
-      <div className="absolute top-8 right-8 z-20 rounded overflow-hidden border border-white/10 opacity-30 hover:opacity-70 transition-opacity pointer-events-none">
-        <video 
-          ref={videoRef} 
-          autoPlay playsInline muted 
-          className="w-32 h-24 object-cover"
-          style={{ transform: 'scaleX(-1)' }}
-        />
-        <div className="absolute inset-0 flex pointer-events-none">
-          <div className="flex-1 border-r border-[#ff00ff22]" />
-          <div className="flex-1 border-r border-[#00ffff22]" />
-          <div className="flex-1" />
+      {/* Webcam full-bleed background layer (toggleable via CAM // ON/OFF) */}
+      {showCameraBackground && (
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ transform: 'scaleX(-1)' }}
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
-      </div>
+      )}
 
       {/* Status bar */}
       <div className="absolute bottom-4 left-4 z-20 pointer-events-none">
@@ -610,6 +611,16 @@ export default function ThresholdView() {
           style={{ border: `1px solid ${palette.accent}`, color: palette.accent, opacity: 0.4 }}
         >
           ?
+        </button>
+      </div>
+
+      {/* Camera background toggle (top-right) */}
+      <div className="absolute top-8 right-8 z-20">
+        <button
+          onClick={() => setShowCameraBackground((v) => !v)}
+          className={`${styles.hudMicro} px-2 py-1 border border-white/20 text-white/70 hover:text-white hover:border-white/50 pointer-events-auto`}
+        >
+          CAM // {showCameraBackground ? 'ON' : 'OFF'}
         </button>
       </div>
 
