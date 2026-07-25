@@ -11,7 +11,7 @@ export function Footer() {
                    bg-surface-1 backdrop-blur-xl backdrop-saturate-150
                    border border-border-1
                    flex items-center justify-between gap-3
-                   text-t-caption text-fg/60"
+                   t-caption text-fg/60"
       >
         <span>
           © {year} Abhishek Saxena

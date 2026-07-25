@@ -29,7 +29,7 @@ export function Nav() {
           AI&nbsp;<span className="text-accent">Musings</span>
         </Link>
 
-        <ul className="hidden sm:flex items-center gap-1 text-t-body3">
+        <ul className="hidden sm:flex items-center gap-1 t-body3">
           {NAV_LINKS.map((l) => (
             <li key={l.href}>
               <Link
@@ -49,17 +49,17 @@ export function Nav() {
             aria-label={open ? 'Close menu' : 'Open menu'}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="sm:hidden w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors"
+            className="sm:hidden relative w-9 h-9 inline-flex items-center justify-center rounded-btn text-fg hover:text-accent transition-colors"
           >
             <motion.span
               animate={{ rotate: open ? 45 : 0, y: open ? 0 : -4 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="block w-4 h-0.5 bg-current"
+              className="absolute inset-0 m-auto block w-4 h-0.5 bg-current"
             />
             <motion.span
-              animate={{ rotate: open ? -45 : 0, y: open ? -4 : 4 }}
+              animate={{ rotate: open ? -45 : 0, y: open ? 0 : 4 }}
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute block w-4 h-0.5 bg-current"
+              className="absolute inset-0 m-auto block w-4 h-0.5 bg-current"
             />
           </button>
         </div>
