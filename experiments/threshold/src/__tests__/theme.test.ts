@@ -1,6 +1,6 @@
 /// <reference types="vitest/globals" />
 import * as THREE from 'three'
-import { getTheme, getGradientColor, THEMES, PHASE_COLORS } from '../theme'
+import { getTheme, getGradientColor, THEMES, PHASE_COLORS, PHASE_LABELS } from '../theme'
 
 describe('getTheme', () => {
   it('returns the dark palette with expected fields', () => {
@@ -101,5 +101,13 @@ describe('PHASE_COLORS', () => {
     expect(PHASE_COLORS.calm).toBe('#00ff41')
     expect(PHASE_COLORS.active).toBe('#ffff00')
     expect(PHASE_COLORS.climax).toBe('#ff4444')
+  })
+})
+
+describe('PHASE_LABELS', () => {
+  it('maps each Phase to its display label', () => {
+    expect(PHASE_LABELS.calm).toBe('CALM')
+    expect(PHASE_LABELS.active).toBe('BUILDING')
+    expect(PHASE_LABELS.climax).toBe('CLIMAX')
   })
 })

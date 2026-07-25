@@ -5,6 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import { Grid } from '@react-three/drei'
 import * as THREE from 'three'
 import { useStore } from './store'
+import { Phase } from './types'
 import { generateBlueNoiseTexture } from './blue-noise'
 import { wristYToExtrusionDrift } from './vision/wrist-mapping'
 import { getGradientColor, getTheme, PHASE_COLORS } from './theme'
@@ -18,7 +19,7 @@ export function Scene({
 }: { 
   pixelDataRef: React.RefObject<Float32Array>,
   analyzerRef: React.RefObject<any>,
-  triggerVoice: (brightness: number, noteIndex: number) => void,
+  triggerVoice: (brightness: number, noteIndex: number, phase?: Phase) => void,
   triggerClick: (note?: string, duration?: string) => void,
 }) {
   const blocksRef = useRef<THREE.InstancedMesh>(null)
@@ -193,7 +194,7 @@ useFrame((state) => {
 
         if (isActive && !wasActive && audioEnabled && clicksThisFrame < MAX_CLICKS_PER_FRAME) {
           const noteIdx = Math.floor(((resolution - y) / resolution) * NOTES.length)
-          triggerVoice(brightness, noteIdx)
+          triggerVoice(brightness, noteIdx, currentPhase)
           triggerClick('C2', '32n')
           clicksThisFrame++
         }
@@ -215,12 +216,14 @@ useFrame((state) => {
         dummy.scale.set(spacing * 0.9, spacing * 0.9, 0.05)
 
         if (viewMode === 'flat') {
-          if (renderMode === 'ascii' || renderMode === 'pixel') {
+          if (renderMode === 'ascii') {
             dummy.scale.set(spacing * s, spacing * s, 1)
+          } else if (renderMode === 'pixel') {
+            dummy.scale.set(spacing * s * 0.7, spacing * s * 0.7, 1)
           } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * s * pSize, spacing * s * pSize, spacing * s * pSize)
           } else if (renderMode === 'lines') {
-            dummy.scale.set(spacing * 0.15, spacing * s * (0.5 + brightness), 1)
+            dummy.scale.set(spacing * s * (0.5 + brightness), spacing * 0.15, 1)
           } else if (renderMode === 'radio') {
             // Radio is handled below
           } else {
@@ -229,12 +232,14 @@ useFrame((state) => {
         } else {
           // Volumetric Mode
           dummy.position.set(posX, posY, modeZ / 2)
-          if (renderMode === 'ascii' || renderMode === 'pixel') {
+          if (renderMode === 'ascii') {
             dummy.scale.set(spacing * s, spacing * s, 1)
+          } else if (renderMode === 'pixel') {
+            dummy.scale.set(spacing * s * 0.7, spacing * s * 0.7, 1)
           } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * 0.9 * pSize, spacing * 0.9 * pSize, spacing * 0.9 * pSize)
           } else if (renderMode === 'lines') {
-            dummy.scale.set(spacing * 0.15, Math.max(0.05, brightness) * spacing * 4, spacing * 0.15)
+            dummy.scale.set(Math.max(0.05, brightness) * spacing * 4, spacing * 0.15, spacing * 0.15)
           } else {
             dummy.scale.set(spacing * 0.9, spacing * 0.9, modeZ)
           }

@@ -179,6 +179,11 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
           AUDIOVISUAL FIELD — DEPTH, HUE AND THE CAMERA ITSELF RESPOND TO WHERE
           YOUR HAND MOVES.
         </p>
+        <p className={`${styles.hudBody} leading-relaxed tracking-[0.15em] opacity-80`}>
+          PALETTE IS A MANUAL CHOICE. SESSION ARC IS AUTOMATIC: MOVING YOUR HAND
+          BUILDS ENERGY — THE ARC SHIFTS FROM CALM TO CLIMAX, CHANGING COLOR,
+          MATERIAL, AND SOUND TOGETHER.
+        </p>
       </div>
     )
   }
@@ -217,6 +222,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
                 data-active={active}
                 style={{ ['--swatch' as string]: sw.color } as React.CSSProperties}
               >
+                <span className="text-2xl" aria-hidden="true">{sw.emoji}</span>
                 <span className="tracking-[0.2em] font-bold">{sw.label}</span>
               </div>
             )

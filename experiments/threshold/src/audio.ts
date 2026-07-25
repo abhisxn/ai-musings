@@ -2,10 +2,40 @@
 
 import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
-import { useStore } from './store'
+import { useStore, type RenderMode, type Theme } from './store'
 import { Mood, Phase } from './types'
 import { MOOD_CONFIGS, getPhaseTempo } from './mood-config'
 import { MarkovMelody } from './markov'
+
+export function volumeToDb(volume: number): number {
+  if (volume <= 0) return -Infinity
+  return -60 + 60 * Math.pow(volume / 100, 0.5)
+}
+
+export function getTextureVoicePitchShift(phase: Phase): number {
+  if (phase === 'climax') return 12
+  if (phase === 'active') return 5
+  return 0
+}
+
+const MODE_THEME_PITCH_SHIFT: Record<RenderMode, Record<Theme, number>> = {
+  radio:    { dark: -3, light: -2, acid: -1, heatmap:  0 },
+  dots:     { dark: -2, light: -1, acid:  0, heatmap:  1 },
+  blocks:   { dark: -1, light:  0, acid:  1, heatmap:  2 },
+  lines:    { dark:  0, light:  1, acid:  2, heatmap:  3 },
+  ascii:    { dark:  1, light:  2, acid:  3, heatmap: -3 },
+  pixel:    { dark:  2, light:  3, acid: -3, heatmap: -2 },
+  spectral: { dark:  3, light: -3, acid: -2, heatmap: -1 },
+}
+
+export function getModeThemePitchShift(renderMode: RenderMode, theme: Theme): number {
+  return MODE_THEME_PITCH_SHIFT[renderMode][theme]
+}
+
+const transposeNote = (note: string, shift: number): string => {
+  if (shift === 0) return note
+  return Tone.Frequency(note).transpose(shift).toNote()
+}
 
 const PHASE_VOLUMES: Record<Phase, { atmos: number; melody: number; rhythm: number; texture: number }> = {
   calm: { atmos: -6, melody: -60, rhythm: -60, texture: -60 },
@@ -27,6 +57,9 @@ export async function ensureAudioContext(): Promise<boolean> {
 export function useAudio() {
   const { audioEnabled, volume, moodEnabled, currentMood, currentPhase } = useStore()
   const soundTexture = useStore(state => state.soundTexture)
+  const renderMode = useStore(state => state.renderMode)
+  const theme = useStore(state => state.theme)
+  const gesture = useStore(state => state.handTracking.gesture)
   const [masterReady, setMasterReady] = useState(false)
   const analyzerRef = useRef<Tone.Analyser | null>(null)
   const masterGainRef = useRef<Tone.Gain | null>(null)
@@ -39,7 +72,9 @@ export function useAudio() {
   const textureVoiceRef = useRef<{ synth: any; fx: Tone.ToneAudioNode[] } | null>(null)
   const textureAccentRef = useRef<{ synth: any; fx: Tone.ToneAudioNode[] } | null>(null)
   const lastTriggerRef = useRef(0)
-
+  const renderModeRef = useRef<RenderMode>(renderMode)
+  const themeRef = useRef<Theme>(theme)
+  const lastFlourishGestureRef = useRef<typeof gesture>(null)
   const disposeTexture = () => {
     [texturePadRef, textureVoiceRef, textureAccentRef].forEach(ref => {
       if (ref.current) {
@@ -53,7 +88,7 @@ export function useAudio() {
   const buildGlitchTexture = (master: Tone.Gain) => {
     const noise = new Tone.Noise('white')
     const bandpass = new Tone.Filter(800, 'bandpass')
-    const padGain = new Tone.Gain(Tone.dbToGain(-18))
+    const padGain = new Tone.Gain(Tone.dbToGain(-12))
     noise.chain(bandpass, padGain, master)
     noise.start()
     texturePadRef.current = { synth: noise, fx: [bandpass, padGain] }
@@ -66,7 +101,7 @@ export function useAudio() {
     const delay = new Tone.FeedbackDelay(0.25, 0.3)
     const reverb = new Tone.Reverb(2)
     const tremolo = new Tone.Tremolo(6, 0.5).start()
-    const voiceGain = new Tone.Gain(Tone.dbToGain(-12))
+    const voiceGain = new Tone.Gain(Tone.dbToGain(-6))
     voice.chain(delay, reverb, tremolo, voiceGain, master)
     textureVoiceRef.current = { synth: voice, fx: [delay, reverb, tremolo, voiceGain] }
 
@@ -74,7 +109,7 @@ export function useAudio() {
       pitchDecay: 0.005, octaves: 2,
       envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 },
     })
-    const accentGain = new Tone.Gain(Tone.dbToGain(-14))
+    const accentGain = new Tone.Gain(Tone.dbToGain(-8))
     accent.chain(accentGain, master)
     textureAccentRef.current = { synth: accent, fx: [accentGain] }
   }
@@ -89,7 +124,7 @@ export function useAudio() {
     const chorus = new Tone.Chorus(3, 0.5, 1).start()
     const reverb = new Tone.Reverb(4)
     const phaser = new Tone.Phaser(0.5, 3)
-    const padGain = new Tone.Gain(Tone.dbToGain(-14))
+    const padGain = new Tone.Gain(Tone.dbToGain(-8))
     pad.chain(chorus, reverb, phaser, padGain, master)
     texturePadRef.current = { synth: pad, fx: [chorus, reverb, phaser, padGain] }
 
@@ -98,7 +133,7 @@ export function useAudio() {
       oscillator: { type: 'triangle' },
       envelope: { attack: 0.005, decay: 0.5, sustain: 0, release: 2 },
     })
-    const voiceGain = new Tone.Gain(Tone.dbToGain(-10))
+    const voiceGain = new Tone.Gain(Tone.dbToGain(-4))
     voice.chain(voiceGain, master)
     textureVoiceRef.current = { synth: voice, fx: [voiceGain] }
 
@@ -106,7 +141,7 @@ export function useAudio() {
       oscillator: { type: 'sine' },
       envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.5 },
     })
-    const accentGain = new Tone.Gain(Tone.dbToGain(-14))
+    const accentGain = new Tone.Gain(Tone.dbToGain(-8))
     accent.chain(accentGain, master)
     textureAccentRef.current = { synth: accent, fx: [accentGain] }
   }
@@ -120,7 +155,7 @@ export function useAudio() {
     const distortion = new Tone.Distortion(0.3)
     const compressor = new Tone.Compressor(-24, 3)
     const autoFilter = new Tone.AutoFilter({ frequency: 0.3, depth: 0.8, baseFrequency: 200, octaves: 3.5 }).start()
-    const padGain = new Tone.Gain(Tone.dbToGain(-14))
+    const padGain = new Tone.Gain(Tone.dbToGain(-8))
     pad.chain(distortion, compressor, autoFilter, padGain, master)
     texturePadRef.current = { synth: pad, fx: [distortion, compressor, autoFilter, padGain] }
 
@@ -128,7 +163,7 @@ export function useAudio() {
       oscillator: { type: 'pulse' },
       envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.1 },
     })
-    const voiceGain = new Tone.Gain(Tone.dbToGain(-10))
+    const voiceGain = new Tone.Gain(Tone.dbToGain(-4))
     voice.chain(voiceGain, master)
     textureVoiceRef.current = { synth: voice, fx: [voiceGain] }
 
@@ -136,7 +171,7 @@ export function useAudio() {
       pitchDecay: 0.008, octaves: 2,
       envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 },
     })
-    const accentGain = new Tone.Gain(Tone.dbToGain(-14))
+    const accentGain = new Tone.Gain(Tone.dbToGain(-8))
     accent.chain(accentGain, master)
     textureAccentRef.current = { synth: accent, fx: [accentGain] }
   }
@@ -173,10 +208,38 @@ export function useAudio() {
   }, [])
 
   useEffect(() => {
-    // Map 0-100% to dB: 0% → -60dB (silent), 100% → 0dB (full)
-    const db = volume === 0 ? -Infinity : (volume / 100) * 60 - 60
-    Tone.getDestination().volume.value = db
+    Tone.getDestination().volume.value = volumeToDb(volume)
   }, [volume])
+
+  useEffect(() => {
+    renderModeRef.current = renderMode
+  }, [renderMode])
+
+  useEffect(() => {
+    themeRef.current = theme
+  }, [theme])
+
+  useEffect(() => {
+    if (gesture === null) {
+      lastFlourishGestureRef.current = null
+      return
+    }
+    if (!audioEnabled) return
+    if (gesture === lastFlourishGestureRef.current) return
+    if (gesture !== 'fist' && gesture !== 'open_palm' && gesture !== 'pinch') return
+    const target = textureVoiceRef.current?.synth
+      ?? melodyRef.current?.synth
+      ?? atmosRef.current?.[0]
+      ?? textureAccentRef.current?.synth
+    lastFlourishGestureRef.current = gesture
+    if (!target) return
+    const mood = currentMood as Mood
+    const scale = MOOD_CONFIGS[mood].scale
+    const baseNote = scale[scale.length - 1] ?? 'C4'
+    const shift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
+    const note = transposeNote(baseNote, shift)
+    target.triggerAttackRelease?.(note, '32n')
+  }, [gesture, audioEnabled, currentMood])
 
   useEffect(() => {
     let cancelled = false
@@ -274,7 +337,10 @@ export function useAudio() {
         melodySynth.chain(melodyGain, master)
         const melodyLoop = new Tone.Loop(time => {
           if (!markovRef.current) return
-          const note = markovRef.current.next()
+          const rawNote = markovRef.current.next()
+          const phaseShift = getTextureVoicePitchShift(currentPhase)
+          const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
+          const note = transposeNote(rawNote, phaseShift + modeThemeShift)
           melodySynth.triggerAttackRelease(note, '8n', time)
         }, '4n')
         melodyLoop.start()
@@ -315,7 +381,7 @@ export function useAudio() {
     build()
   }, [audioEnabled, currentMood, currentPhase])
 
-  const triggerVoice = (brightness: number, noteIndex: number) => {
+  const triggerVoice = (brightness: number, noteIndex: number, phase?: Phase) => {
     if (!audioEnabled) return
     const now = Date.now()
     if (now - lastTriggerRef.current < 50) return
@@ -323,16 +389,24 @@ export function useAudio() {
     const NOTES = ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4']
     const note = NOTES[Math.max(0, Math.min(NOTES.length - 1, noteIndex))]
     if (textureVoiceRef.current) {
-      if (soundTexture === 'glitch' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(note, '32n')
-      else if (soundTexture === 'bloom' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(note, '8n')
-      else if (soundTexture === 'bass' && brightness > 0.3) textureVoiceRef.current.synth?.triggerAttackRelease(note, '16n')
+      const phaseShift = getTextureVoicePitchShift(phase ?? currentPhase)
+      const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
+      const totalShift = phaseShift + modeThemeShift
+      const transposed = transposeNote(note, totalShift)
+      if (soundTexture === 'glitch' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '32n')
+      else if (soundTexture === 'bloom' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '8n')
+      else if (soundTexture === 'bass' && brightness > 0.3) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '16n')
     }
   }
 
   const triggerClick = () => {
     if (!audioEnabled || !textureAccentRef.current) return
     if (soundTexture === 'glitch' || soundTexture === 'bass') {
-      textureAccentRef.current.synth?.triggerAttackRelease('C2', '32n')
+      const phaseShift = getTextureVoicePitchShift(currentPhase)
+      const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
+      const totalShift = phaseShift + modeThemeShift
+      const transposed = transposeNote('C2', totalShift)
+      textureAccentRef.current.synth?.triggerAttackRelease(transposed, '32n')
     }
   }
 

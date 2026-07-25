@@ -76,6 +76,7 @@ export function useGestureTracking() {
     let previousGesture: Gesture = null
     let previousPinchDistance = 0
     let previousWrist: { x: number; y: number; z: number } | null = null
+    let frameCounter = 0
 
     setGestureTrackingStatus('loading')
 
@@ -108,6 +109,11 @@ export function useGestureTracking() {
 
     async function captureAndSendFrame() {
       if (cancelled || !worker || !workerReady || awaitingResult) return
+      frameCounter += 1
+      if (frameCounter % 3 !== 0) {
+        scheduleNextFrame()
+        return
+      }
       if (!videoElement || videoElement.readyState < 2) {
         scheduleNextFrame()
         return

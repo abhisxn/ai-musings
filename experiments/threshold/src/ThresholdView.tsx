@@ -4,10 +4,12 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import { Bloom, EffectComposer, ChromaticAberration, Scanline, Noise, Vignette, HueSaturation, DepthOfField, Glitch } from '@react-three/postprocessing'
 import { useStore, RENDER_MODES, THEMES_LIST } from './store'
+import type { RenderMode, Theme } from './store'
+import { buildLevaSyncPayload } from './levaSync'
 import { Scene } from './Scene'
 import OnboardingOverlay from './OnboardingOverlay'
 import { useControls, folder, Leva } from 'leva'
-import { getTheme, PHASE_COLORS } from './theme'
+import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
@@ -314,7 +316,7 @@ export default function ThresholdView() {
     })
   })
 
-  useControls('Visuals', {
+  const [, setVisualsControls] = useControls('Visuals', () => ({
     params: folder({
       threshold: { value: threshold, min: 0, max: 1, step: 0.01, onChange: setThreshold },
       extrusion: { value: extrusion, min: 0, max: 20, step: 0.1, onChange: setExtrusion },
@@ -323,9 +325,15 @@ export default function ThresholdView() {
     render: folder({
       mode: { value: renderMode, options: [...RENDER_MODES], onChange: setRenderMode },
       theme: { value: theme, options: [...THEMES_LIST], onChange: setTheme },
-      mood: { value: moodEnabled, onChange: setMoodEnabled },
+      mood: { label: 'session arc', value: moodEnabled, onChange: setMoodEnabled },
     })
-  })
+  }))
+
+  useEffect(() => {
+    ;(setVisualsControls as (p: { mode: RenderMode; theme: Theme; mood: boolean }) => void)(
+      buildLevaSyncPayload(renderMode, theme, moodEnabled),
+    )
+  }, [renderMode, theme, moodEnabled, setVisualsControls])
 
   useControls('View', {
     display: folder({
@@ -553,6 +561,15 @@ export default function ThresholdView() {
               }}
             />
           </div>
+          <span
+            className={`${styles.hudMicro} whitespace-nowrap`}
+            style={{
+              color: PHASE_COLORS[currentPhase],
+              opacity: moodEnabled ? 1 : 0.15,
+            }}
+          >
+            {moodEnabled ? PHASE_LABELS[currentPhase] : 'ARC OFF'}
+          </span>
         </div>
         <SessionTimer />
       </div>
@@ -594,13 +611,15 @@ export default function ThresholdView() {
         <AnimatedCamera />
         <color attach="background" args={[palette.background]} />
         <EffectComposer>
-          <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={ppBloom.levels} mipmapBlur />
+          <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />
           <ChromaticAberration offset={ppChromatic} />
           {/* focusDistance constant 0.02 (camera-lerp target isn't exposed to
               the composer; 0.02 keeps the near volumetric field sharp and lets
               the far edge bloom into bokeh). bokehScale ~2.5. */}
-          <DepthOfField focusDistance={0.02} bokehScale={2.5} />
+          {viewMode === 'volumetric' && (
+            <DepthOfField focusDistance={0.02} bokehScale={2.5} />
+          )}
           <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
           <Scanline opacity={ppScanline} density={2} />
           <Noise opacity={ppNoise} />

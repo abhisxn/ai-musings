@@ -74,4 +74,13 @@ describe('gesture practice swatches (step 3)', () => {
   it('keeps swatch keys aligned with the store gesture vocabulary', () => {
     expect(GESTURE_SWATCHES.map((s) => s.key)).toEqual(['fist', 'open_palm', 'pinch'])
   })
+
+  it('exposes emoji glyphs for each practice swatch', () => {
+    const fist = GESTURE_SWATCHES.find((s) => s.key === 'fist')
+    const palm = GESTURE_SWATCHES.find((s) => s.key === 'open_palm')
+    const pinch = GESTURE_SWATCHES.find((s) => s.key === 'pinch')
+    expect(fist?.emoji).toBe('\u270A')
+    expect(palm?.emoji).toBe('\uD83D\uDD90\uFE0F')
+    expect(pinch?.emoji).toBe('\uD83E\uDD0F')
+  })
 })

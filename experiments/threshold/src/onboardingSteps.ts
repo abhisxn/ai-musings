@@ -36,7 +36,7 @@ export const KEYBOARD_SHORTCUTS = [
 
 /** The three practice swatches for step 3, reusing the green/cyan/orange vocabulary. */
 export const GESTURE_SWATCHES = [
-  { key: 'fist', label: 'FIST', color: '#00ff41' },
-  { key: 'open_palm', label: 'OPEN PALM', color: '#00ffff' },
-  { key: 'pinch', label: 'PINCH', color: '#ff4400' },
+  { key: 'fist', label: 'FIST', color: '#00ff41', emoji: '\u270A' },
+  { key: 'open_palm', label: 'OPEN PALM', color: '#00ffff', emoji: '\uD83D\uDD90\uFE0F' },
+  { key: 'pinch', label: 'PINCH', color: '#ff4400', emoji: '\uD83E\uDD0F' },
 ] as const

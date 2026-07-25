@@ -24,6 +24,12 @@ export const PHASE_COLORS: Record<Phase, string> = {
   climax: '#ff4444',
 }
 
+export const PHASE_LABELS: Record<Phase, string> = {
+  calm: 'CALM',
+  active: 'BUILDING',
+  climax: 'CLIMAX',
+}
+
 export function getTheme(theme: ThresholdTheme): ThemePalette {
   return THEMES[theme]
 }
