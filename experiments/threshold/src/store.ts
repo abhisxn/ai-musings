@@ -125,7 +125,7 @@ export const useStore = create<ThresholdState>((set) => ({
   // Session Arc
   moodEnabled: false,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
-  currentMood: 'luminous' as Mood,
+  currentMood: 'deep' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),
   sessionEnergy: 0,
   setSessionEnergy: (sessionEnergy) => set({ sessionEnergy }),
@@ -157,6 +157,6 @@ export const useStore = create<ThresholdState>((set) => ({
   gestureGlitchActive: false,
   setGestureGlitchActive: (gestureGlitchActive) => set({ gestureGlitchActive }),
 
-  soundTexture: 'off' as 'off' | 'glitch' | 'bloom' | 'bass',
+  soundTexture: 'bloom' as 'off' | 'glitch' | 'bloom' | 'bass',
   setSoundTexture: (soundTexture) => set({ soundTexture }),
 }))
