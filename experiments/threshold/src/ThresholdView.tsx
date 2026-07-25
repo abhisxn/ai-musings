@@ -296,7 +296,7 @@ export default function ThresholdView() {
       } else if (e.key === '0') {
         setMoodEnabled(!useStore.getState().moodEnabled)
       } else if (e.key === 'm' || e.key === 'M') {
-        const moods: Mood[] = ['luminous', 'deep', 'pulse']
+        const moods: Mood[] = ['luminous', 'deep', 'pulse', 'solar', 'azure']
         const current = useStore.getState().currentMood
         const nextIdx = (moods.indexOf(current) + 1) % moods.length
         setCurrentMood(moods[nextIdx])
@@ -397,11 +397,13 @@ export default function ThresholdView() {
           
           {moodEnabled && (
             <div className="flex gap-2 mb-6">
-              {(['luminous', 'deep', 'pulse'] as const).map(m => {
+              {(['luminous', 'deep', 'pulse', 'solar', 'azure'] as const).map(m => {
                 const configs: Record<string, { label: string; color: string; emoji: string }> = {
                   luminous: { label: 'LUMINOUS', color: '#00ff41', emoji: '🌿' },
                   deep: { label: 'DEEP', color: '#ff00ff', emoji: '🔮' },
                   pulse: { label: 'PULSE', color: '#ff4400', emoji: '🔥' },
+                  solar: { label: 'SOLAR', color: '#ffcc00', emoji: '☀️' },
+                  azure: { label: 'AZURE', color: '#00ccff', emoji: '🌊' },
                 }
                 const c = configs[m]
                 return (

@@ -1,4 +1,4 @@
-export type Mood = 'luminous' | 'deep' | 'pulse'
+export type Mood = 'luminous' | 'deep' | 'pulse' | 'solar' | 'azure'
 export type Phase = 'calm' | 'active' | 'climax'
 
 export interface HandTracking {

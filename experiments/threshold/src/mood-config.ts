@@ -46,6 +46,28 @@ export const MOOD_CONFIGS: Record<Mood, MoodConfig> = {
     rhythmPattern: '4/4 heavy',
     textureType: 'rumble',
   },
+  solar: {
+    name: 'SOLAR',
+    color: '#ffcc00',
+    baseHue: 50,
+    scale: ['E2', 'F#2', 'G#2', 'A2', 'B2', 'C#3', 'D#3', 'E3', 'F#3'],
+    scaleName: 'E major pentatonic',
+    tempoRange: [70, 130],
+    padWaveform: 'amsynth',
+    rhythmPattern: '4/4 bright',
+    textureType: 'airy',
+  },
+  azure: {
+    name: 'AZURE',
+    color: '#00ccff',
+    baseHue: 200,
+    scale: ['F2', 'G2', 'A2', 'Bb2', 'C3', 'D3', 'F3', 'G3', 'A3'],
+    scaleName: 'F major pentatonic',
+    tempoRange: [50, 110],
+    padWaveform: 'fmsynth',
+    rhythmPattern: '6/8 flow',
+    textureType: 'rumble',
+  },
 }
 
 export function getPhaseTempo(mood: Mood, phase: 'calm' | 'active' | 'climax'): number {
