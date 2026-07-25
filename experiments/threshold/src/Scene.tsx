@@ -25,7 +25,6 @@ export function Scene({
 }) {
   const blocksRef = useRef<THREE.InstancedMesh>(null)
   const radioRingRef = useRef<THREE.InstancedMesh>(null)
-  const radioDotRef = useRef<THREE.InstancedMesh>(null)
   const dotsMeshRef = useRef<THREE.InstancedMesh>(null)
   const linesMeshRef = useRef<THREE.InstancedMesh>(null)
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
@@ -70,7 +69,7 @@ export function Scene({
   // Stable array of instanced-mesh refs shared by the material-effect and the
   // per-frame loop.
   const meshRefs = useMemo(
-    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, linesMeshRef, asciiMeshRef, pixelMeshRef],
+    () => [blocksRef, radioRingRef, dotsMeshRef, linesMeshRef, asciiMeshRef, pixelMeshRef],
     [],
   )
 
@@ -267,24 +266,14 @@ useFrame((state) => {
         if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'lines' && linesMeshRef.current) linesMeshRef.current.setMatrixAt(id, dummy.matrix)
         
-        if (renderMode === 'radio' && radioRingRef.current && radioDotRef.current && cellColor) {
-           // Outer Ring
-           dummy.rotation.x = Math.PI / 2
-           dummy.position.set(posX, posY, viewMode === 'flat' ? 0 : modeZ / 2)
-           // Fix: Scaled for 2D vs 3D
-           const ringScale = viewMode === 'flat' ? 0.05 : modeZ
-           dummy.scale.set(spacing * 0.8, ringScale, spacing * 0.8)
-           dummy.updateMatrix()
-           radioRingRef.current.setMatrixAt(id, dummy.matrix)
-           radioRingRef.current.setColorAt(id, cellColor)
-           
-           // Inner Dot
-           const dotSize = isActive ? 0.4 : 0.01
-           const dotHeight = viewMode === 'flat' ? 0.06 : modeZ + 0.05
-           dummy.scale.set(spacing * dotSize, dotHeight, spacing * dotSize)
-           dummy.updateMatrix()
-           radioDotRef.current.setMatrixAt(id, dummy.matrix)
-           radioDotRef.current.setColorAt(id, cellColor)
+        if (renderMode === 'radio' && radioRingRef.current) {
+          const glowRadius = spacing * (0.3 + brightness * 0.7)
+          dummy.position.set(posX, posY, finalZ)
+          dummy.scale.set(glowRadius, glowRadius, 1)
+          dummy.rotation.set(0, 0, 0)
+          dummy.updateMatrix()
+          radioRingRef.current.setMatrixAt(id, dummy.matrix)
+          if (cellColor) radioRingRef.current.setColorAt(id, cellColor)
         }
 
         // Spectral Point Cloud (House of Cards style)
@@ -388,12 +377,7 @@ useFrame((state) => {
       {/* High-fidelity Radio Components */}
       <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
         <torusGeometry args={[0.5, 0.05, 16, 32]} />
-        <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} />
-      </instancedMesh>
-      
-      <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
-        <cylinderGeometry args={[0.5, 0.5, 1, 32]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} />
+        <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
       </instancedMesh>
 
       <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'pixel'}>
