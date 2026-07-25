@@ -14,8 +14,10 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        aria-label="Toggle theme"
-        className="w-9 h-9 inline-flex items-center justify-center"
+        type="button"
+        disabled
+        aria-hidden="true"
+        className="w-9 h-9 inline-flex items-center justify-center rounded-btn"
       />
     )
   }
