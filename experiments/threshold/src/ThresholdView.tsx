@@ -9,7 +9,7 @@ import { buildLevaSyncPayload } from './levaSync'
 import { Scene } from './Scene'
 import OnboardingOverlay from './OnboardingOverlay'
 import { SessionHud } from './SessionHud'
-import { useControls, folder, Leva } from 'leva'
+import { useControls, folder, Leva, monitor } from 'leva'
 import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
@@ -138,6 +138,7 @@ export default function ThresholdView() {
       toolTipText: palette.accent,
     },
     radii: { xs: '0px', sm: '0px', lg: '0px' },
+    fontSizes: { root: '11px' },
     borderWidths: { root: '1px', input: '1px', focus: '1px', hover: '1px', active: '1px', folder: '1px' },
   }), [palette])
 
@@ -366,8 +367,12 @@ export default function ThresholdView() {
   // Read-only monitor: reflects the last fired one-shot gesture + the worker
   // status. No `onChange` — it never mutates store state.
   useControls('Gesture', {
-    hand: folder({
-      last: { value: `${handTracking.gesture ?? 'idle'}  ·  ${gestureTrackingStatus}` },
+    'hand tracking': monitor(() => {
+      const gestureLabel = handTracking.gesture
+        ? { fist: 'FIST — hold to pulse', open_palm: 'OPEN PALM — release', pinch: 'PINCH — zoom' }[handTracking.gesture]
+        : 'no hand detected'
+      const statusLabel = { idle: 'not started', loading: 'starting camera…', active: 'tracking', failed: 'camera unavailable' }[gestureTrackingStatus]
+      return `${gestureLabel} (${statusLabel})`
     }),
   })
 
