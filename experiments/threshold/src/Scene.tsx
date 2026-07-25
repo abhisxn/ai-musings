@@ -132,16 +132,42 @@ export function Scene({
     return geo
   }, [count])
 
+  // Per-instance glyph index for the ascii atlas (0..9 = '@%#*+=-:. ').
+  // Sized to the instance count; values are written per-cell in useFrame
+  // and the attribute is attached to the ascii mesh's plane geometry.
+  const aGlyphIndex = useMemo(
+    () => new THREE.InstancedBufferAttribute(new Float32Array(count), 1),
+    [count],
+  )
+
   const asciiAtlas = useMemo(() => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
-    canvas.width = 512; canvas.height = 64
+    canvas.width = 640; canvas.height = 64
     ctx.fillStyle = 'white'; ctx.font = 'bold 48px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     '@%#*+=-:. '.split('').forEach((char, i) => ctx.fillText(char, (i * 64) + 32, 32))
     const texture = new THREE.CanvasTexture(canvas)
     texture.minFilter = texture.magFilter = THREE.NearestFilter
     return texture
   }, [])
+
+  // Ascii material: MeshStandardMaterial with the glyph atlas as `map`, plus
+  // an onBeforeCompile patch that uses a per-instance `aGlyphIndex` attribute
+  // to shift `vMapUv` so each cell samples its own glyph column. Requires a
+  // stable material instance (not a JSX element) so onBeforeCompile fires once
+  // and the per-instance attribute is sampled per draw call.
+  const asciiMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({ map: asciiAtlas, transparent: true, alphaTest: 0.4 })
+    mat.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float aGlyphIndex;')
+        .replace(
+          '#include <uv_vertex>',
+          '#include <uv_vertex>\nvMapUv = vec2( ( vMapUv.x + aGlyphIndex ) / 10.0, vMapUv.y );',
+        )
+    }
+    return mat
+  }, [asciiAtlas])
 
   const spacing = 0.25
 
@@ -260,6 +286,13 @@ useFrame((state) => {
         if (cellColor && dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
         if (cellColor && linesMeshRef.current && renderMode === 'lines') linesMeshRef.current.setColorAt(id, cellColor)
         
+        if (renderMode === 'ascii') {
+          // Atlas order is dense-to-sparse: '@%#*+=-:. '
+          // brightness 1 → idx 0 ('@'), brightness 0 → idx 9 (' ').
+          const glyphIdx = Math.floor((1 - brightness) * 9)
+          aGlyphIndex.array[id] = glyphIdx
+        }
+
         if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'ascii' && asciiMeshRef.current) asciiMeshRef.current.setMatrixAt(id, dummy.matrix)
@@ -297,6 +330,9 @@ useFrame((state) => {
     if (renderMode === 'spectral' && spectralRef.current) {
       spectralGeometry.attributes.position.needsUpdate = true
       spectralGeometry.attributes.color.needsUpdate = true
+    }
+    if (renderMode === 'ascii') {
+      aGlyphIndex.needsUpdate = true
     }
 
     let breathMultiplier = 1.0
@@ -396,8 +432,10 @@ useFrame((state) => {
       </instancedMesh>
 
       <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ascii'}>
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial map={asciiAtlas} transparent color={chromeColor} emissive={chromeColor} alphaTest={0.4} />
+        <planeGeometry args={[1, 1]}>
+          <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
+        </planeGeometry>
+        <primitive object={asciiMaterial} attach="material" />
       </instancedMesh>
     </>
   )
