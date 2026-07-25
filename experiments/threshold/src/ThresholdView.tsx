@@ -373,10 +373,14 @@ export default function ThresholdView() {
 
   if (!initialized) {
     return (
-      <div className="flex flex-col items-center justify-center w-full h-full font-mono p-10" style={{ background: palette.background, color: palette.accent }}>
+      <div className="flex flex-col items-center justify-center w-full h-full font-mono p-10 relative" style={{ background: palette.background, color: palette.accent }}>
+        <div className={`${styles.bracket} ${styles.bracketTL}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketTR}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketBL}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
+        <div className={`${styles.bracket} ${styles.bracketBR}`} style={{ '--bracket-color': palette.accentDim } as CSSProperties} />
         <div className="border p-10 text-center max-w-md" style={{ borderColor: palette.accent }}>
           <h1 className={`${styles.hudDisplay} mb-4`}>THRESHOLD V6</h1>
-          <p className={`${styles.hudBody} opacity-50 mb-8 leading-relaxed`}>
+          <p className={`${styles.hudCaption} opacity-50 mb-8 leading-relaxed`}>
             VOLUMETRIC TERMINAL INSTRUMENT<br />
             MOVEMENT → EXPERIENCE
           </p>
