@@ -1,6 +1,7 @@
 /// <reference types="vitest/globals" />
 import { getTextureVoicePitchShift, getModeThemePitchShift, volumeToDb } from '../audio'
 import { RENDER_MODES, THEMES_LIST } from '../store'
+import { moodTextureToSoundTexture } from '../mood-config'
 
 describe('volumeToDb', () => {
   it('returns -Infinity for volume 0', () => {
@@ -81,5 +82,21 @@ describe('getModeThemePitchShift', () => {
     const phaseActive = getTextureVoicePitchShift('active')
     expect(modeTheme + phaseCalm).not.toBe(phaseActive)
     expect(modeTheme + phaseActive).not.toBe(phaseCalm)
+  })
+})
+
+describe('effective texture resolution (mirrors useAudio internal logic)', () => {
+  const resolveEffectiveTexture = (
+    moodEnabled: boolean,
+    moodTextureType: 'airy' | 'glitch' | 'rumble',
+    soundTexture: 'off' | 'glitch' | 'bloom' | 'bass',
+  ) => (moodEnabled ? moodTextureToSoundTexture(moodTextureType) : soundTexture)
+
+  it('uses the raw soundTexture when moodEnabled is false', () => {
+    expect(resolveEffectiveTexture(false, 'airy', 'bass')).toBe('bass')
+  })
+
+  it('uses the mood-derived texture when moodEnabled is true, ignoring the raw soundTexture', () => {
+    expect(resolveEffectiveTexture(true, 'rumble', 'bloom')).toBe('bass')
   })
 })

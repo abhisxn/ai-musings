@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as Tone from 'tone'
 import { useStore, type RenderMode, type Theme } from './store'
 import { Mood, Phase } from './types'
-import { MOOD_CONFIGS, getPhaseTempo } from './mood-config'
+import { MOOD_CONFIGS, getPhaseTempo, moodTextureToSoundTexture } from './mood-config'
 import { MarkovMelody } from './markov'
 
 export function volumeToDb(volume: number): number {
@@ -219,6 +219,10 @@ export function useAudio() {
     themeRef.current = theme
   }, [theme])
 
+  const effectiveTexture = moodEnabled
+    ? moodTextureToSoundTexture(MOOD_CONFIGS[currentMood].textureType)
+    : soundTexture
+
   useEffect(() => {
     if (gesture === null) {
       lastFlourishGestureRef.current = null
@@ -244,14 +248,14 @@ export function useAudio() {
   useEffect(() => {
     let cancelled = false
     disposeTexture()
-    if (!audioEnabled || soundTexture === 'off' || !masterReady || !masterGainRef.current) return
+    if (!audioEnabled || effectiveTexture === 'off' || !masterReady || !masterGainRef.current) return
     const setup = async () => {
       await ensureAudioContext()
       if (cancelled) return
       const master = masterGainRef.current!
-      if (soundTexture === 'glitch') buildGlitchTexture(master)
-      else if (soundTexture === 'bloom') buildBloomTexture(master)
-      else if (soundTexture === 'bass') buildBassTexture(master)
+      if (effectiveTexture === 'glitch') buildGlitchTexture(master)
+      else if (effectiveTexture === 'bloom') buildBloomTexture(master)
+      else if (effectiveTexture === 'bass') buildBassTexture(master)
       if (Tone.Transport.state !== 'started') Tone.Transport.start()
     }
     setup()
@@ -259,7 +263,7 @@ export function useAudio() {
       cancelled = true
       disposeTexture()
     }
-  }, [audioEnabled, soundTexture, masterReady])
+  }, [audioEnabled, effectiveTexture, masterReady])
 
   useEffect(() => {
     if (!audioEnabled || !masterGainRef.current) {
@@ -393,15 +397,15 @@ export function useAudio() {
       const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
       const totalShift = phaseShift + modeThemeShift
       const transposed = transposeNote(note, totalShift)
-      if (soundTexture === 'glitch' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '32n')
-      else if (soundTexture === 'bloom' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '8n')
-      else if (soundTexture === 'bass' && brightness > 0.3) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '16n')
+      if (effectiveTexture === 'glitch' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '32n')
+      else if (effectiveTexture === 'bloom' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '8n')
+      else if (effectiveTexture === 'bass' && brightness > 0.3) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '16n')
     }
   }
 
   const triggerClick = () => {
     if (!audioEnabled || !textureAccentRef.current) return
-    if (soundTexture === 'glitch' || soundTexture === 'bass') {
+    if (effectiveTexture === 'glitch' || effectiveTexture === 'bass') {
       const phaseShift = getTextureVoicePitchShift(currentPhase)
       const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
       const totalShift = phaseShift + modeThemeShift

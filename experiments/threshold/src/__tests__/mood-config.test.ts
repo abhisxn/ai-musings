@@ -1,5 +1,5 @@
 /// <reference types="vitest/globals" />
-import { MOOD_CONFIGS, getPhaseTempo } from '../mood-config'
+import { MOOD_CONFIGS, getPhaseTempo, moodTextureToSoundTexture } from '../mood-config'
 import { Mood } from '../types'
 
 const ALL_MOODS: Mood[] = ['luminous', 'deep', 'pulse', 'solar', 'azure']
@@ -37,5 +37,17 @@ describe('getPhaseTempo', () => {
       expect(getPhaseTempo(mood, 'calm')).toBe(min)
       expect(getPhaseTempo(mood, 'climax')).toBe(max)
     }
+  })
+})
+
+describe('moodTextureToSoundTexture', () => {
+  it('maps airy to bloom', () => {
+    expect(moodTextureToSoundTexture('airy')).toBe('bloom')
+  })
+  it('maps glitch to glitch', () => {
+    expect(moodTextureToSoundTexture('glitch')).toBe('glitch')
+  })
+  it('maps rumble to bass', () => {
+    expect(moodTextureToSoundTexture('rumble')).toBe('bass')
   })
 })
