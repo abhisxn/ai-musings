@@ -8,7 +8,8 @@ import { useStore } from './store'
 import { Phase } from './types'
 import { generateBlueNoiseTexture } from './blue-noise'
 import { wristYToExtrusionDrift } from './vision/wrist-mapping'
-import { getGradientColor, getTheme, PHASE_COLORS } from './theme'
+import { getGradientColor, getMoodGradientColor, getTheme, PHASE_COLORS } from './theme'
+import { MOOD_CONFIGS } from './mood-config'
 import { generateDitherAtlas, generateHalftoneDotAtlas, generateSpectralSprite } from './dither'
 
 export function Scene({ 
@@ -30,7 +31,7 @@ export function Scene({
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentPhase, handTracking, gestureTrackingStatus } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus } = useStore()
 
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
@@ -250,7 +251,11 @@ useFrame((state) => {
         // Per-cell diffuse color: every theme resolves from its own gradient.
         // ascii has no instanceColor (glyph atlas tints via material.color), so
         // skip the gradient call there.
-        const cellColor = renderMode === 'ascii' ? null : getGradientColor(theme, brightness, cellColorScratch)
+        const cellColor = renderMode === 'ascii'
+          ? null
+          : moodEnabled
+            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, brightness, cellColorScratch)
+            : getGradientColor(theme, brightness, cellColorScratch)
         if (cellColor && blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
         if (cellColor && pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
         if (cellColor && dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)

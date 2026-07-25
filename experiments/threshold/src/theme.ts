@@ -58,3 +58,14 @@ export function getGradientColor(
   const frac = t - i
   return target.copy(stops[i]).lerp(stops[i + 1], frac)
 }
+
+// HSL-based color for mood mode: fixed hue per mood, brightness drives lightness.
+// Mirrors getGradientColor's signature (reusable `target` for the hot per-cell path).
+export function getMoodGradientColor(
+  baseHue: number,
+  brightness: number,
+  target: THREE.Color = new THREE.Color(),
+): THREE.Color {
+  const b = Math.min(1, Math.max(0, brightness))
+  return target.setHSL(baseHue / 360, 0.75, 0.08 + b * 0.42)
+}

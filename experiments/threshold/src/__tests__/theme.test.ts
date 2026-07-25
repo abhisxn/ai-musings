@@ -111,3 +111,35 @@ describe('PHASE_LABELS', () => {
     expect(PHASE_LABELS.climax).toBe('CLIMAX')
   })
 })
+
+import { getMoodGradientColor } from '../theme'
+
+describe('getMoodGradientColor', () => {
+  it('produces a darker color at brightness 0 than at brightness 1 for the same hue', () => {
+    const dark = getMoodGradientColor(140, 0)
+    const bright = getMoodGradientColor(140, 1)
+    expect(bright.getHSL({ h: 0, s: 0, l: 0 }).l).toBeGreaterThan(dark.getHSL({ h: 0, s: 0, l: 0 }).l)
+  })
+
+  it('uses the given hue for the HSL color', () => {
+    const c = getMoodGradientColor(300, 0.5)
+    const hsl = { h: 0, s: 0, l: 0 }
+    c.getHSL(hsl)
+    expect(hsl.h).toBeCloseTo(300 / 360, 3)
+  })
+
+  it('clamps brightness below 0 and above 1', () => {
+    const low = getMoodGradientColor(50, -1)
+    const zero = getMoodGradientColor(50, 0)
+    const high = getMoodGradientColor(50, 2)
+    const one = getMoodGradientColor(50, 1)
+    expect(low.getHexString()).toBe(zero.getHexString())
+    expect(high.getHexString()).toBe(one.getHexString())
+  })
+
+  it('reuses a target Color when provided', () => {
+    const target = new (require('three').Color)()
+    const result = getMoodGradientColor(140, 0.5, target)
+    expect(result).toBe(target)
+  })
+})
