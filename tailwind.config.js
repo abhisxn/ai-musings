@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  darkMode: 'class',
+  darkMode: ['selector', '[data-theme="dark"]'],
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,46 +10,41 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        void: {
-          black: '#000000',
-          dark: '#050505',
-          surface: '#0a0a0a',
+        bg: 'var(--color-bg)',
+        fg: 'var(--color-fg)',
+        accent: 'var(--color-accent)',
+        'on-accent': 'var(--color-on-accent)',
+        secondary: 'var(--color-secondary)',
+        'surface-1': 'var(--color-surface-1)',
+        'surface-2': 'var(--color-surface-2)',
+        'surface-3': 'var(--color-surface-3)',
+        'border-1': 'var(--color-border-1)',
+        'border-2': 'var(--color-border-2)',
+        success: {
+          DEFAULT: 'var(--color-success)',
+          bg: 'var(--color-success-bg)',
         },
-        neon: {
-          green: '#00ff00',
-          amber: '#ffae00',
-          cyan: '#00ffff',
-          magenta: '#ff00ff',
+        warning: {
+          DEFAULT: 'var(--color-warning)',
+          bg: 'var(--color-warning-bg)',
         },
-        artifact: {
-          white: '#f5f5f5',
-          paper: '#ffffff',
-          ink: '#000000',
-        }
+        error: {
+          DEFAULT: 'var(--color-error)',
+          bg: 'var(--color-error-bg)',
+        },
+        info: {
+          DEFAULT: 'var(--color-info)',
+          bg: 'var(--color-info-bg)',
+        },
       },
       fontFamily: {
-        mono: ['Share Tech Mono', 'monospace'],
-        system: ['Courier New', 'Courier', 'monospace'],
+        display: ['var(--font-glory)', 'serif'],
+        body: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
       },
-      animation: {
-        'glitch-slow': 'glitch 3s infinite linear alternate-reverse',
-        'glitch-fast': 'glitch 1s infinite linear alternate-reverse',
-        'scanline': 'scanline 10s linear infinite',
-        'pulse-fast': 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      },
-      keyframes: {
-        glitch: {
-          '0%': { transform: 'translate(0)' },
-          '20%': { transform: 'translate(-2px, 2px)' },
-          '40%': { transform: 'translate(-2px, -2px)' },
-          '60%': { transform: 'translate(2px, 2px)' },
-          '80%': { transform: 'translate(2px, -2px)' },
-          '100%': { transform: 'translate(0)' },
-        },
-        scanline: {
-          '0%': { transform: 'translateY(-100%)' },
-          '100%': { transform: 'translateY(100%)' },
-        }
+      borderRadius: {
+        btn: 'var(--radius-btn)',
+        card: 'var(--radius-card)',
+        pill: 'var(--radius-pill)',
       },
     },
   },

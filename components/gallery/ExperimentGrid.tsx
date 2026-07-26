@@ -1,9 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { ExperimentMeta } from '@/lib/types'
 import { ExperimentCard } from './ExperimentCard'
 import { Badge } from '@/components/ui/Badge'
+import { fadeUp, stagger, viewport } from '@/lib/motion'
 
 interface ExperimentGridProps {
   experiments: ExperimentMeta[]
@@ -21,60 +23,90 @@ export function ExperimentGrid({ experiments, tags, series }: ExperimentGridProp
     return tagMatch && seriesMatch
   })
 
+  const hasFilters = tags.length > 0 || series.length > 0
+
   return (
     <div className="flex flex-col gap-12">
-      <div className="flex flex-col gap-6 p-4 border border-zinc-900/50 bg-void-dark/50 backdrop-blur-sm relative">
-        <div className="absolute -top-2 left-4 px-2 bg-void-black text-[8px] font-mono text-zinc-500 uppercase tracking-[0.2em]">
-          Filter_Module
-        </div>
-        
-        {series.length > 0 && (
-          <div className="flex flex-wrap gap-4 items-center">
-            <span className="text-[9px] text-zinc-600 font-mono uppercase tracking-widest w-16">_series</span>
-            <div className="flex flex-wrap gap-2">
-              {series.map(s => (
-                <Badge
-                  key={s}
-                  label={s}
-                  active={activeSeries === s}
-                  onClick={() => setActiveSeries(activeSeries === s ? null : s)}
-                />
-              ))}
+      {hasFilters && (
+        <div className="flex flex-col gap-5 p-5 ring-1 ring-border-1 bg-surface-1 rounded-card">
+          {series.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="t-caption text-fg/50 w-20 shrink-0">Series</span>
+              <div className="flex flex-wrap gap-2">
+                {series.map(s => (
+                  <Badge
+                    key={s}
+                    label={s}
+                    active={activeSeries === s}
+                    onClick={() => setActiveSeries(activeSeries === s ? null : s)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        <div className="flex flex-wrap gap-4 items-center">
-          <span className="text-[9px] text-zinc-600 font-mono uppercase tracking-widest w-16">_tags</span>
-          <div className="flex flex-wrap gap-2">
-            {tags.map(t => (
-              <Badge
-                key={t}
-                label={t}
-                active={activeTag === t}
-                onClick={() => setActiveTag(activeTag === t ? null : t)}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="py-20 flex flex-col items-center justify-center border border-dashed border-zinc-900 gap-4">
-          <p className="text-zinc-700 text-[10px] font-mono uppercase tracking-[0.3em]">No_Matching_Artifacts_Found</p>
-          <button 
-            onClick={() => { setActiveTag(null); setActiveSeries(null); }}
-            className="text-[9px] text-neon-green/50 hover:text-neon-green transition-colors font-mono"
-          >
-            [ RESET_FILTERS ]
-          </button>
+          )}
+          {tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="t-caption text-fg/50 w-20 shrink-0">Tags</span>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(t => (
+                  <Badge
+                    key={t}
+                    label={t}
+                    active={activeTag === t}
+                    onClick={() => setActiveTag(activeTag === t ? null : t)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map(e => (
-          <ExperimentCard key={e.slug} experiment={e} />
-        ))}
-      </div>
+      {filtered.length === 0 ? (
+        <div className="py-20 flex flex-col items-center justify-center gap-4 text-center">
+          <p className="t-h5 text-fg/60">No experiments match your filters</p>
+          <p className="t-body3 text-fg/40 max-w-sm">
+            Try clearing one of the active tags or series to see more work.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setActiveTag(null); setActiveSeries(null); }}
+            className="t-caption text-accent hover:opacity-80 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card"
+          >
+            Reset filters
+          </button>
+        </div>
+      ) : filtered.length === 1 ? (
+        <motion.div
+          className="grid grid-cols-1"
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={stagger}
+        >
+          <motion.div variants={fadeUp}>
+            <ExperimentCard experiment={filtered[0]} />
+          </motion.div>
+        </motion.div>
+      ) : (
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 auto-rows-[minmax(0,1fr)] gap-6"
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={stagger}
+        >
+          {filtered.map((e, i) => (
+            <motion.div
+              key={e.slug}
+              variants={fadeUp}
+              className={i === 0 ? 'md:col-span-2 md:row-span-2' : ''}
+            >
+              <ExperimentCard experiment={e} />
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
     </div>
   )
 }

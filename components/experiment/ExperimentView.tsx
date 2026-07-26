@@ -7,7 +7,7 @@ import { ExperimentMeta } from '@/lib/types'
 // Dynamically import React experiments with SSR disabled
 const Threshold = dynamic(() => import('../../experiments/threshold/index'), { 
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-full text-zinc-600 text-xs font-mono animate-pulse">LOADING EXPERIMENT...</div>
+  loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
 })
 
 interface Props {
@@ -24,7 +24,7 @@ export function ExperimentView({ meta }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-center h-full text-zinc-600 text-sm font-mono">
+      <div className="flex items-center justify-center h-full text-fg/60 t-body3">
       [ experiment component "{meta.slug}" not yet connected ]
     </div>
   )

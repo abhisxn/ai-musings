@@ -5,20 +5,30 @@ interface BadgeProps {
 }
 
 export function Badge({ label, onClick, active = false }: BadgeProps) {
+  const baseClasses = `
+    px-3 py-1 text-[10px] uppercase tracking-[0.2em] rounded-pill transition-all duration-200 border
+    ${active
+      ? 'bg-accent text-on-accent border-accent'
+      : 'bg-transparent text-fg/60 border-border-1 hover:text-fg hover:border-border-2'
+    }
+  `
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        aria-pressed={active}
+        onClick={onClick}
+        className={`${baseClasses} cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-pill`}
+      >
+        {label}
+      </button>
+    )
+  }
+
   return (
-    <button
-      onClick={onClick}
-      className={`
-        px-3 py-1 text-[10px] font-mono transition-all duration-200 uppercase tracking-tighter
-        ${active
-          ? 'text-neon-green text-glow border-l-2 border-neon-green bg-neon-green/5'
-          : 'text-zinc-600 hover:text-zinc-300 hover:border-l-2 hover:border-zinc-500'
-        }
-        ${onClick ? 'cursor-crosshair' : 'cursor-default'}
-      `}
-    >
-      <span className="opacity-50 mr-1">{active ? '●' : '○'}</span>
+    <span className={`${baseClasses} cursor-default`}>
       {label}
-    </button>
+    </span>
   )
 }
