@@ -1,20 +1,28 @@
-import { GestureType, HallucinatedControl } from '../../types'
+/// <reference types="vitest/globals" />
+import { HandTracking } from '../types'
 
-describe('Gesture Types', () => {
-  it('should define jazz hands gesture', () => {
-    const gesture: GestureType = 'jazz-hands'
-    expect(gesture).toBe('jazz-hands')
+describe('HandTracking', () => {
+  it('should define a detected hand with a wrist position', () => {
+    const handTracking: HandTracking = {
+      detected: true,
+      wrist: { x: 0.5, y: 0.5, z: 0 },
+      pinchDistance: 0.1,
+      gesture: 'pinch',
+      confidence: 0.9,
+    }
+    expect(handTracking.detected).toBe(true)
+    expect(handTracking.gesture).toBe('pinch')
   })
 
-  it('should define hallucinated control interface', () => {
-    const control: HallucinatedControl = {
-      id: 'glitch-intensity',
-      label: 'Glitch Intensity',
-      min: 0,
-      max: 1,
-      step: 0.01,
-      defaultValue: 0.5
+  it('should allow no hand detected', () => {
+    const handTracking: HandTracking = {
+      detected: false,
+      wrist: null,
+      pinchDistance: 0,
+      gesture: null,
+      confidence: 0,
     }
-    expect(control.id).toBe('glitch-intensity')
+    expect(handTracking.detected).toBe(false)
+    expect(handTracking.wrist).toBeNull()
   })
 })

@@ -1,25 +1,23 @@
-export type GestureType = 'jazz-hands' | 'peace-sign' | 'fist-pump'
+export type Mood = 'luminous' | 'deep' | 'pulse' | 'solar' | 'azure'
+export type Phase = 'calm' | 'active' | 'climax'
 
-export interface PoseKeypoint {
-  x: number
-  y: number
-  z: number
+export interface HandTracking {
+  detected: boolean
+  wrist: { x: number; y: number; z: number } | null
+  pinchDistance: number
+  gesture: 'fist' | 'open_palm' | 'pinch' | null
   confidence: number
 }
 
-export interface HallucinatedControl {
-  id: string
-  label: string
-  min: number
-  max: number
-  step: number
-  defaultValue: number
-}
-
-export interface AIComposerState {
-  currentGesture: GestureType | null
-  confidence: number
-  hallucinatedControls: HallucinatedControl[]
-  shaderCode: string | null
-  audioProfile: string | null
-}
+/**
+ * Lifecycle status of `useGestureTracking`'s MediaPipe worker, surfaced via
+ * the store so other hooks/components can decide fallback behavior without
+ * prop-drilling (see `useMotionZones`, `useEnergyAccumulator`,
+ * `ThresholdView`):
+ *   - `idle`: not yet started (no camera/video element yet).
+ *   - `loading`: worker created, awaiting `init`/model load.
+ *   - `active`: model loaded and producing (or attempting) per-frame results.
+ *   - `failed`: `init` failed permanently (model/WASM load error) - fall back
+ *     to the legacy `useMotionZones` pixel-diff detector for the session.
+ */
+export type GestureTrackingStatus = 'idle' | 'loading' | 'active' | 'failed'

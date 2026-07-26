@@ -53,33 +53,10 @@ export function useSampler() {
   
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
-  const aiModelRef = useRef<any>(null)
-  const transformersRef = useRef<any>(null)
-  const [loading, setLoading] = useState(false)
 
-  // 1. AI Setup (Dynamic Import)
   useEffect(() => {
-    if (!initialized || sourceMode !== 'ai' || aiModelRef.current) return
-    
-    async function loadAI() {
-      setLoading(true)
-      try {
-        const { pipeline, env, RawImage } = await import('@xenova/transformers')
-        env.allowLocalModels = false
-        transformersRef.current = { RawImage }
-        aiModelRef.current = await pipeline('depth-estimation', 'Xenova/depth-anything-small-hf')
-      } catch (err) { 
-        console.error("AI Load Error:", err) 
-      } finally { 
-        setLoading(false) 
-      }
-    }
-    loadAI()
-  }, [initialized, sourceMode])
-
-  // 2. Main Sampling Loop
-  useEffect(() => {
-    if (!videoElement || !initialized) return
+    if (!initialized) return
+    if (sourceMode !== 'demo' && !videoElement) return
     
     if (!samplerCanvasRef.current) {
       samplerCanvasRef.current = document.createElement('canvas')
@@ -93,69 +70,56 @@ export function useSampler() {
     let isProcessing = false
     let frameId: number
     let isMounted = true
-    let frameCount = 0
 
-    const process = async () => {
+    const process = () => {
       if (!isMounted) return
 
-      if (videoElement.readyState >= 2 && !isProcessing) {
-        isProcessing = true
-        frameCount++
-        try {
-          if (frameCount === 1) {
-            console.log("Sampler: Video ready", videoElement.videoWidth, "x", videoElement.videoHeight)
-          }
+      if (isProcessing) {
+        frameId = requestAnimationFrame(process)
+        return
+      }
 
+      if (sourceMode === 'demo') {
+        isProcessing = true
+        const time = Date.now() / 1000
+        for (let y = 0; y < resolution; y++) {
+          const targetY = y * resolution
+          for (let x = 0; x < resolution; x++) {
+            const nx = x / resolution
+            const ny = y / resolution
+            const val = 0.5 + 0.5 * Math.sin(nx * 6 + time * 0.8) * Math.cos(ny * 4 + time * 0.5)
+            dataRef.current[targetY + x] = val
+          }
+        }
+        isProcessing = false
+        frameId = requestAnimationFrame(process)
+        return
+      }
+
+      if (videoElement && videoElement.readyState >= 2) {
+        isProcessing = true
+        try {
           ctx.drawImage(videoElement, 0, 0, 128, 128)
           const imageData = ctx.getImageData(0, 0, 128, 128)
-          
-          if (frameCount % 60 === 0) {
-            const centerIdx = (64 * 128 + 64) * 4
-            console.log("Sampler: Frame", frameCount, "Center Pixel:", imageData.data[centerIdx], imageData.data[centerIdx+1], imageData.data[centerIdx+2])
-          }
+          const data = imageData.data
 
-          if (sourceMode === 'ai' && aiModelRef.current && transformersRef.current) {
-            const { RawImage } = transformersRef.current
-            const image = new RawImage(imageData.data, 128, 128, 4)
-            const result = await aiModelRef.current(image)
-            
-            if (!isMounted) return
-
-            const depthData = result.depth.data
-
-            let max = 0
-            for (let i = 0; i < depthData.length; i++) if (depthData[i] > max) max = depthData[i]
-
-            for (let y = 0; y < resolution; y++) {
-              const targetY = y * resolution
-              const sy = Math.floor((y / resolution) * 128)
-              for (let x = 0; x < resolution; x++) {
-                const sx = Math.floor((x / resolution) * 128)
-                const val = depthData[sy * 128 + sx]
-                dataRef.current[targetY + x] = max > 1 ? val / max : val
-              }
-            }
-          } else {
-            // PIXEL MODE: Instant Brightness
-            const data = imageData.data
-            for (let y = 0; y < resolution; y++) {
-              const targetY = y * resolution
-              const sy = Math.floor((y / resolution) * 128)
-              for (let x = 0; x < resolution; x++) {
-                const sx = Math.floor((x / resolution) * 128)
-                const idx = (sy * 128 + sx) * 4
-                const r = data[idx]
-                const g = data[idx + 1]
-                const b = data[idx + 2]
-                const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-                dataRef.current[targetY + x] = brightness
-              }
+          for (let y = 0; y < resolution; y++) {
+            const targetY = y * resolution
+            const sy = Math.floor((y / resolution) * 128)
+            for (let x = 0; x < resolution; x++) {
+              const sx = Math.floor((x / resolution) * 128)
+              const idx = (sy * 128 + sx) * 4
+              const r = data[idx]
+              const g = data[idx + 1]
+              const b = data[idx + 2]
+              const brightness = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+              dataRef.current[targetY + x] = brightness
             }
           }
-        } catch (e) { 
-          console.error("Loop Error:", e) 
-        } finally { 
-          isProcessing = false 
+        } catch (e) {
+          // frame skip
+        } finally {
+          isProcessing = false
         }
       }
       
@@ -171,35 +135,35 @@ export function useSampler() {
     }
   }, [videoElement, resolution, sourceMode, initialized])
 
-  return { loading, dataRef }
+  return { dataRef }
 }
 
+/**
+ * Legacy pixel-diff motion detector. Demoted to fallback-only: it only
+ * actually runs its detection loop when `useGestureTracking` hasn't (yet, or
+ * ever) produced a working hand-tracking signal - i.e. while the gesture
+ * worker is still loading, or has permanently failed to init. Once gesture
+ * tracking is `active`, this hook is a no-op (zero dependencies, kept as the
+ * safety net per the plan).
+ */
 export function useMotionZones() {
   const initialized = useStore(state => state.initialized)
-  const setCurrentGesture = useStore(state => state.setCurrentGesture)
-  const setCurrentMode = useStore(state => state.setCurrentMode)
   const videoElement = useStore(state => state.videoElement)
-  const currentGesture = useStore(state => state.currentGesture)
+  const setZoneEnergy = useStore(state => state.setZoneEnergy)
+  const gestureTrackingStatus = useStore(state => state.gestureTrackingStatus)
   const [statusText, setStatusText] = useState<string>('waiting for camera...')
-
-  // Gesture → Mode mapping
-  const gestureToMode: Record<string, 'glitch' | 'bloom' | 'bass'> = {
-    'jazz-hands': 'glitch',
-    'peace-sign': 'bloom',
-    'fist-pump': 'bass',
-  }
 
   useEffect(() => {
     if (!videoElement || !initialized) return
+    if (gestureTrackingStatus === 'active') {
+      setStatusText('gesture tracking active')
+      return
+    }
 
     let isActive = true
     let frameId: number
-    let lockedUntil = 0
-    const LOCK_DURATION = 3000
     const ZONE_THRESHOLD = 0.15
-    const CONSECUTIVE_FRAMES = 5
     const IDLE_THRESHOLD = ZONE_THRESHOLD * 0.5
-    const motionBuffer: number[] = []
     let prevZoneData: Uint8Array | null = null
     const canvas = document.createElement('canvas')
     canvas.width = 64
@@ -247,39 +211,16 @@ export function useMotionZones() {
         }
 
         const avgDeltas = zoneDeltas.map((sum, i) => sum / zoneCounts[i])
-        const now = Date.now()
+        const maxDelta = Math.max(...avgDeltas)
+        const maxZone = avgDeltas.indexOf(maxDelta)
 
-        if (now < lockedUntil) {
-          setStatusText(`LOCKED ${Math.ceil((lockedUntil - now) / 1000)}s`)
+        setZoneEnergy(avgDeltas.map(d => Math.min(1, d * 3)) as [number, number, number])
+
+        if (maxDelta < IDLE_THRESHOLD) {
+          setStatusText('idle')
         } else {
-          const maxDelta = Math.max(...avgDeltas)
-          const maxZone = avgDeltas.indexOf(maxDelta)
-
-motionBuffer.push(maxZone)
-if (motionBuffer.length > CONSECUTIVE_FRAMES) {
-  motionBuffer.shift()
-}
-
-          if (motionBuffer.length >= CONSECUTIVE_FRAMES) {
-            const allSame = motionBuffer.every(v => v === motionBuffer[0])
-            if (allSame && avgDeltas[maxZone] > ZONE_THRESHOLD) {
-              const zoneGestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
-              const gesture = zoneGestures[motionBuffer[0]]
-              if (gesture) {
-                setCurrentGesture(gesture)
-                setCurrentMode(gestureToMode[gesture] || null)
-                lockedUntil = now + LOCK_DURATION
-                setStatusText(`TRIGGER: ${gestureToMode[gesture]?.toUpperCase() || gesture}`)
-              }
-            }
-          }
-
-          if (maxDelta < IDLE_THRESHOLD) {
-            setStatusText('idle')
-          } else {
-            const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
-            setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
-          }
+          const zoneNames = ['LEFT', 'CENTER', 'RIGHT']
+          setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
         }
       } catch (e) {
         // frame skip
@@ -290,27 +231,7 @@ if (motionBuffer.length > CONSECUTIVE_FRAMES) {
 
     detect()
     return () => { isActive = false; cancelAnimationFrame(frameId) }
-  }, [videoElement, initialized, setCurrentGesture, setCurrentMode])
-
-  // Auto-demo mode: cycle gestures if no motion detected for 15s
-  useEffect(() => {
-    if (!initialized) return
-    let timer: ReturnType<typeof setTimeout>
-    const gestures: Array<'jazz-hands' | 'peace-sign' | 'fist-pump'> = ['jazz-hands', 'peace-sign', 'fist-pump']
-    let i = 0
-
-    const cycle = () => {
-      if (!currentGesture) {
-        setCurrentGesture(gestures[i % gestures.length])
-        setCurrentMode(gestureToMode[gestures[i % gestures.length]] || null)
-        i++
-      }
-      timer = setTimeout(cycle, 8000)
-    }
-
-    timer = setTimeout(cycle, 15000)
-    return () => clearTimeout(timer)
-  }, [initialized, currentGesture, setCurrentGesture, setCurrentMode])
+  }, [videoElement, initialized, gestureTrackingStatus])
 
   return { statusText }
 }

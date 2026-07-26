@@ -1,7 +1,11 @@
 import { create } from 'zustand'
-import { GestureType, HallucinatedControl } from './types'
+import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 
-export type RenderMode = 'radio' | 'dots' | 'blocks' | 'particles' | 'ascii' | 'pixel' | 'spectral'
+export const RENDER_MODES = ['radio', 'dots', 'blocks', 'lines', 'ascii', 'pixel', 'spectral'] as const
+export type RenderMode = (typeof RENDER_MODES)[number]
+
+export const THEMES_LIST = ['dark', 'light', 'acid', 'heatmap'] as const
+export type Theme = (typeof THEMES_LIST)[number]
 
 interface ThresholdState {
   // UI / Global
@@ -22,6 +26,9 @@ interface ThresholdState {
   extrusion: number
   setExtrusion: (val: number) => void
 
+  ditherIntensity: number
+  setDitherIntensity: (val: number) => void
+
   inverse: boolean
   setInverse: (val: boolean) => void
   
@@ -32,40 +39,50 @@ interface ThresholdState {
   renderMode: RenderMode
   setRenderMode: (val: RenderMode) => void
   
-  theme: 'dark' | 'light' | 'acid' | 'heatmap'
-  setTheme: (val: 'dark' | 'light' | 'acid' | 'heatmap') => void
+  theme: Theme
+  setTheme: (val: Theme) => void
 
-  sourceMode: 'pixel' | 'ai'
-  setSourceMode: (val: 'pixel' | 'ai') => void
+  sourceMode: 'pixel' | 'demo'
+  setSourceMode: (val: 'pixel' | 'demo') => void
 
   showGrid: boolean
   setShowGrid: (val: boolean) => void
+
+  // Session Arc
+  moodEnabled: boolean
+  setMoodEnabled: (val: boolean) => void
+  currentMood: Mood
+  setCurrentMood: (mood: Mood) => void
+  sessionEnergy: number
+  setSessionEnergy: (val: number) => void
+  currentPhase: Phase
+  setCurrentPhase: (phase: Phase) => void
   
   // Audio
   audioEnabled: boolean
   setAudioEnabled: (val: boolean) => void
   audioReactive: boolean
   setAudioReactive: (val: boolean) => void
-  soundType: 'sine' | 'chimes' | 'bells' | 'pulse'
-  setSoundType: (val: 'sine' | 'chimes' | 'bells' | 'pulse') => void
   volume: number
   setVolume: (val: number) => void
 
-  // AI Composer State (NEW)
-  currentGesture: GestureType | null
-  setCurrentGesture: (gesture: GestureType | null) => void
+  zoneEnergy: [number, number, number]
+  setZoneEnergy: (energy: [number, number, number]) => void
 
-  currentMode: 'glitch' | 'bloom' | 'bass' | null
-  setCurrentMode: (mode: 'glitch' | 'bloom' | 'bass' | null) => void
+  // Hand Tracking (MediaPipe)
+  handTracking: HandTracking
+  setHandTracking: (handTracking: HandTracking) => void
 
-  hallucinatedControls: HallucinatedControl[]
-  spawnHallucinatedControls: (controls: HallucinatedControl[]) => void
-  
-  currentShader: string | null
-  setCurrentShader: (shader: string | null) => void
-  
-  audioProfile: string | null
-  setAudioProfile: (profile: string | null) => void
+  gestureTrackingStatus: GestureTrackingStatus
+  setGestureTrackingStatus: (status: GestureTrackingStatus) => void
+
+  // Transient VHS-glitch trigger: flipped true briefly on each hand-gesture edge.
+  // Owned/written by Track E2 (UI chrome); read by Track E1 (Glitch post-fx).
+  gestureGlitchActive: boolean
+  setGestureGlitchActive: (val: boolean) => void
+
+  soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
+  setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -84,13 +101,16 @@ export const useStore = create<ThresholdState>((set) => ({
   extrusion: 3.0,
   setExtrusion: (extrusion) => set({ extrusion }),
 
+  ditherIntensity: 0.3,
+  setDitherIntensity: (ditherIntensity) => set({ ditherIntensity }),
+
   inverse: false,
   setInverse: (inverse) => set({ inverse }),
   
   viewMode: 'flat',
   setViewMode: (viewMode) => set({ viewMode }),
 
-  renderMode: 'radio',
+  renderMode: 'dots' as RenderMode,
   setRenderMode: (renderMode) => set({ renderMode }),
   
   theme: 'dark',
@@ -101,29 +121,42 @@ export const useStore = create<ThresholdState>((set) => ({
 
   showGrid: true,
   setShowGrid: (showGrid) => set({ showGrid }),
+
+  // Session Arc
+  moodEnabled: false,
+  setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
+  currentMood: 'deep' as Mood,
+  setCurrentMood: (currentMood) => set({ currentMood }),
+  sessionEnergy: 0,
+  setSessionEnergy: (sessionEnergy) => set({ sessionEnergy }),
+  currentPhase: 'calm' as Phase,
+  setCurrentPhase: (currentPhase) => set({ currentPhase }),
   
   audioEnabled: false,
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
   audioReactive: true,
   setAudioReactive: (audioReactive) => set({ audioReactive }),
-  soundType: 'chimes',
-  setSoundType: (soundType) => set({ soundType }),
-  volume: -12,
+  volume: 75,
   setVolume: (volume) => set({ volume }),
 
-  // AI Composer State (NEW)
-  currentGesture: null,
-  setCurrentGesture: (gesture) => set({ currentGesture: gesture }),
+  zoneEnergy: [0, 0, 0] as [number, number, number],
+  setZoneEnergy: (zoneEnergy) => set({ zoneEnergy }),
 
-  currentMode: null,
-  setCurrentMode: (mode) => set({ currentMode: mode }),
+  handTracking: {
+    detected: false,
+    wrist: null,
+    pinchDistance: 0,
+    gesture: null,
+    confidence: 0,
+  },
+  setHandTracking: (handTracking) => set({ handTracking }),
 
-  hallucinatedControls: [],
-  spawnHallucinatedControls: (controls) => set({ hallucinatedControls: controls }),
-  
-  currentShader: null,
-  setCurrentShader: (shader) => set({ currentShader: shader }),
-  
-  audioProfile: null,
-  setAudioProfile: (profile) => set({ audioProfile: profile }),
+  gestureTrackingStatus: 'idle' as GestureTrackingStatus,
+  setGestureTrackingStatus: (gestureTrackingStatus) => set({ gestureTrackingStatus }),
+
+  gestureGlitchActive: false,
+  setGestureGlitchActive: (gestureGlitchActive) => set({ gestureGlitchActive }),
+
+  soundTexture: 'bloom' as 'off' | 'glitch' | 'bloom' | 'bass',
+  setSoundTexture: (soundTexture) => set({ soundTexture }),
 }))

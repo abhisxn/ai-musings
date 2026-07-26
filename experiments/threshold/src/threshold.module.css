@@ -1,0 +1,273 @@
+.hudMicro,
+.hudCaption,
+.hudBody,
+.hudLabel,
+.hudHeading,
+.hudDisplay {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+.hudMicro {
+  font-size: 8px;
+  letter-spacing: 0.25em;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.hudCaption {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.hudBody {
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.hudLabel {
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hudHeading {
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hudDisplay {
+  font-size: 32px;
+  letter-spacing: 0.3em;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+/* Corner brackets → tick rulers. Each bracket is an L (two 1px borders) in a
+   corner; ::before draws the 3 perpendicular ticks along the horizontal arm
+   (at 25/50/75%), ::after along the vertical arm. Ticks + arms consume the
+   --bracket-color variable set inline by ThresholdView.tsx. */
+.bracket {
+  position: absolute;
+  pointer-events: none;
+  width: 40px;
+  height: 40px;
+  --bracket-color: #00ff41;
+}
+
+.bracket::before,
+.bracket::after {
+  content: '';
+  position: absolute;
+  background-repeat: no-repeat;
+}
+
+.bracket::before {
+  width: 40px;
+  height: 5px;
+  background-image: linear-gradient(
+    to right,
+    transparent 9.5px, var(--bracket-color) 9.5px, var(--bracket-color) 10.5px, transparent 10.5px,
+    transparent 19.5px, var(--bracket-color) 19.5px, var(--bracket-color) 20.5px, transparent 20.5px,
+    transparent 29.5px, var(--bracket-color) 29.5px, var(--bracket-color) 30.5px, transparent 30.5px
+  );
+}
+
+.bracket::after {
+  width: 5px;
+  height: 40px;
+  background-image: linear-gradient(
+    to bottom,
+    transparent 9.5px, var(--bracket-color) 9.5px, var(--bracket-color) 10.5px, transparent 10.5px,
+    transparent 19.5px, var(--bracket-color) 19.5px, var(--bracket-color) 20.5px, transparent 20.5px,
+    transparent 29.5px, var(--bracket-color) 29.5px, var(--bracket-color) 30.5px, transparent 30.5px
+  );
+}
+
+.bracketTL {
+  top: 0;
+  left: 0;
+  border-top: 1px solid var(--bracket-color);
+  border-left: 1px solid var(--bracket-color);
+}
+.bracketTL::before { top: 0; left: 0; }
+.bracketTL::after { top: 0; left: 0; }
+
+.bracketTR {
+  top: 0;
+  right: 0;
+  border-top: 1px solid var(--bracket-color);
+  border-right: 1px solid var(--bracket-color);
+}
+.bracketTR::before { top: 0; right: 0; }
+.bracketTR::after { top: 0; right: 0; }
+
+.bracketBL {
+  bottom: 0;
+  left: 0;
+  border-bottom: 1px solid var(--bracket-color);
+  border-left: 1px solid var(--bracket-color);
+}
+.bracketBL::before { bottom: 0; left: 0; }
+.bracketBL::after { bottom: 0; left: 0; }
+
+.bracketBR {
+  bottom: 0;
+  right: 0;
+  border-bottom: 1px solid var(--bracket-color);
+  border-right: 1px solid var(--bracket-color);
+}
+.bracketBR::before { bottom: 0; right: 0; }
+.bracketBR::after { bottom: 0; right: 0; }
+
+.reticle {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+  width: 48px;
+  height: 48px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.reticleCrossH,
+.reticleCrossV {
+  background: var(--reticle-color, #00ff41);
+}
+
+.reticleCrossH {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+.reticleCrossV {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+.reticleRing {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--reticle-color, #00ff41);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.reticlePulsing {
+  animation: thReticlePulse 1.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+  will-change: transform;
+}
+
+@keyframes thReticlePulse {
+  0% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
+.glitchActive {
+  text-shadow: 2px 0 #ff00ff, -2px 0 #00ffff;
+  animation: thGlitch 0.18s steps(2, end) infinite;
+  will-change: transform;
+}
+
+@keyframes thGlitch {
+  0% {
+    transform: translate(0);
+  }
+  20% {
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    transform: translate(2px, -1px);
+  }
+  60% {
+    transform: translate(-1px, 2px);
+  }
+  80% {
+    transform: translate(1px, -2px);
+  }
+  100% {
+    transform: translate(0);
+  }
+}
+
+.neonGlow {
+  box-shadow: 0 0 8px currentColor;
+}
+
+.signalSeg {
+  width: 6px;
+  height: 8px;
+}
+
+.signalBar {
+  display: inline-flex;
+  gap: 2px;
+  margin-top: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.legibilityHud {
+  position: absolute;
+  top: 56px;
+  left: 24px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--bracket-color, #00ff41);
+  background: rgba(5, 5, 5, 0.55);
+  pointer-events: none;
+  max-width: 220px;
+}
+
+.legibilityRow {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.legibilityLabel {
+  composes: hudCaption;
+  color: var(--bracket-color, #00ff41);
+  opacity: 0.9;
+}
+
+.legibilityDesc {
+  composes: hudMicro;
+  color: #f5f5f5;
+  opacity: 0.55;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
