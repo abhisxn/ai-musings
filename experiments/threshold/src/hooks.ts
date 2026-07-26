@@ -1,17 +1,38 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './store'
+import { createStreamAttacher } from './videoStreamAttacher'
 
 export function useWebcam() {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const [stream, setStream] = useState<MediaStream | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
   const setVideoElement = useStore(state => state.setVideoElement)
   const initialized = useStore(state => state.initialized)
 
+  // ThresholdView mounts/unmounts its <video> element across several
+  // conditional branches (init screen / onboarding / main scene). A plain
+  // `useRef` + "attach once when the stream resolves" only ever wires the
+  // stream to whichever node happened to exist at that moment — any later
+  // remount (e.g. dismissing onboarding) left the new node disconnected
+  // from the live stream. This attacher re-attaches on every node change.
+  // Using lazy initialization to avoid calling createStreamAttacher on every render.
+  const attacherRef = useRef<ReturnType<typeof createStreamAttacher<MediaStream, HTMLVideoElement>> | null>(null)
+  if (!attacherRef.current) {
+    attacherRef.current = createStreamAttacher<MediaStream, HTMLVideoElement>((node, mediaStream) => {
+      node.srcObject = mediaStream
+      if (mediaStream) {
+        node.onloadedmetadata = () => {
+          console.log('Webcam: Metadata loaded', node.videoWidth, node.videoHeight)
+          node.play().catch(e => console.error('Webcam: Play error', e))
+        }
+      }
+      setVideoElement(node)
+    })
+  }
+
   useEffect(() => {
     if (!initialized) return
-    let currentStream: MediaStream | null = null
+    let cancelled = false
 
     async function setupCamera() {
       try {
@@ -19,17 +40,13 @@ export function useWebcam() {
           video: { width: 640, height: 480 },
           audio: false
         })
-        console.log("Webcam: Stream captured", mediaStream.id)
-        currentStream = mediaStream
-        setStream(mediaStream)
-        if (videoRef.current) {
-          videoRef.current.srcObject = mediaStream
-          videoRef.current.onloadedmetadata = () => {
-            console.log("Webcam: Metadata loaded", videoRef.current?.videoWidth, videoRef.current?.videoHeight)
-            videoRef.current?.play().catch(e => console.error("Webcam: Play error", e))
-          }
-          setVideoElement(videoRef.current)
+        if (cancelled) {
+          mediaStream.getTracks().forEach(track => track.stop())
+          return
         }
+        console.log("Webcam: Stream captured", mediaStream.id)
+        streamRef.current = mediaStream
+        attacherRef.current.setStream(mediaStream)
       } catch (err) {
         console.error("Webcam: Error", err)
       }
@@ -38,9 +55,16 @@ export function useWebcam() {
     setupCamera()
 
     return () => {
-      currentStream?.getTracks().forEach(track => track.stop())
+      cancelled = true
+      streamRef.current?.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+      attacherRef.current.setStream(null)
     }
-  }, [initialized, setVideoElement])
+  }, [initialized])
+
+  const videoRef = useCallback((node: HTMLVideoElement | null) => {
+    attacherRef.current.setNode(node)
+  }, [])
 
   return { videoRef }
 }
