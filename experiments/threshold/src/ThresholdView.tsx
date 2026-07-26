@@ -237,7 +237,10 @@ export default function ThresholdView() {
   const [ppScanline, setPpScanline] = useState(0.05)
   const [ppVignette, setPpVignette] = useState(0.8)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [showCameraBackground, setShowCameraBackground] = useState(true)
+  type CameraView = 'pip' | 'bleed'
+  const [cameraView, setCameraView] = useState<CameraView>('bleed')
+  const [cameraOn, setCameraOn] = useState(true)
+  const [cameraOpacity, setCameraOpacity] = useState(0.3)
 
   useEffect(() => {
     if (initialized && !localStorage.getItem('threshold_onboarding_done')) {
@@ -342,6 +345,18 @@ export default function ThresholdView() {
     display: folder({
       mode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
       grid: { value: showGrid, onChange: setShowGrid },
+    }),
+    camera: folder({
+      view: { value: cameraView, options: { 'PIP — corner thumbnail': 'pip', 'BLEED — full background': 'bleed' }, onChange: setCameraView },
+      on: { value: cameraOn, onChange: setCameraOn },
+      opacity: {
+        value: cameraOpacity,
+        min: 0,
+        max: 1,
+        step: 0.05,
+        onChange: setCameraOpacity,
+        render: () => cameraOn && cameraView === 'bleed',
+      },
     })
   })
 
@@ -531,19 +546,32 @@ export default function ThresholdView() {
         />
       </div>
 
-      {/* Webcam full-bleed background layer (toggleable via CAM // ON/OFF) */}
-      {showCameraBackground && (
-        <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* Webcam overlay (pip | bleed; off when !cameraOn) */}
+      {cameraOn && cameraView === 'bleed' && (
+        <>
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
-            style={{ transform: 'rotate(180deg)' }}
-            className="w-full h-full object-cover opacity-20"
+            style={{ transform: 'rotate(180deg)', opacity: cameraOpacity }}
+            className="absolute inset-0 z-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ background: `rgba(0,0,0,${1 - cameraOpacity})` }}
+          />
+        </>
+      )}
+      {cameraOn && cameraView === 'pip' && (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{ transform: 'rotate(180deg)' }}
+          className="absolute top-8 right-8 z-20 w-[200px] h-[150px] object-cover rounded border border-white/20"
+        />
       )}
 
       {/* Status bar */}
@@ -623,13 +651,31 @@ export default function ThresholdView() {
         </button>
       </div>
 
-      {/* Camera background toggle (top-right) */}
-      <div className="absolute top-8 right-8 z-20">
+      {/* Camera controls: PIP | BLEED view selectors + OFF kill switch */}
+      <div className="absolute top-8 right-8 z-20 flex gap-2 items-center pointer-events-auto">
+        {(['pip', 'bleed'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => { setCameraView(v); setCameraOn(true) }}
+            className={`${styles.hudMicro} px-2 py-1 border ${
+              cameraOn && cameraView === v
+                ? 'border-white text-white bg-white/10'
+                : 'border-white/20 text-white/50 hover:text-white hover:border-white/50'
+            }`}
+          >
+            CAM // {v.toUpperCase()}
+          </button>
+        ))}
         <button
-          onClick={() => setShowCameraBackground((v) => !v)}
-          className={`${styles.hudMicro} px-2 py-1 border border-white/20 text-white/70 hover:text-white hover:border-white/50 pointer-events-auto`}
+          onClick={() => setCameraOn((v) => !v)}
+          aria-label={cameraOn ? 'Hide camera' : 'Show camera'}
+          className={`${styles.hudMicro} px-2 py-1 border ${
+            !cameraOn
+              ? 'border-[#ff4400] text-[#ff4400] bg-[#ff4400]/10'
+              : 'border-white/20 text-white/70 hover:text-white hover:border-white/50'
+          }`}
         >
-          CAM // {showCameraBackground ? 'ON' : 'OFF'}
+          CAM // {cameraOn ? 'ON' : 'OFF'}
         </button>
       </div>
 
