@@ -539,7 +539,7 @@ export default function ThresholdView() {
             autoPlay
             muted
             playsInline
-            style={{ transform: 'scaleX(-1)' }}
+            style={{ transform: 'rotate(180deg)' }}
             className="w-full h-full object-cover opacity-20"
           />
           <div className="absolute inset-0 bg-black/40" />
