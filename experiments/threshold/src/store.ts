@@ -123,7 +123,7 @@ export const useStore = create<ThresholdState>((set) => ({
   setShowGrid: (showGrid) => set({ showGrid }),
 
   // Session Arc
-  moodEnabled: false,
+  moodEnabled: true,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
   currentMood: 'deep' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),
@@ -132,7 +132,7 @@ export const useStore = create<ThresholdState>((set) => ({
   currentPhase: 'calm' as Phase,
   setCurrentPhase: (currentPhase) => set({ currentPhase }),
   
-  audioEnabled: false,
+  audioEnabled: true,
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
   audioReactive: true,
   setAudioReactive: (audioReactive) => set({ audioReactive }),
