@@ -1,10 +1,11 @@
 interface CardProps {
   children: React.ReactNode
   className?: string
+  contentClassName?: string
   onClick?: () => void
 }
 
-export function Card({ children, className = '', onClick }: CardProps) {
+export function Card({ children, className = '', contentClassName = 'p-4', onClick }: CardProps) {
   return (
     <div
       onClick={onClick}
@@ -16,7 +17,7 @@ export function Card({ children, className = '', onClick }: CardProps) {
         ${className}
       `}
     >
-      <div className="h-full flex flex-col bg-surface-2 rounded-[calc(var(--radius-card)-0.5rem)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] p-4">
+      <div className={`h-full flex flex-col bg-surface-2 rounded-[calc(var(--radius-card)-0.5rem)] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] overflow-hidden ${contentClassName}`}>
         {children}
       </div>
     </div>
