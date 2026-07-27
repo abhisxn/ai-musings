@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from './store'
 import { createStreamAttacher } from './videoStreamAttacher'
+import * as THREE from 'three'
 
 export function useWebcam() {
   const streamRef = useRef<MediaStream | null>(null)
@@ -77,6 +78,7 @@ export function useSampler() {
   
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const frameTextureRef = useRef<THREE.CanvasTexture | null>(null)
 
   useEffect(() => {
     if (!initialized) return
@@ -159,7 +161,23 @@ export function useSampler() {
     }
   }, [videoElement, resolution, sourceMode, initialized])
 
-  return { dataRef }
+  // Wraps the sampler canvas in a CanvasTexture so GPU consumers (the `dither`
+  // mode's fragment shader) can sample the same frame data the per-cell loop
+  // reads. Lazily created on first read.
+  useEffect(() => {
+    if (!samplerCanvasRef.current) return
+    if (!frameTextureRef.current) {
+      const t = new THREE.CanvasTexture(samplerCanvasRef.current)
+      t.minFilter = THREE.LinearFilter
+      t.magFilter = THREE.LinearFilter
+      t.colorSpace = THREE.SRGBColorSpace
+      frameTextureRef.current = t
+    } else {
+      frameTextureRef.current.needsUpdate = true
+    }
+  })
+
+  return { dataRef, frameTextureRef }
 }
 
 /**
