@@ -1,10 +1,9 @@
-import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const alias = { '@': path.resolve(__dirname) }
-
-const projectRoot = fileURLToPath(new URL('./', import.meta.url))
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
+const alias = { '@': projectRoot }
 
 export default defineConfig({
   test: {
@@ -25,9 +24,6 @@ export default defineConfig({
           jsx: {
             runtime: 'automatic',
           },
-        },
-        resolve: {
-          alias: { '@': projectRoot },
         },
         test: {
           name: 'components',
