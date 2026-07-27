@@ -274,7 +274,7 @@ useFrame((state) => {
         prevStates[id] = isActive ? 1 : 0
 
         const posX = (x - resolution / 2 + 0.5) * spacing
-        const posY = (y - resolution / 2 + 0.5) * spacing
+        const posY = (resolution / 2 - 0.5 - y) * spacing
 
         const proximityWarp =
           gestureTrackingStatus === 'active' && handTracking.detected && handTracking.wrist
@@ -425,7 +425,7 @@ useFrame((state) => {
       const fullWidth = resolution * spacing
       for (let y = 0; y < resolution; y++) {
         const mean = rowCountRef.current[y] ? rowSumRef.current[y] / rowCountRef.current[y] : 0
-        const rowPosY = (y - resolution / 2 + 0.5) * spacing
+        const rowPosY = (resolution / 2 - 0.5 - y) * spacing
         const thickness = spacing * (0.2 + mean * 1.3)
         dummy.position.set(0, rowPosY, 0)
         dummy.scale.set(fullWidth, thickness, 1)
