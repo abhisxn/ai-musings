@@ -1,10 +1,14 @@
 import { defineConfig } from 'vitest/config'
+import path from 'node:path'
+
+const alias = { '@': path.resolve(__dirname) }
 
 export default defineConfig({
   test: {
     globals: true,
     projects: [
       {
+        resolve: { alias },
         test: {
           name: 'experiments',
           globals: true,
@@ -13,6 +17,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { alias },
         oxc: {
           jsx: {
             runtime: 'automatic',
