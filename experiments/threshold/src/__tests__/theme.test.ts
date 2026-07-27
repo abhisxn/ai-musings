@@ -33,8 +33,38 @@ describe('getTheme', () => {
     expect(t.gradient).toEqual(['#0033ff', '#00e5ff', '#00ff41', '#ffee00', '#ff003c'])
   })
 
-  it('exposes exactly four themes', () => {
-    expect(Object.keys(THEMES).sort()).toEqual(['acid', 'dark', 'heatmap', 'light'])
+  it('exposes nine themes (Phase 6 multi-accent extension)', () => {
+    expect(Object.keys(THEMES).sort()).toEqual(['acid', 'cyber', 'dark', 'heatmap', 'ir', 'light', 'matrix', 'noir', 'sunset'])
+  })
+})
+
+describe('Phase 6 multi-accent themes', () => {
+  it('every theme declares a non-empty accents array (1..5 entries)', () => {
+    for (const k of Object.keys(THEMES) as (keyof typeof THEMES)[]) {
+      const t = THEMES[k]
+      expect(Array.isArray(t.accents)).toBe(true)
+      expect(t.accents.length).toBeGreaterThanOrEqual(1)
+      expect(t.accents.length).toBeLessThanOrEqual(5)
+    }
+  })
+
+  it('every theme declares a valid blend mode', () => {
+    const allowed = new Set(['split', 'gradient', 'parallel', 'glitch'])
+    for (const k of Object.keys(THEMES) as (keyof typeof THEMES)[]) {
+      expect(allowed.has(THEMES[k].blend)).toBe(true)
+    }
+  })
+
+  it('multi-accent themes (cyber/sunset/ir/matrix/noir) have more than one accent', () => {
+    for (const k of ['cyber', 'sunset', 'ir', 'matrix', 'noir'] as const) {
+      expect(THEMES[k].accents.length).toBeGreaterThan(1)
+    }
+  })
+
+  it('single-accent themes preserve the legacy single-color behavior', () => {
+    for (const k of ['dark', 'light', 'acid'] as const) {
+      expect(THEMES[k].accents.length).toBe(1)
+    }
   })
 })
 

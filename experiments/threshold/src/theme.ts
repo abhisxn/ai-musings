@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { Phase } from './types'
 
-export type ThresholdTheme = 'dark' | 'light' | 'acid' | 'heatmap'
+export type ThresholdTheme = 'dark' | 'light' | 'acid' | 'heatmap' | 'cyber' | 'sunset' | 'ir' | 'matrix' | 'noir'
 
 export interface ThemePalette {
   background: string
@@ -9,13 +9,20 @@ export interface ThemePalette {
   accentDim: string
   label: string
   gradient: string[]
+  accents: string[]
+  blend: 'split' | 'gradient' | 'parallel' | 'glitch'
 }
 
 export const THEMES: Record<ThresholdTheme, ThemePalette> = {
-  dark:    { background: '#050505', accent: '#00ff41', accentDim: '#00ff4166', label: 'DARK',  gradient: ['#031a0d', '#00ff41'] },
-  light:   { background: '#050505', accent: '#f5f5f5', accentDim: '#f5f5f566', label: 'LIGHT', gradient: ['#0a0a0a', '#f5f5f5'] },
-  acid:    { background: '#050505', accent: '#ccff00', accentDim: '#ccff0066', label: 'ACID',  gradient: ['#1a1f00', '#ccff00'] },
-  heatmap: { background: '#050505', accent: '#ff003c', accentDim: '#ff003c66', label: 'HEAT',  gradient: ['#0033ff', '#00e5ff', '#00ff41', '#ffee00', '#ff003c'] },
+  dark:    { background: '#050505', accent: '#00ff41', accentDim: '#00ff4166', label: 'DARK',   gradient: ['#031a0d', '#00ff41'], accents: ['#00ff41'], blend: 'gradient' },
+  light:   { background: '#050505', accent: '#f5f5f5', accentDim: '#f5f5f566', label: 'LIGHT',  gradient: ['#0a0a0a', '#f5f5f5'], accents: ['#f5f5f5'], blend: 'gradient' },
+  acid:    { background: '#050505', accent: '#ccff00', accentDim: '#ccff0066', label: 'ACID',   gradient: ['#1a1f00', '#ccff00'], accents: ['#ccff00'], blend: 'gradient' },
+  heatmap: { background: '#050505', accent: '#ff003c', accentDim: '#ff003c66', label: 'HEAT',   gradient: ['#0033ff', '#00e5ff', '#00ff41', '#ffee00', '#ff003c'], accents: ['#0033ff', '#00e5ff', '#00ff41', '#ffee00', '#ff003c'], blend: 'gradient' },
+  cyber:   { background: '#050510', accent: '#00ffff', accentDim: '#00ffff66', label: 'CYBER',  gradient: ['#00ffff', '#ff00ff'], accents: ['#00ffff', '#ff00ff'], blend: 'glitch' },
+  sunset:  { background: '#0a0500', accent: '#ff4400', accentDim: '#ff440066', label: 'SUNSET', gradient: ['#ff4400', '#ff00aa', '#aa00ff'], accents: ['#ff4400', '#ff00aa', '#aa00ff'], blend: 'gradient' },
+  ir:      { background: '#050000', accent: '#ff2200', accentDim: '#ff220066', label: 'IR',     gradient: ['#ff2200', '#ffaa00', '#ffffff'], accents: ['#ff2200', '#ffaa00', '#ffffff'], blend: 'gradient' },
+  matrix:  { background: '#000a00', accent: '#00ff41', accentDim: '#00ff4166', label: 'MATRIX', gradient: ['#00ff41', '#00cc00'], accents: ['#00ff41', '#00ff41', '#003300'], blend: 'parallel' },
+  noir:    { background: '#000000', accent: '#ffffff', accentDim: '#ffffff66', label: 'NOIR',   gradient: ['#222222', '#888888', '#ffffff'], accents: ['#222222', '#888888', '#ffffff'], blend: 'gradient' },
 }
 
 export const PHASE_COLORS: Record<Phase, string> = {
@@ -68,4 +75,37 @@ export function getMoodGradientColor(
 ): THREE.Color {
   const b = Math.min(1, Math.max(0, brightness))
   return target.setHSL(baseHue / 360, 0.75, 0.08 + b * 0.42)
+}
+
+// Phase 6 multi-accent gradient: lerps through `accents[1..n]` instead of the
+// legacy `gradient` stops. Behavior matches the `blend` mode declared on the
+// theme:
+//   - gradient: classic multi-stop lerp (default).
+//   - split:    0..0.5 lerps accent[0]→accent[1]; 0.5..1 lerps accent[1]→accent[2]
+//               (or stops at accent[1] for 2-accent themes).
+//   - parallel: not yet wired; falls back to gradient (the visual parallel
+//               scanline effect is owned by the renderer for matrix theme).
+//   - glitch:   not yet wired; falls back to gradient.
+export function getAccentGradientColor(
+  theme: ThresholdTheme,
+  brightness: number,
+  target: THREE.Color = new THREE.Color(),
+): THREE.Color {
+  const palette = THEMES[theme]
+  const b = Math.min(1, Math.max(0, brightness))
+  const accents = palette.accents
+  if (accents.length === 1) return target.set(accents[0])
+  if (palette.blend === 'split' && accents.length >= 2) {
+    if (b < 0.5) {
+      return new THREE.Color(accents[0]).lerp(new THREE.Color(accents[1]), b * 2).copy(target)
+    } else if (accents.length >= 3) {
+      return new THREE.Color(accents[1]).lerp(new THREE.Color(accents[2]), (b - 0.5) * 2).copy(target)
+    }
+    return target.set(accents[1])
+  }
+  // default: multi-stop lerp through `accents`
+  const t = b * (accents.length - 1)
+  const i = Math.min(accents.length - 2, Math.floor(t))
+  const frac = t - i
+  return target.set(accents[i]).lerp(new THREE.Color(accents[i + 1]), frac)
 }
