@@ -178,6 +178,115 @@ export function useAudio() {
     textureAccentRef.current = { synth: accent, fx: [accentGain] }
   }
 
+  const buildAmbientTexture = (master: Tone.Gain) => {
+    const pad = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 1.5,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 4, decay: 2, sustain: 0.6, release: 8 },
+    })
+    pad.triggerAttack(['A1', 'C2', 'E2'])
+    const lowpass = new Tone.Filter(400, 'lowpass')
+    const autoFilter = new Tone.AutoFilter({ frequency: 0.1, depth: 0.7, baseFrequency: 200, octaves: 4 }).start()
+    const reverb = new Tone.Reverb(8)
+    const chorus = new Tone.Chorus(1, 2, 0.4).start()
+    const padGain = new Tone.Gain(Tone.dbToGain(-10))
+    pad.chain(lowpass, autoFilter, reverb, chorus, padGain, master)
+    texturePadRef.current = { synth: pad, fx: [lowpass, autoFilter, reverb, chorus, padGain] }
+    textureVoiceRef.current = null
+    textureAccentRef.current = null
+  }
+
+  const buildPulseTexture = (master: Tone.Gain) => {
+    const sub = new Tone.MembraneSynth({
+      pitchDecay: 0.04, octaves: 3,
+      envelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.2 },
+    })
+    sub.triggerAttackRelease('C1', '8n')
+    const subGain = new Tone.Gain(Tone.dbToGain(-6))
+    sub.chain(subGain, master)
+    textureAccentRef.current = { synth: sub, fx: [subGain] }
+
+    const arp = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'square' },
+      envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 },
+    })
+    const notes = ['C3', 'E3', 'G3', 'C4']
+    const arpSequence = new Tone.Sequence((time, note) => {
+      arp.triggerAttackRelease(note, '16n', time)
+    }, notes, '16n')
+    arpSequence.start()
+    const arpGain = new Tone.Gain(Tone.dbToGain(-12))
+    arp.connect(arpGain)
+    arpGain.toDestination()
+    texturePadRef.current = { synth: arp, fx: [arpGain] }
+    textureVoiceRef.current = null
+  }
+
+  const buildBloom2Texture = (master: Tone.Gain) => {
+    const pad = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 1.2,
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.5, decay: 0.5, sustain: 0.4, release: 3 },
+    })
+    pad.triggerAttack(['C2', 'E2', 'G2'])
+    const chorus = new Tone.Chorus(3, 0.5, 1).start()
+    const reverb = new Tone.Reverb(4)
+    const phaser = new Tone.Phaser(0.5, 3)
+    const padGain = new Tone.Gain(Tone.dbToGain(-8))
+    pad.chain(chorus, reverb, phaser, padGain, master)
+    texturePadRef.current = { synth: pad, fx: [chorus, reverb, phaser, padGain] }
+
+    const voice = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 1.2,
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.005, decay: 0.5, sustain: 0, release: 2 },
+    })
+    const voiceGain = new Tone.Gain(Tone.dbToGain(-4))
+    voice.chain(voiceGain, master)
+    textureVoiceRef.current = { synth: voice, fx: [voiceGain] }
+
+    const accent = new Tone.MetalSynth({
+      harmonicity: 5.1, modulationIndex: 32, resonance: 4000,
+      envelope: { attack: 0.001, decay: 0.4, release: 0.2 },
+    })
+    const accentGain = new Tone.Gain(Tone.dbToGain(-10))
+    accent.chain(accentGain, master)
+    new Tone.Sequence((time) => {
+      accent.triggerAttackRelease('C5', '16n', time)
+    }, [null, null, 'C5', null, null, null, 'C5', null], '8n').start()
+    textureAccentRef.current = { synth: accent, fx: [accentGain] }
+  }
+
+  const buildGlitch2Texture = (master: Tone.Gain) => {
+    const noise = new Tone.Noise('white')
+    const bandpass = new Tone.Filter(800, 'bandpass')
+    const padGain = new Tone.Gain(Tone.dbToGain(-12))
+    noise.chain(bandpass, padGain, master)
+    noise.start()
+    texturePadRef.current = { synth: noise, fx: [bandpass, padGain] }
+
+    const bitCrusher = new Tone.BitCrusher(4)
+    const voice = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3, modulationIndex: 10,
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.001, decay: 0.3, sustain: 0.1, release: 1.2 },
+    })
+    const delay = new Tone.FeedbackDelay(0.25, 0.3)
+    const reverb = new Tone.Reverb(2)
+    const tremolo = new Tone.Tremolo(6, 0.5).start()
+    const voiceGain = new Tone.Gain(Tone.dbToGain(-6))
+    voice.chain(bitCrusher, delay, reverb, tremolo, voiceGain, master)
+    textureVoiceRef.current = { synth: voice, fx: [bitCrusher, delay, reverb, tremolo, voiceGain] }
+
+    const accent = new Tone.MembraneSynth({
+      pitchDecay: 0.005, octaves: 2,
+      envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 },
+    })
+    const accentGain = new Tone.Gain(Tone.dbToGain(-8))
+    accent.chain(accentGain, master)
+    textureAccentRef.current = { synth: accent, fx: [accentGain] }
+  }
+
   useEffect(() => {
     const setup = async () => {
       await ensureAudioContext()
@@ -256,7 +365,11 @@ export function useAudio() {
       if (cancelled) return
       const master = masterGainRef.current!
       if (effectiveTexture === 'glitch') buildGlitchTexture(master)
+      else if (effectiveTexture === 'glitch2') buildGlitch2Texture(master)
+      else if (effectiveTexture === 'ambient') buildAmbientTexture(master)
       else if (effectiveTexture === 'bloom') buildBloomTexture(master)
+      else if (effectiveTexture === 'bloom2') buildBloom2Texture(master)
+      else if (effectiveTexture === 'pulse') buildPulseTexture(master)
       else if (effectiveTexture === 'bass') buildBassTexture(master)
       if (Tone.Transport.state !== 'started') Tone.Transport.start()
     }
@@ -400,14 +513,17 @@ export function useAudio() {
       const totalShift = phaseShift + modeThemeShift
       const transposed = transposeNote(note, totalShift)
       if (effectiveTexture === 'glitch' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '32n')
+      else if (effectiveTexture === 'glitch2' && brightness > 0.7) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '32n')
+      else if (effectiveTexture === 'ambient' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '4n')
       else if (effectiveTexture === 'bloom' && brightness > 0.5) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '8n')
+      else if (effectiveTexture === 'bloom2' && brightness > 0.4) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '16n')
       else if (effectiveTexture === 'bass' && brightness > 0.3) textureVoiceRef.current.synth?.triggerAttackRelease(transposed, '16n')
     }
   }
 
   const triggerClick = () => {
     if (!audioEnabled || !textureAccentRef.current) return
-    if (effectiveTexture === 'glitch' || effectiveTexture === 'bass') {
+    if (effectiveTexture === 'glitch' || effectiveTexture === 'glitch2' || effectiveTexture === 'bass' || effectiveTexture === 'pulse') {
       const phaseShift = getTextureVoicePitchShift(currentPhase)
       const modeThemeShift = getModeThemePitchShift(renderModeRef.current, themeRef.current)
       const totalShift = phaseShift + modeThemeShift

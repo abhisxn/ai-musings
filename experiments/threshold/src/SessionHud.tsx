@@ -23,8 +23,12 @@ const THEME_DESC: Record<Theme, string> = {
 
 const TEXTURE_DESC: Record<string, string> = {
   off: 'Silent',
+  ambient: 'Slow-drifting atmospheric pad',
   bloom: 'Bells and soft pads',
+  bloom2: 'Bells + metallic chime arpeggios',
   glitch: 'Noise and digital fx',
+  glitch2: 'Bit-crushed spectrum + slow freeze',
+  pulse: 'Sub-kick + square-wave arpeggio',
   bass: 'Drone and low kick',
 }
 

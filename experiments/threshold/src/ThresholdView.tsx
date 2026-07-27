@@ -375,7 +375,7 @@ export default function ThresholdView() {
       volume: { value: volume, min: 0, max: 100, step: 1, onChange: setVolume },
     }),
     texture: folder({
-      soundscape: { value: soundTexture, options: { 'OFF': 'off', 'BLOOM — bells/pads': 'bloom', 'GLITCH — noise/fx': 'glitch', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
+      soundscape: { value: soundTexture, options: { 'OFF': 'off', 'AMBIENT — atmospheric pad': 'ambient', 'BLOOM — bells/pads': 'bloom', 'BLOOM2 — bells + chimes': 'bloom2', 'GLITCH — noise/fx': 'glitch', 'GLITCH2 — bit-crushed + freeze': 'glitch2', 'PULSE — sub-kick + arp': 'pulse', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
     }),
   })
 
