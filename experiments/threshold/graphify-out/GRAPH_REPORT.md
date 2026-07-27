@@ -1,12 +1,12 @@
-# Graph Report - experiments/threshold  (2026-07-26)
+# Graph Report - experiments/threshold  (2026-07-27)
 
 ## Corpus Check
-- 35 files · ~41,062 words
+- 39 files · ~47,742 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 96 nodes · 72 edges · 32 communities detected
-- Extraction: 93% EXTRACTED · 7% INFERRED · 0% AMBIGUOUS · INFERRED: 5 edges (avg confidence: 0.8)
+- 104 nodes · 78 edges · 35 communities detected
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 6 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -42,30 +42,33 @@
 - [[_COMMUNITY_Community 29|Community 29]]
 - [[_COMMUNITY_Community 30|Community 30]]
 - [[_COMMUNITY_Community 31|Community 31]]
+- [[_COMMUNITY_Community 32|Community 32]]
+- [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 34|Community 34]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `toErrorWorkerMessage()` - 4 edges
 2. `applyGestureEdge()` - 4 edges
 3. `moodTextureToSoundTexture()` - 3 edges
 4. `MarkovMelody` - 3 edges
-5. `handleFrame()` - 3 edges
-6. `useAudio()` - 2 edges
-7. `nextRenderMode()` - 2 edges
-8. `nextTheme()` - 2 edges
-9. `nextMoodEnabled()` - 2 edges
-10. `bayerMatrix()` - 2 edges
+5. `bayerMatrix()` - 3 edges
+6. `handleFrame()` - 3 edges
+7. `createStreamAttacher()` - 2 edges
+8. `useAudio()` - 2 edges
+9. `nextRenderMode()` - 2 edges
+10. `nextTheme()` - 2 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `useWebcam()` --calls--> `createStreamAttacher()`  [INFERRED]
+  experiments/threshold/src/hooks.ts → experiments/threshold/src/videoStreamAttacher.ts
 - `useAudio()` --calls--> `moodTextureToSoundTexture()`  [INFERRED]
   experiments/threshold/src/audio.ts → experiments/threshold/src/mood-config.ts
-- `resolveEffectiveTexture()` --calls--> `moodTextureToSoundTexture()`  [INFERRED]
-  experiments/threshold/src/__tests__/audio.test.ts → experiments/threshold/src/mood-config.ts
-- `applyGestureEdge()` --calls--> `nextRenderMode()`  [INFERRED]
-  experiments/threshold/src/__tests__/useGestureControlsHook.test.ts → experiments/threshold/src/useGestureControls.ts
-- `applyGestureEdge()` --calls--> `nextTheme()`  [INFERRED]
-  experiments/threshold/src/__tests__/useGestureControlsHook.test.ts → experiments/threshold/src/useGestureControls.ts
-- `applyGestureEdge()` --calls--> `nextMoodEnabled()`  [INFERRED]
-  experiments/threshold/src/__tests__/useGestureControlsHook.test.ts → experiments/threshold/src/useGestureControls.ts
+- `moodTextureToSoundTexture()` --calls--> `resolveEffectiveTexture()`  [INFERRED]
+  experiments/threshold/src/mood-config.ts → experiments/threshold/src/__tests__/audio.test.ts
+- `nextRenderMode()` --calls--> `applyGestureEdge()`  [INFERRED]
+  experiments/threshold/src/useGestureControls.ts → experiments/threshold/src/__tests__/useGestureControlsHook.test.ts
+- `nextTheme()` --calls--> `applyGestureEdge()`  [INFERRED]
+  experiments/threshold/src/useGestureControls.ts → experiments/threshold/src/__tests__/useGestureControlsHook.test.ts
 
 ## Communities
 
@@ -86,28 +89,28 @@ Cohesion: 0.29
 Nodes (2): clamp(), normalizePinchDistance()
 
 ### Community 4 - "Community 4"
-Cohesion: 0.4
-Nodes (0): 
+Cohesion: 0.33
+Nodes (2): useWebcam(), createStreamAttacher()
 
 ### Community 5 - "Community 5"
-Cohesion: 0.5
-Nodes (2): bayerMatrix(), generateDitherAtlas()
+Cohesion: 0.47
+Nodes (3): bayerMatrix(), generateBayerDitherAtlas(), generateDitherAtlas()
 
 ### Community 6 - "Community 6"
 Cohesion: 0.4
 Nodes (0): 
 
 ### Community 7 - "Community 7"
-Cohesion: 0.5
-Nodes (1): MarkovMelody
+Cohesion: 0.4
+Nodes (0): 
 
 ### Community 8 - "Community 8"
-Cohesion: 0.5
+Cohesion: 0.4
 Nodes (0): 
 
 ### Community 9 - "Community 9"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (1): MarkovMelody
 
 ### Community 10 - "Community 10"
 Cohesion: 0.67
@@ -197,6 +200,18 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
+### Community 32 - "Community 32"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 33 - "Community 33"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 34 - "Community 34"
+Cohesion: 1.0
+Nodes (0): 
+
 ## Knowledge Gaps
 - **Thin community `Community 12`** (2 nodes): `index.tsx`, `ThresholdExperiment()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -208,35 +223,41 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 16`** (2 nodes): `useEnergyAccumulator.ts`, `useEnergyAccumulator()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 17`** (2 nodes): `gesture-worker.test.ts`, `makeLandmarks()`
+- **Thin community `Community 17`** (2 nodes): `Scene.tsx`, `Scene()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 18`** (2 nodes): `theme.test.ts`, `roundRgb()`
+- **Thin community `Community 18`** (2 nodes): `gesture-worker.test.ts`, `makeLandmarks()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 19`** (1 nodes): `meta.ts`
+- **Thin community `Community 19`** (2 nodes): `theme.test.ts`, `roundRgb()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 20`** (1 nodes): `types.ts`
+- **Thin community `Community 20`** (1 nodes): `meta.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 21`** (1 nodes): `onboardingSteps.ts`
+- **Thin community `Community 21`** (1 nodes): `shaders.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (1 nodes): `Scene.tsx`
+- **Thin community `Community 22`** (1 nodes): `types.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 23`** (1 nodes): `store.ts`
+- **Thin community `Community 23`** (1 nodes): `onboardingSteps.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 24`** (1 nodes): `wrist-mapping.test.ts`
+- **Thin community `Community 24`** (1 nodes): `store.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 25`** (1 nodes): `pinch.test.ts`
+- **Thin community `Community 25`** (1 nodes): `wrist-mapping.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 26`** (1 nodes): `levaSync.test.ts`
+- **Thin community `Community 26`** (1 nodes): `pinch.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 27`** (1 nodes): `gestureControls.test.ts`
+- **Thin community `Community 27`** (1 nodes): `levaSync.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 28`** (1 nodes): `types.test.ts`
+- **Thin community `Community 28`** (1 nodes): `store.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 29`** (1 nodes): `onboarding.test.ts`
+- **Thin community `Community 29`** (1 nodes): `gestureControls.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 30`** (1 nodes): `dither.test.ts`
+- **Thin community `Community 30`** (1 nodes): `types.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (1 nodes): `mood-config.test.ts`
+- **Thin community `Community 31`** (1 nodes): `onboarding.test.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 32`** (1 nodes): `videoStreamAttacher.test.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 33`** (1 nodes): `dither.test.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 34`** (1 nodes): `mood-config.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
