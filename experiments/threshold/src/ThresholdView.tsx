@@ -552,29 +552,46 @@ export default function ThresholdView() {
       </div>
 
       {/* Webcam overlay (pip | bleed; off when !cameraOn) */}
-      {cameraOn && cameraView === 'bleed' && (
-        <>
-          <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
-            style={{ transform: 'scaleY(-1)', opacity: cameraOpacity }}
-            className="absolute inset-0 z-0 w-full h-full object-cover"
-          />
-          <div
-            className="absolute inset-0 z-0 pointer-events-none"
-            style={{ background: `rgba(0,0,0,${1 - cameraOpacity})` }}
-          />
-        </>
-      )}
+      {/* 3D stage: shared 4:3 aspect ratio container that holds the bleed
+          video and the Canvas. Both fill the same box so the 3D grid aligns
+          pixel-for-pixel with the visible camera feed. The container is
+          centered and sized to the largest 4:3 box that fits the viewport. */}
+      <div
+        className="absolute z-0"
+        style={{
+          aspectRatio: '4 / 3',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          width: 'min(100vw, calc(100vh * 4 / 3))',
+          height: 'min(100vh, calc(100vw * 3 / 4))',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        {cameraOn && cameraView === 'bleed' && (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{ opacity: cameraOpacity }}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: `rgba(0,0,0,${1 - cameraOpacity})` }}
+            />
+          </>
+        )}
+      </div>
       {cameraOn && cameraView === 'pip' && (
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
-          style={{ transform: 'scaleY(-1)' }}
           className="absolute top-8 right-8 z-20 w-[200px] h-[150px] object-cover rounded border border-white/20"
         />
       )}
@@ -689,6 +706,21 @@ export default function ThresholdView() {
         flat
         theme={levaTheme}
       />
+      {/* Canvas wrapper: matches the 4:3 bleed stage so the 3D grid renders
+          at the same size/ratio as the camera feed. */}
+      <div
+        className="absolute z-[1]"
+        style={{
+          aspectRatio: '4 / 3',
+          maxWidth: '100vw',
+          maxHeight: '100vh',
+          width: 'min(100vw, calc(100vh * 4 / 3))',
+          height: 'min(100vh, calc(100vw * 3 / 4))',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
       <Canvas shadows gl={{ antialias: false, alpha: true }} onCreated={({ gl }) => { 
         gl.setClearAlpha(0);
         gl.domElement.style.touchAction = 'auto'; 
@@ -717,6 +749,7 @@ export default function ThresholdView() {
         <fog attach="fog" args={[palette.background, 15, 45]} />
         <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} frameTextureRef={frameTextureRef} />
       </Canvas>
+      </div>
     </div>
   )
 }
