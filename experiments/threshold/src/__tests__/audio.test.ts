@@ -50,8 +50,8 @@ describe('getModeThemePitchShift', () => {
   })
 
   it('returns a deterministic value for the same inputs', () => {
-    const a = getModeThemePitchShift('lines', 'acid')
-    const b = getModeThemePitchShift('lines', 'acid')
+    const a = getModeThemePitchShift('hline', 'acid')
+    const b = getModeThemePitchShift('hline', 'acid')
     expect(a).toBe(b)
   })
 
@@ -89,7 +89,7 @@ describe('effective texture resolution (mirrors useAudio internal logic)', () =>
   const resolveEffectiveTexture = (
     moodEnabled: boolean,
     moodTextureType: 'airy' | 'glitch' | 'rumble',
-    soundTexture: 'off' | 'glitch' | 'bloom' | 'bass',
+    soundTexture: 'off' | 'ambient' | 'bloom' | 'bloom2' | 'glitch' | 'glitch2' | 'pulse' | 'bass',
   ) => (moodEnabled ? moodTextureToSoundTexture(moodTextureType) : soundTexture)
 
   it('uses the raw soundTexture when moodEnabled is false', () => {
@@ -98,5 +98,13 @@ describe('effective texture resolution (mirrors useAudio internal logic)', () =>
 
   it('uses the mood-derived texture when moodEnabled is true, ignoring the raw soundTexture', () => {
     expect(resolveEffectiveTexture(true, 'rumble', 'bloom')).toBe('bass')
+  })
+
+  it('maps airy mood → ambient (Phase 6 extension)', () => {
+    expect(resolveEffectiveTexture(true, 'airy', 'bloom')).toBe('ambient')
+  })
+
+  it('maps glitch mood → glitch2 (Phase 6 extension)', () => {
+    expect(resolveEffectiveTexture(true, 'glitch', 'bloom')).toBe('glitch2')
   })
 })

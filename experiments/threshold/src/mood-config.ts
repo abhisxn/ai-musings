@@ -79,11 +79,11 @@ export function getPhaseTempo(mood: Mood, phase: 'calm' | 'active' | 'climax'): 
   }
 }
 
-export type SoundTexture = 'off' | 'glitch' | 'bloom' | 'bass'
+export type SoundTexture = 'off' | 'ambient' | 'bloom' | 'bloom2' | 'glitch' | 'glitch2' | 'pulse' | 'bass'
 
 const TEXTURE_MAP: Record<MoodConfig['textureType'], SoundTexture> = {
-  airy: 'bloom',
-  glitch: 'glitch',
+  airy: 'ambient',
+  glitch: 'glitch2',
   rumble: 'bass',
 }
 

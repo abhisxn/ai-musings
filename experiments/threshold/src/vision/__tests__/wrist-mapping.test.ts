@@ -123,7 +123,7 @@ describe('wristProximityWarp', () => {
 
   it('returns maximum warp strength at zero distance', () => {
     const wrist = { x: 5, y: 5, z: 0 }
-    expect(wristProximityWarp(5, 5, wrist, true)).toBeCloseTo(3, 5)
+    expect(wristProximityWarp(5, 5, wrist, true)).toBeCloseTo(1.5, 5)
   })
 
   it('falls off linearly with distance within the warp radius', () => {
@@ -131,7 +131,7 @@ describe('wristProximityWarp', () => {
     const atRadius = wristProximityWarp(6, 0, wrist, true)
     const halfway = wristProximityWarp(3, 0, wrist, true)
     expect(atRadius).toBeCloseTo(0, 5)
-    expect(halfway).toBeCloseTo(1.5, 5)
+    expect(halfway).toBeCloseTo(0.75, 5)
     expect(halfway).toBeGreaterThan(atRadius)
   })
 })

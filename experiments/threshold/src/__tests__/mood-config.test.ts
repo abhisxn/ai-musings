@@ -41,13 +41,13 @@ describe('getPhaseTempo', () => {
 })
 
 describe('moodTextureToSoundTexture', () => {
-  it('maps airy to bloom', () => {
-    expect(moodTextureToSoundTexture('airy')).toBe('bloom')
+  it('maps airy to ambient (Phase 6 extension — was bloom)', () => {
+    expect(moodTextureToSoundTexture('airy')).toBe('ambient')
   })
-  it('maps glitch to glitch', () => {
-    expect(moodTextureToSoundTexture('glitch')).toBe('glitch')
+  it('maps glitch to glitch2 (Phase 6 extension — was glitch)', () => {
+    expect(moodTextureToSoundTexture('glitch')).toBe('glitch2')
   })
-  it('maps rumble to bass', () => {
+  it('maps rumble to bass (unchanged)', () => {
     expect(moodTextureToSoundTexture('rumble')).toBe('bass')
   })
 })

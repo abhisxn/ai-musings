@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
 }
 
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
-const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
+const POS_VOLUMETRIC = new THREE.Vector3(18, -18, 24)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
 
 /** Per-gesture reticle pulse swatch colors (mirrors the onboarding swatches):
@@ -143,7 +143,7 @@ export default function ThresholdView() {
   }), [palette])
 
   const { videoRef } = useWebcam()
-  const { dataRef } = useSampler()
+  const { dataRef, frameTextureRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
   const { status: gestureStatus } = useGestureTracking()
@@ -237,7 +237,10 @@ export default function ThresholdView() {
   const [ppScanline, setPpScanline] = useState(0.05)
   const [ppVignette, setPpVignette] = useState(0.8)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [showCameraBackground, setShowCameraBackground] = useState(true)
+  type CameraView = 'pip' | 'bleed'
+  const [cameraView, setCameraView] = useState<CameraView>('bleed')
+  const [cameraOn, setCameraOn] = useState(true)
+  const [cameraOpacity, setCameraOpacity] = useState(0.3)
 
   useEffect(() => {
     if (initialized && !localStorage.getItem('threshold_onboarding_done')) {
@@ -293,7 +296,7 @@ export default function ThresholdView() {
         e.preventDefault()
         const current = useStore.getState().viewMode
         setViewMode(current === 'flat' ? 'volumetric' : 'flat')
-      } else if (e.key >= '1' && e.key <= '7') {
+      } else if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key) - 1
         if (idx < modeList.length) setRenderMode(modeList[idx])
       } else if (e.key === '0') {
@@ -327,7 +330,12 @@ export default function ThresholdView() {
     }),
     render: folder({
       mode: { value: renderMode, options: [...RENDER_MODES], onChange: setRenderMode },
-      theme: { value: theme, options: [...THEMES_LIST], onChange: setTheme },
+      theme: {
+        value: theme,
+        options: [...THEMES_LIST],
+        onChange: setTheme,
+        render: () => !moodEnabled,
+      },
       mood: { label: 'session arc', value: moodEnabled, onChange: setMoodEnabled },
     })
   }))
@@ -342,6 +350,18 @@ export default function ThresholdView() {
     display: folder({
       mode: { value: viewMode, options: ['flat', 'volumetric'], onChange: setViewMode },
       grid: { value: showGrid, onChange: setShowGrid },
+    }),
+    camera: folder({
+      view: { value: cameraView, options: { 'PIP — corner thumbnail': 'pip', 'BLEED — full background': 'bleed' }, onChange: setCameraView },
+      on: { value: cameraOn, onChange: setCameraOn },
+      opacity: {
+        value: cameraOpacity,
+        min: 0,
+        max: 1,
+        step: 0.05,
+        onChange: setCameraOpacity,
+        render: () => cameraOn && cameraView === 'bleed',
+      },
     })
   })
 
@@ -360,7 +380,7 @@ export default function ThresholdView() {
       volume: { value: volume, min: 0, max: 100, step: 1, onChange: setVolume },
     }),
     texture: folder({
-      soundscape: { value: soundTexture, options: { 'OFF': 'off', 'BLOOM — bells/pads': 'bloom', 'GLITCH — noise/fx': 'glitch', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
+      soundscape: { value: soundTexture, options: { 'OFF': 'off', 'AMBIENT — atmospheric pad': 'ambient', 'BLOOM — bells/pads': 'bloom', 'BLOOM2 — bells + chimes': 'bloom2', 'GLITCH — noise/fx': 'glitch', 'GLITCH2 — bit-crushed + freeze': 'glitch2', 'PULSE — sub-kick + arp': 'pulse', 'BASS — drone/kick': 'bass' }, onChange: setSoundTexture },
     }),
   })
 
@@ -369,7 +389,7 @@ export default function ThresholdView() {
   useControls('Gesture', {
     'hand tracking': monitor(() => {
       const gestureLabel = handTracking.gesture
-        ? { fist: 'FIST — hold to pulse', open_palm: 'OPEN PALM — release', pinch: 'PINCH — zoom' }[handTracking.gesture]
+        ? { fist: 'FIST — cycle render mode', open_palm: 'OPEN PALM — toggle ARC', pinch: 'PINCH — threshold' }[handTracking.gesture]
         : 'no hand detected'
       const statusLabel = { idle: 'not started', loading: 'starting camera…', active: 'tracking', failed: 'camera unavailable' }[gestureTrackingStatus]
       return `${gestureLabel} (${statusLabel})`
@@ -531,19 +551,32 @@ export default function ThresholdView() {
         />
       </div>
 
-      {/* Webcam full-bleed background layer (toggleable via CAM // ON/OFF) */}
-      {showCameraBackground && (
-        <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* Webcam overlay (pip | bleed; off when !cameraOn) */}
+      {cameraOn && cameraView === 'bleed' && (
+        <>
           <video
             ref={videoRef}
             autoPlay
             muted
             playsInline
-            style={{ transform: 'scaleX(-1)' }}
-            className="w-full h-full object-cover opacity-20"
+            style={{ transform: 'scaleY(-1)', opacity: cameraOpacity }}
+            className="absolute inset-0 z-0 w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{ background: `rgba(0,0,0,${1 - cameraOpacity})` }}
+          />
+        </>
+      )}
+      {cameraOn && cameraView === 'pip' && (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
+          style={{ transform: 'scaleY(-1)' }}
+          className="absolute top-8 right-8 z-20 w-[200px] h-[150px] object-cover rounded border border-white/20"
+        />
       )}
 
       {/* Status bar */}
@@ -623,13 +656,31 @@ export default function ThresholdView() {
         </button>
       </div>
 
-      {/* Camera background toggle (top-right) */}
-      <div className="absolute top-8 right-8 z-20">
+      {/* Camera controls: PIP | BLEED view selectors + OFF kill switch */}
+      <div className="absolute top-8 right-8 z-20 flex gap-2 items-center pointer-events-auto">
+        {(['pip', 'bleed'] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => { setCameraView(v); setCameraOn(true) }}
+            className={`${styles.hudMicro} px-2 py-1 border ${
+              cameraOn && cameraView === v
+                ? 'border-white text-white bg-white/10'
+                : 'border-white/20 text-white/50 hover:text-white hover:border-white/50'
+            }`}
+          >
+            CAM // {v.toUpperCase()}
+          </button>
+        ))}
         <button
-          onClick={() => setShowCameraBackground((v) => !v)}
-          className={`${styles.hudMicro} px-2 py-1 border border-white/20 text-white/70 hover:text-white hover:border-white/50 pointer-events-auto`}
+          onClick={() => setCameraOn((v) => !v)}
+          aria-label={cameraOn ? 'Hide camera' : 'Show camera'}
+          className={`${styles.hudMicro} px-2 py-1 border ${
+            !cameraOn
+              ? 'border-[#ff4400] text-[#ff4400] bg-[#ff4400]/10'
+              : 'border-white/20 text-white/70 hover:text-white hover:border-white/50'
+          }`}
         >
-          CAM // {showCameraBackground ? 'ON' : 'OFF'}
+          CAM // {cameraOn ? 'ON' : 'OFF'}
         </button>
       </div>
 
@@ -638,9 +689,9 @@ export default function ThresholdView() {
         flat
         theme={levaTheme}
       />
-      <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
+      <Canvas shadows gl={{ antialias: false, alpha: true }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
         <AnimatedCamera />
-        <color attach="background" args={[palette.background]} />
+        {/* No background color — Canvas is transparent (alpha: true) so the camera video shows through behind the 3D grid */}
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />
@@ -660,7 +711,7 @@ export default function ThresholdView() {
         <DriftingPointLight basePosition={[10, 10, 10]} intensity={1} color={palette.accent} />
         <directionalLight position={[-8, 6, -10]} intensity={0.4} color={palette.accent} />
         <fog attach="fog" args={[palette.background, 15, 45]} />
-        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
+        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} frameTextureRef={frameTextureRef} />
       </Canvas>
     </div>
   )

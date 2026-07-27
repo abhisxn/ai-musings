@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 
-export const RENDER_MODES = ['radio', 'dots', 'blocks', 'lines', 'ascii', 'pixel', 'spectral'] as const
+export const RENDER_MODES = ['radio', 'dots', 'blocks', 'hline', 'vline', 'ascii', 'pixel', 'ribbon', 'dither'] as const
 export type RenderMode = (typeof RENDER_MODES)[number]
 
 export const THEMES_LIST = ['dark', 'light', 'acid', 'heatmap'] as const
@@ -98,7 +98,7 @@ export const useStore = create<ThresholdState>((set) => ({
   threshold: 0.5,
   setThreshold: (threshold) => set({ threshold }),
   
-  extrusion: 3.0,
+  extrusion: 6.0,
   setExtrusion: (extrusion) => set({ extrusion }),
 
   ditherIntensity: 0.3,
@@ -123,16 +123,16 @@ export const useStore = create<ThresholdState>((set) => ({
   setShowGrid: (showGrid) => set({ showGrid }),
 
   // Session Arc
-  moodEnabled: false,
+  moodEnabled: true,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
-  currentMood: 'deep' as Mood,
+  currentMood: 'pulse' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),
   sessionEnergy: 0,
   setSessionEnergy: (sessionEnergy) => set({ sessionEnergy }),
   currentPhase: 'calm' as Phase,
   setCurrentPhase: (currentPhase) => set({ currentPhase }),
   
-  audioEnabled: false,
+  audioEnabled: true,
   setAudioEnabled: (audioEnabled) => set({ audioEnabled }),
   audioReactive: true,
   setAudioReactive: (audioReactive) => set({ audioReactive }),

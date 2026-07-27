@@ -96,3 +96,29 @@ export function generateSpectralSprite(size: number = 64): THREE.CanvasTexture {
   const texture = new THREE.CanvasTexture(canvas)
   return texture
 }
+
+// Returns a hard-edged Bayer-quantized atlas: each pixel is one of K discrete
+// gray levels (no anti-aliasing, no fade-to-edge softening). Used by the
+// `pixel` render mode to look like a rasterized bitmap portrait (moodboard
+// reference) rather than soft alpha-blended dots.
+export function generateBayerDitherAtlas(size: number, levels: number = 8): THREE.CanvasTexture {
+  const matrix = bayerMatrix(size)
+  const tileSize = matrix.length
+  const canvas = document.createElement('canvas')
+  canvas.width = tileSize
+  canvas.height = tileSize
+  const ctx = canvas.getContext('2d')!
+  for (let y = 0; y < tileSize; y++) {
+    for (let x = 0; x < tileSize; x++) {
+      const v = (matrix[y][x] + 0.5) / (tileSize * tileSize)
+      const level = Math.floor(v * levels)
+      const gray = Math.round((level / Math.max(1, levels - 1)) * 255)
+      ctx.fillStyle = `rgb(${gray},${gray},${gray})`
+      ctx.fillRect(x, y, 1, 1)
+    }
+  }
+  const texture = new THREE.CanvasTexture(canvas)
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+  texture.minFilter = texture.magFilter = THREE.NearestFilter
+  return texture
+}
