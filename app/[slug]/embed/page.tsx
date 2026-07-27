@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { getAllExperiments, getExperimentBySlug } from '@/lib/experiments'
-import { ExperimentLayout } from '@/components/experiment/ExperimentLayout'
 import { ExperimentView } from '@/components/experiment/ExperimentView'
 
 export async function generateStaticParams() {
@@ -11,14 +10,14 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
-export default async function ExperimentPage({ params }: Props) {
+export default async function ExperimentEmbedPage({ params }: Props) {
   const { slug } = await params
   const meta = getExperimentBySlug(slug)
   if (!meta) notFound()
 
   return (
-    <ExperimentLayout meta={meta}>
+    <div className="w-screen h-screen overflow-hidden">
       <ExperimentView meta={meta} />
-    </ExperimentLayout>
+    </div>
   )
 }
