@@ -29,7 +29,7 @@ export function nextTheme(current: Theme): Theme {
   return THEMES_LIST[(idx + 1) % THEMES_LIST.length]
 }
 
-/** Toggle the session-arc (mood) boolean on a PINCH enter edge. */
+/** Toggle the session-arc (mood) boolean on an OPEN_PALM enter edge. */
 export function nextMoodEnabled(current: boolean): boolean {
   return !current
 }
@@ -37,8 +37,9 @@ export function nextMoodEnabled(current: boolean): boolean {
 /**
  * On each non-null gesture enter edge, fire the mapped action:
  *   FIST      -> cycle render mode
- *   OPEN_PALM -> cycle theme
- *   PINCH     -> toggle session-arc (moodEnabled)
+ *   OPEN_PALM -> toggle session-arc (moodEnabled)
+ *   PINCH     -> (reserved for threshold control in ThresholdView — not
+ *                handled here to avoid the pinch/threshold/arc conflict)
  */
 export function useGestureControls(): void {
   const gesture = useStore((s) => s.handTracking.gesture)
@@ -60,10 +61,11 @@ export function useGestureControls(): void {
           setRenderMode(nextRenderMode(renderMode))
           break
         case 'open_palm':
-          setTheme(nextTheme(theme))
+          setMoodEnabled(nextMoodEnabled(moodEnabled))
           break
         case 'pinch':
-          setMoodEnabled(nextMoodEnabled(moodEnabled))
+          // PINCH is handled in ThresholdView.tsx for threshold control.
+          // Do NOT also toggle ARC here — that was the conflict.
           break
       }
     }

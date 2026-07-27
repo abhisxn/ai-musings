@@ -17,8 +17,8 @@ describe('store defaults (Phase 6 PR1 REV 2)', () => {
   it('volume stays 75', () => {
     expect(useStore.getState().volume).toBe(75)
   })
-  it('currentMood stays deep (Phase 5 default)', () => {
-    expect(useStore.getState().currentMood).toBe('deep')
+  it('currentMood stays pulse (REV 2 default)', () => {
+    expect(useStore.getState().currentMood).toBe('pulse')
   })
   it('soundTexture stays bloom (Phase 5 default)', () => {
     expect(useStore.getState().soundTexture).toBe('bloom')

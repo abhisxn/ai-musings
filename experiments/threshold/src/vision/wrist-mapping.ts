@@ -104,7 +104,7 @@ export function wristYToExtrusionDrift(
 }
 
 const WARP_RADIUS = 6
-const WARP_STRENGTH = 3
+const WARP_STRENGTH = 1.5
 
 // Grid cells near the tracked wrist push toward the viewer; falls off linearly
 // to 0 at WARP_RADIUS so the effect stays local to the hand instead of

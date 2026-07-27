@@ -27,7 +27,7 @@ if (typeof window !== 'undefined') {
 }
 
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
-const POS_VOLUMETRIC = new THREE.Vector3(12, -12, 20)
+const POS_VOLUMETRIC = new THREE.Vector3(18, -18, 24)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
 
 /** Per-gesture reticle pulse swatch colors (mirrors the onboarding swatches):
@@ -330,7 +330,12 @@ export default function ThresholdView() {
     }),
     render: folder({
       mode: { value: renderMode, options: [...RENDER_MODES], onChange: setRenderMode },
-      theme: { value: theme, options: [...THEMES_LIST], onChange: setTheme },
+      theme: {
+        value: theme,
+        options: [...THEMES_LIST],
+        onChange: setTheme,
+        render: () => !moodEnabled,
+      },
       mood: { label: 'session arc', value: moodEnabled, onChange: setMoodEnabled },
     })
   }))
@@ -384,7 +389,7 @@ export default function ThresholdView() {
   useControls('Gesture', {
     'hand tracking': monitor(() => {
       const gestureLabel = handTracking.gesture
-        ? { fist: 'FIST — hold to pulse', open_palm: 'OPEN PALM — release', pinch: 'PINCH — zoom' }[handTracking.gesture]
+        ? { fist: 'FIST — cycle render mode', open_palm: 'OPEN PALM — toggle ARC', pinch: 'PINCH — threshold' }[handTracking.gesture]
         : 'no hand detected'
       const statusLabel = { idle: 'not started', loading: 'starting camera…', active: 'tracking', failed: 'camera unavailable' }[gestureTrackingStatus]
       return `${gestureLabel} (${statusLabel})`
@@ -554,7 +559,7 @@ export default function ThresholdView() {
             autoPlay
             muted
             playsInline
-            style={{ transform: 'rotate(180deg)', opacity: cameraOpacity }}
+            style={{ transform: 'scaleY(-1)', opacity: cameraOpacity }}
             className="absolute inset-0 z-0 w-full h-full object-cover"
           />
           <div
@@ -569,7 +574,7 @@ export default function ThresholdView() {
           autoPlay
           muted
           playsInline
-          style={{ transform: 'rotate(180deg)' }}
+          style={{ transform: 'scaleY(-1)' }}
           className="absolute top-8 right-8 z-20 w-[200px] h-[150px] object-cover rounded border border-white/20"
         />
       )}
@@ -686,7 +691,8 @@ export default function ThresholdView() {
       />
       <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
         <AnimatedCamera />
-        <color attach="background" args={[palette.background]} />
+        {/* Transparent background so the camera video shows through behind the 3D grid */}
+        <color attach="background" args={['transparent']} />
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />

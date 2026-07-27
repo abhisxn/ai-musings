@@ -98,7 +98,7 @@ export const useStore = create<ThresholdState>((set) => ({
   threshold: 0.5,
   setThreshold: (threshold) => set({ threshold }),
   
-  extrusion: 3.0,
+  extrusion: 6.0,
   setExtrusion: (extrusion) => set({ extrusion }),
 
   ditherIntensity: 0.3,
@@ -125,7 +125,7 @@ export const useStore = create<ThresholdState>((set) => ({
   // Session Arc
   moodEnabled: true,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
-  currentMood: 'deep' as Mood,
+  currentMood: 'pulse' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),
   sessionEnergy: 0,
   setSessionEnergy: (sessionEnergy) => set({ sessionEnergy }),

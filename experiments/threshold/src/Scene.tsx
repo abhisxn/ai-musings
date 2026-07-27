@@ -369,23 +369,20 @@ useFrame((state) => {
           colCountRef.current[x] += 1
         }
 
-        // Ribbon (3-band FFT, per-cell sin wave displacement)
+        // Ribbon: spectrum-analyzer bars. Each column = one FFT bin, bar height
+        // = bin magnitude. Reads as a real audio spectrum, not just sin waves.
         if (renderMode === 'ribbon' && ribbonMeshRef.current && fftData) {
-          const rowBucket = Math.min(2, Math.floor((y / resolution) * 3))
-          let bandSum = 0; let bandCount = 0
-          const binStart = rowBucket === 0 ? 0 : rowBucket === 1 ? 8 : 32
-          const binEnd = rowBucket === 0 ? 8 : rowBucket === 1 ? 32 : 64
-          for (let b = binStart; b < binEnd; b++) { bandSum += fftData[b]; bandCount++ }
-          const bandAmp = bandCount ? (bandSum / bandCount) / 255 : 0
-          const wave = Math.sin(state.clock.elapsedTime * 2 + x * 0.3) * bandAmp * effectiveExtrusion * 0.5
-          dummy.position.set(posX, posY + wave, modeZ)
-          dummy.scale.set(spacing * 0.9, spacing * 0.15, 1)
+          const binIdx = Math.min(63, Math.floor((x / resolution) * 64))
+          const binValue = fftData[binIdx] / 255
+          const barHeight = binValue * effectiveExtrusion * 2
+          dummy.position.set(posX, posY, finalZ + barHeight / 2)
+          dummy.scale.set(spacing * 0.8, spacing * 0.8, Math.max(0.05, barHeight))
           dummy.rotation.set(0, 0, 0)
           dummy.updateMatrix()
           ribbonMeshRef.current.setMatrixAt(id, dummy.matrix)
           const ribbonColor = moodEnabled
-            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, bandAmp, cellColorScratch)
-            : getGradientColor(theme, bandAmp, cellColorScratch)
+            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, binValue, cellColorScratch)
+            : getGradientColor(theme, binValue, cellColorScratch)
           ribbonMeshRef.current.setColorAt(id, ribbonColor)
         }
 
@@ -422,12 +419,14 @@ useFrame((state) => {
     }
 
     // hline: one instance per row, full-width, scaled to row mean brightness.
+    // Brightness dramatically affects thickness (0.2..1.5x spacing) so active
+    // rows stand out as thick bright lines vs inactive rows as thin dim lines.
     if (renderMode === 'hline' && hlineMeshRef.current) {
       const fullWidth = resolution * spacing
       for (let y = 0; y < resolution; y++) {
         const mean = rowCountRef.current[y] ? rowSumRef.current[y] / rowCountRef.current[y] : 0
         const rowPosY = (y - resolution / 2 + 0.5) * spacing
-        const thickness = spacing * (0.5 + mean * 0.5)
+        const thickness = spacing * (0.2 + mean * 1.3)
         dummy.position.set(0, rowPosY, 0)
         dummy.scale.set(fullWidth, thickness, 1)
         dummy.rotation.set(0, 0, 0)
@@ -442,7 +441,7 @@ useFrame((state) => {
       for (let x = 0; x < resolution; x++) {
         const mean = colCountRef.current[x] ? colSumRef.current[x] / colCountRef.current[x] : 0
         const colPosX = (x - resolution / 2 + 0.5) * spacing
-        const thickness = spacing * (0.5 + mean * 0.5)
+        const thickness = spacing * (0.2 + mean * 1.3)
         dummy.position.set(colPosX, 0, 0)
         dummy.scale.set(thickness, fullHeight, 1)
         dummy.rotation.set(0, 0, 0)
