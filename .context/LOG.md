@@ -15,4 +15,4 @@
 [2026-06-01] [CONTEXT SYSTEM] Done — Repo-as-brain tier system implemented; ADRs seeded; memory enriched; INSTRUCTIONS.md updated to match reality
 [2026-07-18] [DEV PORT] Done — Enabled PORT environment variable support in package.json dev script, falling back to 3002
 [2026-07-20] [THRESHOLD PHASE 2] Done — Spectral/dither visual reskin: new theme.ts (unified gradient color model) + dither.ts (Bayer/halftone/spectral textures); Scene.tsx 7-mode reskin with new `lines` mode replacing `particles`; ThresholdView Leva brutalist theming + chrome paletteization. 82 tests green, tsc clean. Subagent-driven parallel worktree framework (foundation → parallel Task A/B → review → merge → follow-ups).
-[2026-07-26] [VISUAL-REDESIGN] Done — Fixed Phase C review findings: Card height propagation, Badge span/button split, parent-driven card hover, reset-button focus ring.
+[2026-07-27] [GALLERY-DETAIL-REDESIGN] Done — Flattened routes to / and /[slug], redesigned gallery card and case-study detail page, added jsdom/Testing Library component harness, 171 tests green, tsc clean, static export verified; PR #7 opened.
