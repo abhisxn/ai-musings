@@ -1355,7 +1355,7 @@ git commit -m "style(threshold): clarify gesture monitor label, sharpen Leva pan
 ### Task ADR-1: Mood-driven color consistency
 
 **Files:**
-- Create: `docs/adr/0004-mood-driven-color-consistency.md`
+- Create: `experiments/threshold/docs/adr/0004-mood-driven-color-consistency.md`
 
 - [ ] **Step 1: Write the ADR**
 
@@ -1383,7 +1383,7 @@ Harder: two parallel color systems (theme-based, mood-based) now exist in `Scene
 - [ ] **Step 2: Commit**
 
 ```bash
-git add docs/adr/0004-mood-driven-color-consistency.md
+git add experiments/threshold/docs/adr/0004-mood-driven-color-consistency.md
 git commit -m "docs(adr): 0004 mood-driven color consistency"
 ```
 
@@ -1392,7 +1392,7 @@ git commit -m "docs(adr): 0004 mood-driven color consistency"
 ### Task ADR-2: ASCII per-instance glyph UV offset
 
 **Files:**
-- Create: `docs/adr/0005-ascii-per-instance-glyph-uv.md`
+- Create: `experiments/threshold/docs/adr/0005-ascii-per-instance-glyph-uv.md`
 
 - [ ] **Step 1: Write the ADR**
 
@@ -1420,7 +1420,7 @@ Harder: the shader patch depends on three.js's internal `vMapUv` varying name an
 - [ ] **Step 2: Commit**
 
 ```bash
-git add docs/adr/0005-ascii-per-instance-glyph-uv.md
+git add experiments/threshold/docs/adr/0005-ascii-per-instance-glyph-uv.md
 git commit -m "docs(adr): 0005 ascii per-instance glyph UV offset"
 ```
 
@@ -1429,7 +1429,7 @@ git commit -m "docs(adr): 0005 ascii per-instance glyph UV offset"
 ### Task ADR-3: Spectral mode FFT redesign
 
 **Files:**
-- Create: `docs/adr/0006-spectral-fft-redesign.md`
+- Create: `experiments/threshold/docs/adr/0006-spectral-fft-redesign.md`
 
 - [ ] **Step 1: Write the ADR**
 
@@ -1457,7 +1457,7 @@ Harder: spectral mode's visual output now depends on `audioEnabled`/microphone p
 - [ ] **Step 2: Commit**
 
 ```bash
-git add docs/adr/0006-spectral-fft-redesign.md
+git add experiments/threshold/docs/adr/0006-spectral-fft-redesign.md
 git commit -m "docs(adr): 0006 spectral mode FFT redesign"
 ```
 
@@ -1466,7 +1466,7 @@ git commit -m "docs(adr): 0006 spectral mode FFT redesign"
 ### Task ADR-4: Texture/mood wiring via a single effective-texture value
 
 **Files:**
-- Create: `docs/adr/0007-texture-mood-wiring.md`
+- Create: `experiments/threshold/docs/adr/0007-texture-mood-wiring.md`
 
 - [ ] **Step 1: Write the ADR**
 
@@ -1494,7 +1494,7 @@ Harder: `soundTexture` (the raw Leva/store value) is no longer a reliable signal
 - [ ] **Step 2: Commit**
 
 ```bash
-git add docs/adr/0007-texture-mood-wiring.md
+git add experiments/threshold/docs/adr/0007-texture-mood-wiring.md
 git commit -m "docs(adr): 0007 texture/mood wiring via a single effective-texture value"
 ```
 
