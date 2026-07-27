@@ -3,13 +3,15 @@ import type { Mood } from './types'
 import styles from './threshold.module.css'
 
 const RENDER_MODE_DESC: Record<RenderMode, string> = {
-  radio: 'Glow rings, brightness-driven radius',
-  dots: 'Sphere field, position by brightness',
-  blocks: 'Extruded cubes, height by brightness',
-  lines: 'Horizontal scanlines',
-  ascii: 'Live character glyphs, dense→sparse',
-  pixel: 'Flat brightness grid',
-  spectral: 'Live audio spectrum bars',
+  radio: 'Literal radio-button cells (ring + filled dot when active)',
+  dots: 'Sphere field, center-distance falloff',
+  blocks: 'Extruded cubes, 0.95 gap between cells',
+  hline: 'Long horizontal lines (one per row)',
+  vline: 'Long vertical lines (one per column)',
+  ascii: '24-glyph ASCII portrait of the camera feed',
+  pixel: 'Hard Bayer-dithered bitmap squares',
+  ribbon: '3-band FFT, flowing horizontal bands',
+  dither: 'Full Bayer-dithered halftone face',
 }
 
 const THEME_DESC: Record<Theme, string> = {

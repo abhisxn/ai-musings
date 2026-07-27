@@ -50,8 +50,8 @@ describe('getModeThemePitchShift', () => {
   })
 
   it('returns a deterministic value for the same inputs', () => {
-    const a = getModeThemePitchShift('lines', 'acid')
-    const b = getModeThemePitchShift('lines', 'acid')
+    const a = getModeThemePitchShift('hline', 'acid')
+    const b = getModeThemePitchShift('hline', 'acid')
     expect(a).toBe(b)
   })
 

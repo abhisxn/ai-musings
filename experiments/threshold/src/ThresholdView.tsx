@@ -143,7 +143,7 @@ export default function ThresholdView() {
   }), [palette])
 
   const { videoRef } = useWebcam()
-  const { dataRef } = useSampler()
+  const { dataRef, frameTextureRef } = useSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
   const { statusText } = useMotionZones()
   const { status: gestureStatus } = useGestureTracking()
@@ -296,7 +296,7 @@ export default function ThresholdView() {
         e.preventDefault()
         const current = useStore.getState().viewMode
         setViewMode(current === 'flat' ? 'volumetric' : 'flat')
-      } else if (e.key >= '1' && e.key <= '7') {
+      } else if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key) - 1
         if (idx < modeList.length) setRenderMode(modeList[idx])
       } else if (e.key === '0') {
@@ -706,7 +706,7 @@ export default function ThresholdView() {
         <DriftingPointLight basePosition={[10, 10, 10]} intensity={1} color={palette.accent} />
         <directionalLight position={[-8, 6, -10]} intensity={0.4} color={palette.accent} />
         <fog attach="fog" args={[palette.background, 15, 45]} />
-        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} />
+        <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} frameTextureRef={frameTextureRef} />
       </Canvas>
     </div>
   )
