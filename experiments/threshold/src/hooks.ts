@@ -9,6 +9,7 @@ export function useWebcam() {
   const streamRef = useRef<MediaStream | null>(null)
   const setVideoElement = useStore(state => state.setVideoElement)
   const initialized = useStore(state => state.initialized)
+  const resolution = useStore(state => state.resolution)
 
   // ThresholdView mounts/unmounts its <video> element across several
   // conditional branches (init screen / onboarding / main scene). A plain
@@ -38,7 +39,7 @@ export function useWebcam() {
     async function setupCamera() {
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480 },
+          video: { width: resolution, height: resolution },
           audio: false
         })
         if (cancelled) {
@@ -61,7 +62,7 @@ export function useWebcam() {
       streamRef.current = null
       attacherRef.current.setStream(null)
     }
-  }, [initialized])
+  }, [initialized, resolution])
 
   const videoRef = useCallback((node: HTMLVideoElement | null) => {
     attacherRef.current.setNode(node)
@@ -77,6 +78,11 @@ export function useSampler() {
   const sourceMode = useStore(state => state.sourceMode)
   
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
+  // Re-allocate dataRef when resolution changes so it always has the right
+  // size (one float per grid cell).
+  useEffect(() => {
+    dataRef.current = new Float32Array(resolution * resolution)
+  }, [resolution])
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const frameTextureRef = useRef<THREE.CanvasTexture | null>(null)
 
@@ -86,9 +92,11 @@ export function useSampler() {
     
     if (!samplerCanvasRef.current) {
       samplerCanvasRef.current = document.createElement('canvas')
-      samplerCanvasRef.current.width = 128
-      samplerCanvasRef.current.height = 128
     }
+    // Size the sampler canvas to match the current grid resolution so the
+    // bleed video and the 3D Canvas operate on the same pixel grid.
+    samplerCanvasRef.current.width = resolution
+    samplerCanvasRef.current.height = resolution
     
     const canvas = samplerCanvasRef.current
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!
@@ -125,16 +133,16 @@ export function useSampler() {
       if (videoElement && videoElement.readyState >= 2) {
         isProcessing = true
         try {
-          ctx.drawImage(videoElement, 0, 0, 128, 128)
-          const imageData = ctx.getImageData(0, 0, 128, 128)
+          ctx.drawImage(videoElement, 0, 0, resolution, resolution)
+          const imageData = ctx.getImageData(0, 0, resolution, resolution)
           const data = imageData.data
 
           for (let y = 0; y < resolution; y++) {
             const targetY = y * resolution
-            const sy = Math.floor((y / resolution) * 128)
+            const sy = y
             for (let x = 0; x < resolution; x++) {
-              const sx = Math.floor((x / resolution) * 128)
-              const idx = (sy * 128 + sx) * 4
+              const sx = x
+              const idx = (sy * resolution + sx) * 4
               const r = data[idx]
               const g = data[idx + 1]
               const b = data[idx + 2]

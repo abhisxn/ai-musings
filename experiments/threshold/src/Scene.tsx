@@ -53,14 +53,15 @@ export function Scene({
   const count = resolution * resolution
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
-  const prevStates = useMemo(() => new Uint8Array(128 * 128), [])
+  const prevStates = useMemo(() => new Uint8Array(resolution * resolution), [resolution])
 
   // Per-row / per-column brightness accumulators for hline/vline modes
   // (reset each frame, written in the per-cell loop, consumed after).
-  const rowSumRef = useRef<Float32Array>(new Float32Array(128))
-  const rowCountRef = useRef<Float32Array>(new Float32Array(128))
-  const colSumRef = useRef<Float32Array>(new Float32Array(128))
-  const colCountRef = useRef<Float32Array>(new Float32Array(128))
+  // Sized to the current resolution so the per-row/per-col loops index safely.
+  const rowSumRef = useRef<Float32Array>(new Float32Array(resolution))
+  const rowCountRef = useRef<Float32Array>(new Float32Array(resolution))
+  const colSumRef = useRef<Float32Array>(new Float32Array(resolution))
+  const colCountRef = useRef<Float32Array>(new Float32Array(resolution))
 
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
@@ -187,7 +188,7 @@ export function Scene({
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uFrame: { value: frameTextureRef?.current ?? null },
-        uResolution: { value: new THREE.Vector2(640, 480) },
+        uResolution: { value: new THREE.Vector2(resolution, resolution) },
         uLevels: { value: 6 },
       },
       vertexShader: bayerDitherVertexShader,
@@ -196,7 +197,7 @@ export function Scene({
       depthWrite: false,
     })
     return mat
-  }, [frameTextureRef])
+  }, [frameTextureRef, resolution])
 
   const spacing = 0.25
 

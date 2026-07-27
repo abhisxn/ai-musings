@@ -29,6 +29,17 @@ if (typeof window !== 'undefined') {
 const POS_FLAT = new THREE.Vector3(0, 0, 22)
 const POS_VOLUMETRIC = new THREE.Vector3(18, -18, 24)
 const LOOK_AT = new THREE.Vector3(0, 0, 0)
+const SPACING = 0.25
+const FOV = 50
+
+/** Camera distance required for a grid of `resolution` cells (each SPACING
+ *  wide) to exactly fill the viewport vertically. The base positions
+ *  (POS_FLAT / POS_VOLUMETRIC) are scaled uniformly from the origin so the
+ *  viewing angle stays the same at every resolution. */
+function cameraDistanceForResolution(resolution: number): number {
+  const gridSize = resolution * SPACING
+  return gridSize / (2 * Math.tan((FOV * Math.PI / 180) / 2))
+}
 
 /** Per-gesture reticle pulse swatch colors (mirrors the onboarding swatches):
  *  fist → green, open_palm → cyan, pinch → orange. */
@@ -40,17 +51,25 @@ const GESTURE_RETICLE_COLORS: Record<string, string> = {
 
 function AnimatedCamera() {
   const viewMode = useStore(state => state.viewMode)
+  const resolution = useStore(state => state.resolution)
   const cameraRef = useRef<THREE.PerspectiveCamera>(null)
 
   useFrame((_, delta) => {
     if (!cameraRef.current) return
-    const targetPos = viewMode === 'flat' ? POS_FLAT : POS_VOLUMETRIC
+    const basePos = viewMode === 'flat' ? POS_FLAT : POS_VOLUMETRIC
+    // Scale the base position so the camera's Z-component (its perpendicular
+    // distance to the grid plane at z=0) matches the distance needed for the
+    // grid to exactly fill the viewport. The viewing angle is preserved.
+    const targetDist = cameraDistanceForResolution(resolution)
+    const baseZ = Math.abs(basePos.z)
+    const scale = baseZ > 0 ? targetDist / baseZ : 1
+    const targetPos = basePos.clone().multiplyScalar(scale)
     const factor = 1 - Math.pow(0.01, delta)
     cameraRef.current.position.lerp(targetPos, factor)
     cameraRef.current.lookAt(LOOK_AT)
   })
 
-  return <PerspectiveCamera ref={cameraRef} makeDefault fov={50} />
+  return <PerspectiveCamera ref={cameraRef} makeDefault fov={FOV} />
 }
 
 // Existing warm pointLight with a slow positional drift (±0.5 units, ~0.1Hz).
@@ -552,18 +571,18 @@ export default function ThresholdView() {
       </div>
 
       {/* Webcam overlay (pip | bleed; off when !cameraOn) */}
-      {/* 3D stage: shared 4:3 aspect ratio container that holds the bleed
-          video and the Canvas. Both fill the same box so the 3D grid aligns
-          pixel-for-pixel with the visible camera feed. The container is
-          centered and sized to the largest 4:3 box that fits the viewport. */}
+      {/* 3D stage: shared square (1:1) container that holds the bleed video
+          and the Canvas. Both fill the same box at the same pixel size, so
+          the 3D grid aligns pixel-for-pixel with the visible camera feed.
+          Centered and sized to the largest square that fits the viewport. */}
       <div
         className="absolute z-0"
         style={{
-          aspectRatio: '4 / 3',
+          aspectRatio: '1 / 1',
           maxWidth: '100vw',
           maxHeight: '100vh',
-          width: 'min(100vw, calc(100vh * 4 / 3))',
-          height: 'min(100vh, calc(100vw * 3 / 4))',
+          width: 'min(100vw, 100vh)',
+          height: 'min(100vw, 100vh)',
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
@@ -706,16 +725,16 @@ export default function ThresholdView() {
         flat
         theme={levaTheme}
       />
-      {/* Canvas wrapper: matches the 4:3 bleed stage so the 3D grid renders
-          at the same size/ratio as the camera feed. */}
+      {/* Canvas wrapper: matches the square bleed stage so the 3D grid
+          renders at the exact same pixel size as the camera feed. */}
       <div
         className="absolute z-[1]"
         style={{
-          aspectRatio: '4 / 3',
+          aspectRatio: '1 / 1',
           maxWidth: '100vw',
           maxHeight: '100vh',
-          width: 'min(100vw, calc(100vh * 4 / 3))',
-          height: 'min(100vh, calc(100vw * 3 / 4))',
+          width: 'min(100vw, 100vh)',
+          height: 'min(100vw, 100vh)',
           left: '50%',
           top: '50%',
           transform: 'translate(-50%, -50%)',
