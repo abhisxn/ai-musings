@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { ExperimentCard } from './ExperimentCard'
+import { assetPath } from '@/lib/assetPath'
 import meta from '@/experiments/threshold/meta'
 
 describe('ExperimentCard', () => {
@@ -12,7 +13,7 @@ describe('ExperimentCard', () => {
 
     const img = screen.getByRole('img', { name: meta.title })
     expect(img).toBeVisible()
-    expect(img).toHaveAttribute('src', meta.thumbnail)
+    expect(img).toHaveAttribute('src', assetPath(meta.thumbnail))
   })
 
   it('links to the flattened /[slug] route', () => {

@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ExperimentMeta } from '@/lib/types'
+import { assetPath } from '@/lib/assetPath'
 import { Badge } from '@/components/ui/Badge'
 import { Card } from '@/components/ui/Card'
 
@@ -41,12 +43,18 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
       >
         <Card className="h-full" contentClassName="p-0">
           <div className="relative aspect-[4/3] overflow-hidden bg-surface-3">
-            <motion.img
-              src={experiment.thumbnail}
-              alt={experiment.title}
-              className="w-full h-full object-cover"
+            <motion.div
+              className="w-full h-full"
               variants={imageVariants}
-            />
+            >
+              <Image
+                src={assetPath(experiment.thumbnail)}
+                alt={experiment.title}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </motion.div>
           </div>
 
           <div className="flex flex-col gap-2.5 p-5">

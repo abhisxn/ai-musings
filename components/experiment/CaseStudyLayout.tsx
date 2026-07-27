@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { ExperimentMeta, CaseStudyParagraph } from '@/lib/types'
+import { assetPath } from '@/lib/assetPath'
 import { SectionNav } from './SectionNav'
 
 interface CaseStudyLayoutProps {
@@ -32,7 +34,7 @@ export function CaseStudyLayout({ meta }: CaseStudyLayoutProps) {
   return (
     <article className="max-w-6xl mx-auto px-4 pb-24">
       <div className="relative w-full aspect-[21/6] rounded-card overflow-hidden mb-10 bg-surface-3">
-        <img src={meta.hero} alt={meta.title} className="w-full h-full object-cover" />
+        <Image src={assetPath(meta.hero)} alt={meta.title} fill className="object-cover" sizes="100vw" priority />
         <Link
           href={`/${meta.slug}/embed`}
           target="_blank"
