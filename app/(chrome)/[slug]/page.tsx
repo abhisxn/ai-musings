@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation'
 import { getAllExperiments, getExperimentBySlug } from '@/lib/experiments'
-import { ExperimentLayout } from '@/components/experiment/ExperimentLayout'
-import { ExperimentView } from '@/components/experiment/ExperimentView'
+import { CaseStudyLayout } from '@/components/experiment/CaseStudyLayout'
 
 export async function generateStaticParams() {
   return getAllExperiments().map(e => ({ slug: e.slug }))
@@ -16,9 +15,5 @@ export default async function ExperimentPage({ params }: Props) {
   const meta = getExperimentBySlug(slug)
   if (!meta) notFound()
 
-  return (
-    <ExperimentLayout meta={meta}>
-      <ExperimentView meta={meta} />
-    </ExperimentLayout>
-  )
+  return <CaseStudyLayout meta={meta} />
 }

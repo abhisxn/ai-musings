@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { getAllExperiments, getExperimentBySlug } from '@/lib/experiments'
-import { ExperimentLayout } from '@/components/experiment/ExperimentLayout'
 import { ExperimentFrame } from '@/components/experiment/ExperimentFrame'
 
 export async function generateStaticParams() {
@@ -17,7 +16,7 @@ export default async function ExperimentEmbedPage({ params }: Props) {
   if (!meta) notFound()
 
   return (
-    <ExperimentLayout meta={meta} embed>
+    <div className="w-screen h-screen overflow-hidden">
       {meta.type === 'iframe' && meta.iframeSrc ? (
         <ExperimentFrame src={meta.iframeSrc} title={meta.title} />
       ) : (
@@ -25,6 +24,6 @@ export default async function ExperimentEmbedPage({ params }: Props) {
           [ react component not yet connected ]
         </div>
       )}
-    </ExperimentLayout>
+    </div>
   )
 }
