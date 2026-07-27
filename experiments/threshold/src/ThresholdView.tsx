@@ -689,9 +689,13 @@ export default function ThresholdView() {
         flat
         theme={levaTheme}
       />
-      <Canvas shadows gl={{ antialias: false }} onCreated={({ gl }) => { gl.domElement.style.touchAction = 'auto'; gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) }}>
+      <Canvas shadows gl={{ antialias: false, alpha: true }} onCreated={({ gl }) => { 
+        gl.setClearAlpha(0);
+        gl.domElement.style.touchAction = 'auto'; 
+        gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) 
+      }}>
         <AnimatedCamera />
-        <color attach="background" args={['#000000']} />
+        {/* No background color - transparent Canvas allows camera bleed to show through */}
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />
