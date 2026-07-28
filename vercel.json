@@ -12,6 +12,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/musings/:path(.+)/",
+      "destination": "/:path"
+    },
+    {
       "source": "/musings/:path*",
       "destination": "/:path*"
     }
