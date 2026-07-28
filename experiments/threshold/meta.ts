@@ -7,7 +7,7 @@ const meta: ExperimentMeta = {
   summary: 'A webcam turned into a volumetric instrument — real-time depth, gesture, and generative sound built from a single video feed.',
   date: '2026-04-30',
   type: 'react',
-  status: 'wip',
+  status: 'live',
   tags: ['vision', 'audio', 'terminal', 'camera', 'webgl', 'ai'],
   series: 'perception',
   thumbnail: '/experiments/threshold/thumbnail.svg',
