@@ -1,5 +1,19 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "out",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/musings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/musings/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/musings/:path*",
+      "destination": "/:path*"
+    }
+  ]
 }
