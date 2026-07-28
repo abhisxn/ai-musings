@@ -1,27 +1,123 @@
 import Link from 'next/link'
 
+const PORTFOLIO_URL = 'https://thatguyabhishek.com'
+const YEAR = new Date().getFullYear()
+
+const SOCIALS = [
+  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/thatguyabhishek/' },
+  { label: 'Dribbble', href: 'https://dribbble.com/abhisheksaxena' },
+  { label: 'Behance', href: 'https://www.behance.net/thatguyabhishek' },
+]
+
+const LINKS = [
+  { label: 'About', href: `${PORTFOLIO_URL}/about` },
+  { label: 'Work', href: `${PORTFOLIO_URL}/work` },
+  { label: 'Awards', href: `${PORTFOLIO_URL}/awards` },
+]
+
+const CONTACT = [
+  { label: 'Call for a Chat', href: 'tel:+919999005281' },
+  { label: 'Send an email', href: 'mailto:abhisxn@gmail.com' },
+  { label: 'WhatsApp me', href: 'https://wa.me/919999005281' },
+]
+
 export function Footer() {
-  const year = new Date().getFullYear()
   return (
-    <footer className="mt-24 mb-6 px-4 flex justify-center">
-      <div
-        className="w-full max-w-3xl mx-auto
-                   px-5 py-3
-                   rounded-pill
-                   bg-surface-1 backdrop-blur-xl backdrop-saturate-150
-                   border border-border-1
-                   flex items-center justify-between gap-3
-                   t-caption text-fg/60"
-      >
-        <span>
-          © {year} Abhishek Saxena
-        </span>
-        <Link
-          href="/experiments"
-          className="hover:text-accent transition-colors rounded-btn focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-        >
-          AI Musings
-        </Link>
+    <footer className="border-t border-border-1 text-fg relative z-10">
+      <div className="max-w-[1200px] mx-auto px-6 sm:px-10 lg:px-16 py-14 sm:py-20 lg:py-24">
+        <div className="flex flex-col gap-12 sm:gap-16">
+          {/* CTA headline */}
+          <div>
+            <p className="t-h3 max-w-4xl">
+              Good design isn&apos;t decoration. It&apos;s the decision that changes the outcome. If
+              that&apos;s who you&apos;re looking for,{' '}
+              <span className="text-accent">look no further, get in touch.</span>
+            </p>
+            <hr className="mt-8 border-border-1" />
+          </div>
+
+          {/* Contact CTA */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div>
+              <p className="t-h4">Have an exciting project?</p>
+              <p className="t-body1 text-fg/70">Let&apos;s work together.</p>
+            </div>
+            <a
+              href="mailto:abhisxn@gmail.com"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full font-medium text-sm border border-fg/30 text-fg hover:bg-fg hover:text-bg transition-colors duration-200"
+            >
+              Connect with me
+            </a>
+          </div>
+
+          {/* Links grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-border-1 pt-10 text-center sm:text-left">
+            <div className="flex flex-col gap-4 items-center sm:items-start">
+              <p className="t-body1 font-semibold text-fg">Socials</p>
+              {SOCIALS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-4 items-center sm:items-start">
+              <p className="t-body1 font-semibold text-fg">Links</p>
+              {LINKS.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-4 items-center sm:items-start">
+              <p className="t-body1 font-semibold text-fg">Contact</p>
+              {CONTACT.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target={link.href.startsWith('http') ? '_blank' : undefined}
+                  rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                  className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom bar */}
+      <div className="border-t border-border-1">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-10 lg:px-16 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 t-caption text-fg/60">
+          <span>© {YEAR} Abhishek Saxena</span>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="hover:text-accent transition-colors">
+              AI Musings
+            </Link>
+            <a
+              href={PORTFOLIO_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-accent transition-colors"
+            >
+              thatguyabhishek.com
+            </a>
+          </div>
+        </div>
       </div>
     </footer>
   )
