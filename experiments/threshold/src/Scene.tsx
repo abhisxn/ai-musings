@@ -37,6 +37,7 @@ export function Scene({
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   const ribbonMeshRef = useRef<THREE.InstancedMesh>(null)
+  const meshModeRef = useRef<THREE.Mesh>(null)
   const ditherMeshRef = useRef<THREE.Mesh>(null)
   
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
@@ -61,6 +62,11 @@ export function Scene({
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
   const prevStates = useMemo(() => new Uint8Array(resolution * resolution), [resolution])
+
+  // Per-cell z displacement buffer for the `mesh` render mode. Written every
+  // frame in the per-cell loop (after finalZ is computed), consumed after the
+  // loop to mutate the mesh's vertex z attribute.
+  const meshZBufferRef = useRef<Float32Array | null>(null)
 
   // Per-row / per-column brightness accumulators for hline/vline modes
   // (reset each frame, written in the per-cell loop, consumed after).
@@ -92,9 +98,16 @@ export function Scene({
   // per-frame loop. hline/vline use `count = resolution` (one per row/col);
   // the rest use `count = resolution²`.
   const meshRefs = useMemo(
-    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, hlineMeshRef, vlineMeshRef, asciiMeshRef, pixelMeshRef, ribbonMeshRef],
+    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, hlineMeshRef, vlineMeshRef, asciiMeshRef, pixelMeshRef, ribbonMeshRef, meshModeRef],
     [],
   )
+
+  // Resize the mesh z-buffer when resolution changes (matches the
+  // planeGeometry's (resolution-1)x(resolution-1) segment count, which yields
+  // resolution*resolution vertices).
+  useEffect(() => {
+    meshZBufferRef.current = new Float32Array(resolution * resolution)
+  }, [resolution])
 
   // Chrome color: UI / grid / emissive glow only. Per-cell diffuse is now
   // always driven by `getGradientColor(theme, brightness)` via instanceColor,
@@ -311,6 +324,10 @@ useFrame((state) => {
         const audioHeight = isActive ? (audioIntensity * effectiveExtrusion) : 0
         const finalZ = Math.max(0.05, zExtrusion + audioHeight) + proximityWarp
         const modeZ = finalZ
+
+        if (renderMode === 'mesh' && meshZBufferRef.current) {
+          meshZBufferRef.current[id] = viewMode === 'flat' ? 0 : finalZ
+        }
         
         const s = isActive ? 0.4 : 0.1
         const pSize = 0.4
@@ -469,6 +486,27 @@ useFrame((state) => {
       colSumRef.current.fill(0); colCountRef.current.fill(0)
     }
 
+    // Mesh mode: read the per-cell z buffer written in the loop above and
+    // apply it as vertex displacement on the planeGeometry. Vertices are laid
+    // out in row-major order matching the per-cell loop (resolution*resolution
+    // vertices from planeGeometry args resolution-1 segments per side).
+    if (renderMode === 'mesh' && meshModeRef.current) {
+      const geometry = meshModeRef.current.geometry as THREE.PlaneGeometry
+      const positions = geometry.attributes.position.array as Float32Array
+      const zBuf = meshZBufferRef.current
+      if (zBuf) {
+        for (let i = 0; i < positions.length / 3; i++) {
+          const x = i % resolution
+          const y = Math.floor(i / resolution)
+          const cellId = y * resolution + x
+          const z = zBuf[cellId] ?? 0
+          positions[i * 3 + 2] = z
+        }
+        geometry.attributes.position.needsUpdate = true
+        geometry.computeVertexNormals()
+      }
+    }
+
     let breathMultiplier = 1.0
     if (moodEnabled) {
       const t = state.clock.elapsedTime
@@ -495,7 +533,7 @@ useFrame((state) => {
     // shimmers without a per-frame Math.random() storm. ±3%, clamped >= 0.
     const flickerIdx = Math.floor(state.clock.elapsedTime * 24) % count
     const flicker = flickerOffsets[flickerIdx] ?? 0
-    let activeRef: React.RefObject<THREE.InstancedMesh | null> | undefined
+    let activeRef: React.RefObject<THREE.InstancedMesh | THREE.Mesh | null> | undefined
     switch (renderMode) {
       case 'blocks': activeRef = blocksRef; break
       case 'radio': activeRef = radioRingRef; break
@@ -505,16 +543,17 @@ useFrame((state) => {
       case 'vline': activeRef = vlineMeshRef; break
       case 'ascii': activeRef = asciiMeshRef; break
       case 'ribbon': activeRef = ribbonMeshRef; break
+      case 'mesh': activeRef = meshModeRef; break
     }
 
     if (activeRef?.current) {
       const mesh = activeRef.current
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      if ('instanceColor' in mesh && mesh.instanceColor) mesh.instanceColor.needsUpdate = true
       if (mesh.material instanceof THREE.MeshStandardMaterial) {
         const flickered = Math.max(0, baseEmissive * (1 + flicker))
         mesh.material.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
       }
-      mesh.instanceMatrix.needsUpdate = true
+      if ('instanceMatrix' in mesh && mesh.instanceMatrix) mesh.instanceMatrix.needsUpdate = true
     }
     if (renderMode === 'radio' && radioDotRef.current) {
       const mesh = radioDotRef.current
@@ -605,6 +644,21 @@ useFrame((state) => {
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
               </instancedMesh>
+            )
+          case 'mesh':
+            return (
+              <mesh key={`mesh-${resolution}`} ref={meshModeRef} visible>
+                <planeGeometry args={[resolution * spacing, resolution * spacing, resolution - 1, resolution - 1]} />
+                <meshStandardMaterial
+                  color="#ffffff"
+                  emissive={chromeColor}
+                  emissiveIntensity={1}
+                  wireframe
+                  blending={THREE.AdditiveBlending}
+                  transparent
+                  depthWrite={false}
+                />
+              </mesh>
             )
           case 'dither':
             return (
