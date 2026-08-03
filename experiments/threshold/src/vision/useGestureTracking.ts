@@ -175,7 +175,7 @@ export function useGestureTracking() {
         detected,
         wrist,
         pinchDistance,
-        proximity: 0,
+        proximity: 0, // TODO(B3): replace with normalized hand-span + resolveContinuousValue
         // One-shot: only report a gesture on the frame it's entered, not
         // every frame it's held - avoids re-firing downstream "moment" logic.
         gesture: edge.entered ?? null,
