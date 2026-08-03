@@ -98,9 +98,11 @@ Textures are quiet by design relative to the main pad (mixed several dB below it
 
 | Gesture | Action | Cycles/toggles |
 |---|---|---|
-| FIST | next Render Mode | `RENDER_MODES` order: radio → dots → blocks → lines → ascii → pixel → spectral → (loop) |
-| OPEN_PALM | next Theme | `THEMES_LIST` order: dark → light → acid → heatmap → (loop) |
-| PINCH | toggle Session Arc on/off | `moodEnabled` |
+| FIST | toggle View Mode | `flat` ↔ `volumetric` |
+| OPEN_PALM | toggle Session Arc | `moodEnabled` on/off |
+| PINCH | live threshold control | `threshold` slider |
+| THUMB_UP | next Render Mode | `RENDER_MODES` forward |
+| THUMB_DOWN | previous Render Mode | `RENDER_MODES` backward |
 
 A continuous (non-edge) gesture signal, `pinchDistance`, separately and directly drives the **Threshold** brightness-cutoff slider every frame — unrelated to the discrete PINCH toggle above.
 

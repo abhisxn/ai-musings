@@ -13,13 +13,16 @@ export const ONBOARDING_STEP_COUNT = 6
 
 /**
  * The gesture → action contract documented in step 3. Mirrors Track B's
- * `useGestureControls` mapping: FIST→next render mode, OPEN PALM→next theme,
- * PINCH→toggle mood.
+ * `useGestureControls` mapping: FIST→toggle flat/volumetric view, OPEN PALM→
+ * toggle Session Arc (mood), PINCH→live threshold control, THUMB UP→next
+ * render mode, THUMB DOWN→previous render mode.
  */
 export const GESTURE_ACTIONS = [
-  { gesture: 'FIST', action: 'next render mode' },
-  { gesture: 'OPEN PALM', action: 'next theme' },
-  { gesture: 'PINCH', action: 'toggle mood (ARC)' },
+  { gesture: 'FIST', action: 'toggle flat ↔ volumetric view' },
+  { gesture: 'OPEN PALM', action: 'toggle Session Arc (mood)' },
+  { gesture: 'PINCH', action: 'live threshold control' },
+  { gesture: 'THUMB UP', action: 'next render mode' },
+  { gesture: 'THUMB DOWN', action: 'previous render mode' },
 ] as const
 
 /**
@@ -34,9 +37,11 @@ export const KEYBOARD_SHORTCUTS = [
   { keys: 'Space', action: 'toggle flat ↔ volumetric view' },
 ] as const
 
-/** The three practice swatches for step 3, reusing the green/cyan/orange vocabulary. */
+/** The five practice swatches for step 3, reusing the green/cyan/orange/yellow/magenta vocabulary. */
 export const GESTURE_SWATCHES = [
   { key: 'fist', label: 'FIST', color: '#00ff41', emoji: '\u270A' },
   { key: 'open_palm', label: 'OPEN PALM', color: '#00ffff', emoji: '\uD83D\uDD90\uFE0F' },
   { key: 'pinch', label: 'PINCH', color: '#ff4400', emoji: '\uD83E\uDD0F' },
+  { key: 'thumb_up', label: 'THUMB UP', color: '#ffff00', emoji: '\uD83D\uDC4D' },
+  { key: 'thumb_down', label: 'THUMB DOWN', color: '#ff00ff', emoji: '\uD83D\uDC4E' },
 ] as const
