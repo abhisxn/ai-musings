@@ -41,14 +41,19 @@ export function Scene({
 
   const frameCountRef = useRef(0)
 
+  const PROXIMITY_EXTRUSION_BOOST = 0.5
+
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
   // on top - same signal that drives the ambient glow in ThresholdView, now
-  // also proving out on the volumetric depth.
+  // also proving out on the volumetric depth. Proximity (how close the hand
+  // is to the camera) multiplies the combined value, so reaching toward the
+  // camera boosts the volumetric extrusion by up to 50%.
   const effectiveExtrusion = useMemo(() => {
     if (gestureTrackingStatus !== 'active') return extrusion
-    return extrusion + wristYToExtrusionDrift(handTracking.wrist, handTracking.detected)
-  }, [extrusion, gestureTrackingStatus, handTracking.wrist, handTracking.detected])
+    const drift = wristYToExtrusionDrift(handTracking.wrist, handTracking.detected)
+    return (extrusion + drift) * (1 + handTracking.proximity * PROXIMITY_EXTRUSION_BOOST)
+  }, [extrusion, gestureTrackingStatus, handTracking.wrist, handTracking.detected, handTracking.proximity])
 
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   

@@ -62,9 +62,11 @@ export function useAudio() {
   const renderMode = useStore(state => state.renderMode)
   const theme = useStore(state => state.theme)
   const gesture = useStore(state => state.handTracking.gesture)
+  const proximity = useStore(state => state.handTracking.proximity)
   const [masterReady, setMasterReady] = useState(false)
   const analyzerRef = useRef<Tone.Analyser | null>(null)
   const masterGainRef = useRef<Tone.Gain | null>(null)
+  const proximityFilterRef = useRef<Tone.Filter | null>(null)
   const markovRef = useRef<MarkovMelody | null>(null)
   const atmosRef = useRef<Tone.ToneAudioNode[]>([])
   const melodyRef = useRef<{ synth: Tone.PolySynth; loop: Tone.Loop } | null>(null)
@@ -295,7 +297,8 @@ export function useAudio() {
       }
       if (!masterGainRef.current) {
         masterGainRef.current = new Tone.Gain(0.8)
-        masterGainRef.current.toDestination()
+        proximityFilterRef.current = new Tone.Filter(800, 'lowpass')
+        masterGainRef.current.chain(proximityFilterRef.current, Tone.Destination)
         masterGainRef.current.connect(analyzerRef.current)
         setMasterReady(true)
       }
@@ -314,6 +317,7 @@ export function useAudio() {
       textureRef.current?.gain.dispose()
       disposeTexture()
       masterGainRef.current?.dispose()
+      proximityFilterRef.current?.dispose()
       analyzerRef.current?.dispose()
     }
   }, [])
@@ -321,6 +325,14 @@ export function useAudio() {
   useEffect(() => {
     Tone.getDestination().volume.value = volumeToDb(volume)
   }, [volume])
+
+  useEffect(() => {
+    if (!proximityFilterRef.current) return
+    const minFreq = 800
+    const maxFreq = 8000
+    const target = minFreq + proximity * (maxFreq - minFreq)
+    proximityFilterRef.current.frequency.rampTo(target, 0.1)
+  }, [proximity])
 
   useEffect(() => {
     renderModeRef.current = renderMode
