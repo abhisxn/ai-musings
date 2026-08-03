@@ -2,6 +2,14 @@
   "buildCommand": "npm run build",
   "outputDirectory": "out",
   "framework": null,
+  "headers": [
+    {
+      "source": "/musings/:path*",
+      "headers": [
+        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self)" }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/musings",
