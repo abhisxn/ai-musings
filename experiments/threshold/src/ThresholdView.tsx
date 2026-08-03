@@ -146,6 +146,14 @@ export default function ThresholdView() {
 
   const palette = getTheme(theme)
 
+  const [canvasReady, setCanvasReady] = useState(false)
+  useEffect(() => {
+    if (initialized) {
+      const raf = requestAnimationFrame(() => setCanvasReady(true))
+      return () => cancelAnimationFrame(raf)
+    }
+  }, [initialized])
+
   // Leva brutalist theme — memoized on `palette` (a stable THEMES singleton
   // reference, so this only re-builds when the actual theme changes) so Leva
   // doesn't re-apply theming on every unrelated store-driven re-render.
@@ -844,7 +852,11 @@ export default function ThresholdView() {
         theme={levaTheme}
       />
       {/* Canvas wrapper: matches the square bleed stage so the 3D grid
-          renders at the exact same pixel size as the camera feed. */}
+          renders at the exact same pixel size as the camera feed.
+          Guarded by `canvasReady` so React StrictMode's double-mount in
+          dev can't create/unmount the WebGL renderer twice in rapid
+          succession (which can surface as a transient context-lost). */}
+      {canvasReady && (
       <div
         className="absolute z-[1]"
         style={{
@@ -858,10 +870,19 @@ export default function ThresholdView() {
           transform: 'translate(-50%, -50%)',
         }}
       >
-      <Canvas shadows gl={{ antialias: false, alpha: true }} onCreated={({ gl }) => { 
-        gl.setClearAlpha(0);
-        gl.domElement.style.touchAction = 'auto'; 
-        gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false }) 
+      <Canvas shadows gl={{ antialias: false, alpha: true, powerPreference: 'high-performance' }} onCreated={({ gl }) => {
+        gl.setClearAlpha(0)
+        gl.domElement.style.touchAction = 'auto'
+        gl.domElement.addEventListener('wheel', (e) => e.stopPropagation(), { passive: false })
+
+        const canvas = gl.domElement
+        canvas.addEventListener('webglcontextlost', (event) => {
+          event.preventDefault()
+          console.warn('[Threshold] WebGL context lost — attempting recovery')
+        })
+        canvas.addEventListener('webglcontextrestored', () => {
+          console.info('[Threshold] WebGL context restored')
+        })
       }}>
         <AnimatedCamera />
         {/* No background color - transparent Canvas allows camera bleed to show through */}
@@ -899,6 +920,7 @@ export default function ThresholdView() {
         <Scene pixelDataRef={dataRef} analyzerRef={analyzerRef} triggerVoice={triggerVoice} triggerClick={triggerClick} frameTextureRef={frameTextureRef} />
       </Canvas>
       </div>
+      )}
     </div>
   )
 }
