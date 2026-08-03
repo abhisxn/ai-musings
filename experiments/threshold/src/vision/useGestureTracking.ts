@@ -34,6 +34,8 @@ import type {
 const RAW_GESTURE_MAP: Record<string, Exclude<Gesture, null>> = {
   Closed_Fist: 'fist',
   Open_Palm: 'open_palm',
+  Thumb_Up: 'thumb_up',
+  Thumb_Down: 'thumb_down',
 }
 
 function mapRawGesture(raw: string | null): Gesture {

@@ -6,6 +6,7 @@ import {
   resolveGesture,
   resolveContinuousValue,
   detectGestureEdge,
+  type Gesture,
 } from '../pinch'
 
 describe('calculateLandmarkDistance', () => {
@@ -155,9 +156,9 @@ describe('detectGestureEdge', () => {
   })
 
   it('fires only once across repeated identical frames (not on every held frame)', () => {
-    const frames: Array<'fist' | 'open_palm' | 'pinch' | null> = [null, 'fist', 'fist', 'fist', null]
-    const entries: Array<'fist' | 'open_palm' | 'pinch'> = []
-    const exits: Array<'fist' | 'open_palm' | 'pinch'> = []
+    const frames: Array<Gesture> = [null, 'fist', 'fist', 'fist', null]
+    const entries: Array<Exclude<Gesture, null>> = []
+    const exits: Array<Exclude<Gesture, null>> = []
     for (let i = 1; i < frames.length; i++) {
       const edge = detectGestureEdge(frames[i - 1], frames[i])
       if (edge.entered) entries.push(edge.entered)
@@ -167,9 +168,11 @@ describe('detectGestureEdge', () => {
     expect(exits).toEqual(['fist'])
   })
 
-  it('works generically for all three discrete gestures', () => {
+  it('works generically for all discrete gestures', () => {
     expect(detectGestureEdge(null, 'open_palm').entered).toBe('open_palm')
     expect(detectGestureEdge(null, 'fist').entered).toBe('fist')
     expect(detectGestureEdge(null, 'pinch').entered).toBe('pinch')
+    expect(detectGestureEdge(null, 'thumb_up').entered).toBe('thumb_up')
+    expect(detectGestureEdge(null, 'thumb_down').entered).toBe('thumb_down')
   })
 })

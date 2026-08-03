@@ -15,7 +15,7 @@ export interface Landmark {
 }
 
 /** The vocabulary of discrete, edge-triggered gestures this experiment recognizes. */
-export type Gesture = 'fist' | 'open_palm' | 'pinch' | null
+export type Gesture = 'fist' | 'open_palm' | 'pinch' | 'thumb_up' | 'thumb_down' | null
 
 /** Which discrete gesture(s) a transition entered and/or exited on this frame. */
 export interface GestureTransition {

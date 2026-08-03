@@ -1,3 +1,5 @@
+import type { Gesture } from './vision/pinch'
+
 export type Mood = 'luminous' | 'deep' | 'pulse' | 'solar' | 'azure'
 export type Phase = 'calm' | 'active' | 'climax'
 
@@ -5,7 +7,7 @@ export interface HandTracking {
   detected: boolean
   wrist: { x: number; y: number; z: number } | null
   pinchDistance: number
-  gesture: 'fist' | 'open_palm' | 'pinch' | null
+  gesture: Exclude<Gesture, null> | null
   confidence: number
 }
 
