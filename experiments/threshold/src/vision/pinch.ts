@@ -27,6 +27,8 @@ const DEFAULT_CONFIDENCE_THRESHOLD = 0.6
 const DEFAULT_MIN_PINCH_DISTANCE = 0.02
 const DEFAULT_MAX_PINCH_DISTANCE = 0.3
 const DEFAULT_PINCH_THRESHOLD = 0.15
+const DEFAULT_MIN_HAND_SPAN = 0.05
+const DEFAULT_MAX_HAND_SPAN = 0.5
 
 /** Euclidean distance between two landmarks in 3D normalized space. */
 export function calculateLandmarkDistance(a: Landmark, b: Landmark): number {
@@ -54,6 +56,20 @@ export function normalizePinchDistance(
   rawDistance: number,
   minDistance: number = DEFAULT_MIN_PINCH_DISTANCE,
   maxDistance: number = DEFAULT_MAX_PINCH_DISTANCE
+): number {
+  if (maxDistance <= minDistance) return 0
+  const clamped = clamp(rawDistance, minDistance, maxDistance)
+  return (clamped - minDistance) / (maxDistance - minDistance)
+}
+
+/**
+ * Normalize a raw wrist↔middle-fingertip distance (a proxy for how close the
+ * hand is to the camera) into [0, 1]. Larger span → higher proximity.
+ */
+export function normalizeHandSpan(
+  rawDistance: number,
+  minDistance: number = DEFAULT_MIN_HAND_SPAN,
+  maxDistance: number = DEFAULT_MAX_HAND_SPAN
 ): number {
   if (maxDistance <= minDistance) return 0
   const clamped = clamp(rawDistance, minDistance, maxDistance)

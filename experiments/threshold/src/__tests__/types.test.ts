@@ -7,6 +7,7 @@ describe('HandTracking', () => {
       detected: true,
       wrist: { x: 0.5, y: 0.5, z: 0 },
       pinchDistance: 0.1,
+      proximity: 0,
       gesture: 'pinch',
       confidence: 0.9,
     }
@@ -19,6 +20,7 @@ describe('HandTracking', () => {
       detected: false,
       wrist: null,
       pinchDistance: 0,
+      proximity: 0,
       gesture: null,
       confidence: 0,
     }

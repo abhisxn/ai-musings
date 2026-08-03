@@ -158,6 +158,7 @@ export const useStore = create<ThresholdState>((set) => ({
     detected: false,
     wrist: null,
     pinchDistance: 0,
+    proximity: 0,
     gesture: null,
     confidence: 0,
   },
