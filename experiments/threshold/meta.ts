@@ -80,11 +80,11 @@ const meta: ExperimentMeta = {
       items: [
         {
           lead: 'Gestures',
-          text: "(edge-triggered, once the camera's on): fist = next render mode, open palm = next theme, pinch = toggle the session arc. Pinch distance also live-drives the depth-cutoff threshold.",
+          text: "(edge-triggered, once the camera's on): fist = toggle flat/volumetric view, open palm = toggle the session arc, pinch = live depth-cutoff threshold, thumb up = next render mode, thumb down = previous render mode.",
         },
         {
           lead: 'Keyboard',
-          text: '1–7 jump directly to a render mode (radio, dots, blocks, lines, ascii, pixel, spectral), T cycles theme, M cycles mood, 0 toggles mood/arc mode, spacebar flips between flat and volumetric camera views.',
+          text: '1–0 jump directly to a render mode (radio, dots, blocks, hline, vline, ascii, pixel, ribbon, mesh, dither), a toggles the session arc, m cycles mood, spacebar flips between flat and volumetric camera views.',
         },
         {
           lead: 'Leva panel',
