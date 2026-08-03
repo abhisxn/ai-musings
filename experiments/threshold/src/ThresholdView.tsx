@@ -55,13 +55,16 @@ function AnimatedCamera() {
   const resolution = useStore(state => state.resolution)
   const cameraRef = useRef<THREE.PerspectiveCamera>(null)
 
+  // Cache the distance so the per-frame useFrame loop doesn't recompute
+  // the Math.tan-based formula every 16ms — only when resolution changes.
+  const targetDist = useMemo(() => cameraDistanceForResolution(resolution), [resolution])
+
   useFrame((_, delta) => {
     if (!cameraRef.current) return
     const basePos = viewMode === 'flat' ? POS_FLAT : POS_VOLUMETRIC
     // Scale the base position so the camera's Z-component (its perpendicular
     // distance to the grid plane at z=0) matches the distance needed for the
     // grid to exactly fill the viewport. The viewing angle is preserved.
-    const targetDist = cameraDistanceForResolution(resolution)
     const baseZ = Math.abs(basePos.z)
     const scale = baseZ > 0 ? targetDist / baseZ : 1
     const targetPos = basePos.clone().multiplyScalar(scale)

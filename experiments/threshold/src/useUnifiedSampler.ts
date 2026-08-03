@@ -20,6 +20,7 @@ export function useUnifiedSampler() {
   const prevResRef = useRef<number>(0)
   const prevWristRef = useRef<WristPosition | null>(null)
   const energyRef = useRef<number>(0)
+  const lastQuantizedEnergyRef = useRef<number>(-1)
 
   useEffect(() => {
     if (!initialized) return
@@ -156,11 +157,17 @@ export function useUnifiedSampler() {
         if (phase === 'active' && energyRef.current < 25) phase = 'calm'
         if (phase === 'climax' && energyRef.current < 65) phase = 'active'
 
-        useStore.getState().setSessionEnergy(energyRef.current)
+        const quantized = Math.round(energyRef.current / 5) * 5
+        if (quantized !== lastQuantizedEnergyRef.current) {
+          lastQuantizedEnergyRef.current = quantized
+          useStore.getState().setSessionEnergy(quantized)
+        }
         useStore.getState().setCurrentPhase(phase)
       } else {
-        energyRef.current = 0
-        useStore.getState().setSessionEnergy(0)
+        if (lastQuantizedEnergyRef.current !== 0) {
+          lastQuantizedEnergyRef.current = 0
+          useStore.getState().setSessionEnergy(0)
+        }
         useStore.getState().setCurrentPhase('calm')
       }
 
