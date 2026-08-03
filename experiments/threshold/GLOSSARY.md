@@ -104,7 +104,7 @@ Textures are quiet by design relative to the main pad (mixed several dB below it
 | THUMB_UP | next Render Mode | `RENDER_MODES` forward |
 | THUMB_DOWN | previous Render Mode | `RENDER_MODES` backward |
 
-A continuous (non-edge) gesture signal, `pinchDistance`, separately and directly drives the **Threshold** brightness-cutoff slider every frame — unrelated to the discrete PINCH toggle above.
+FIST, OPEN_PALM, THUMB_UP, and THUMB_DOWN are edge-triggered one-shots (fire once per recognition). PINCH is continuous: when thumb↔index fingertip distance crosses the pinch threshold it is recognized, and while held the live `pinchDistance` signal drives the **Threshold** brightness-cutoff slider every frame — the edge itself is not a discrete app action.
 
 Today, gesture-driven changes update the underlying app state correctly but don't visibly refresh the Leva debug panel's own control widgets (a known bug, fixed in Phase 4 Track A).
 

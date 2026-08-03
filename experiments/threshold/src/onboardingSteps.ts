@@ -27,8 +27,8 @@ export const GESTURE_ACTIONS = [
 
 /**
  * The keyboard shortcuts documented in step 4. Deliberately omits any theme
- * shortcut — themes cycle via the OPEN PALM gesture / the Visuals panel, not
- * a dedicated key.
+ * shortcut — themes are selected in the Visuals panel; OPEN_PALM toggles the
+ * Session Arc, not theme.
  */
 export const KEYBOARD_SHORTCUTS = [
   { keys: '1–7', action: 'select render mode' },

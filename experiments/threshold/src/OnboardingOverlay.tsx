@@ -286,7 +286,7 @@ function StepContent({ step, palette, activeGesture, statusLine }: StepContentPr
           ))}
         </div>
         <p className={`${styles.hudBody} tracking-[0.15em] opacity-50 text-center`}>
-          THEMES CYCLE VIA THE OPEN PALM GESTURE OR THE VISUALS PANEL.
+          THEMES ARE SELECTED IN THE VISUALS PANEL; OPEN PALM TOGGLES THE SESSION ARC.
         </p>
       </div>
     )
