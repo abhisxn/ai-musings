@@ -46,7 +46,7 @@ All modes except `ascii` pull their per-cell color from the same shared gradient
 | `acid` | yellow-green `#ccff00` | dark olive → acid |
 | `heatmap` | red `#ff003c` | blue → cyan → green → yellow → red (5-stop) |
 
-Theme is independent of Palette/Arc below — it's purely the render grid's color scheme. Cycled by the OPEN_PALM gesture or the `T` key.
+Theme is independent of Palette/Arc below — it's purely the render grid's color scheme. Selected in the Visuals panel; the OPEN_PALM gesture toggles the Session Arc, not the theme.
 
 ## Palette vs. Arc — the one thing worth memorizing
 
@@ -55,7 +55,7 @@ Threshold has **two separate systems** that both end up changing color/sound, wh
 | | **Palette** (`currentMood`) | **Session Arc** (`currentPhase`) |
 |---|---|---|
 | Type | `'luminous' \| 'deep' \| 'pulse'` | `'calm' \| 'active' \| 'climax'` |
-| Driven by | You — manual choice (PINCH gesture toggles arc on/off; a keyboard shortcut cycles the palette itself) | Automatic — your physical motion, moment to moment |
+| Driven by | You — manual choice (OPEN_PALM gesture toggles arc on/off; the `m` key cycles the palette itself) | Automatic — your physical motion, moment to moment |
 | What it picks | A whole musical/visual *identity*: scale, tempo range, synth waveform, rhythm pattern, texture type, base hue (`mood-config.ts`) | Where you currently sit *within* that identity: calm, building, or climax |
 | Analogy | Choosing a song / instrument set | The song's dynamics — quiet verse vs. loud chorus — responding to how much you're moving |
 | Changes with | Nothing automatic — stays fixed until you change it | Continuously, via the energy accumulator below |
