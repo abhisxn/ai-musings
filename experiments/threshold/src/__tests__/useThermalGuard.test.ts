@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import {
   estimateFrameMs,
   classifyRisk,
+  classifyRiskHybrid,
   readDeviceInfo,
   THERMAL_DEFAULTS,
   BASE_FRAME_MS,
@@ -103,6 +104,23 @@ describe('useThermalGuard', () => {
     it('classifies baseline defaults as high risk', () => {
       const ms = estimateFrameMs(THERMAL_DEFAULTS)
       expect(classifyRisk(ms, null)).toBe('high')
+    })
+  })
+
+  describe('classifyRiskHybrid', () => {
+    it('uses measured frame time when available', () => {
+      expect(classifyRiskHybrid(5, 15, 8)).toBe('high')
+      expect(classifyRiskHybrid(15, 5, 8)).toBe('low')
+    })
+
+    it('falls back to static estimate when measured is 0', () => {
+      expect(classifyRiskHybrid(15, 0, 8)).toBe('high')
+      expect(classifyRiskHybrid(5, 0, 8)).toBe('low')
+    })
+
+    it('memory risk still applies with measured data', () => {
+      expect(classifyRiskHybrid(5, 5, 2)).toBe('high')
+      expect(classifyRiskHybrid(5, 5, 6)).toBe('medium')
     })
   })
 

@@ -95,6 +95,10 @@ interface ThresholdState {
   // Frame skip for thermal throttle: 1 = 60fps, 2 = 30fps
   frameSkip: number
   setFrameSkip: (val: number) => void
+
+  // GPU Profiler
+  measuredFrameMs: number
+  setMeasuredFrameMs: (val: number) => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -183,4 +187,7 @@ export const useStore = create<ThresholdState>((set) => ({
 
   frameSkip: 1,
   setFrameSkip: (frameSkip) => set({ frameSkip }),
+
+  measuredFrameMs: 0,
+  setMeasuredFrameMs: (measuredFrameMs) => set({ measuredFrameMs }),
 }))

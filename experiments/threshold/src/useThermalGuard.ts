@@ -75,10 +75,20 @@ export function classifyRisk(
   return RISK_RANK[frameRisk] >= RISK_RANK[memRisk] ? frameRisk : memRisk
 }
 
+export function classifyRiskHybrid(
+  estimatedFrameMs: number,
+  measuredFrameMs: number,
+  deviceMemoryGB: number | null,
+): ThermalRisk {
+  const effectiveFrameMs = measuredFrameMs > 0 ? measuredFrameMs : estimatedFrameMs
+  return classifyRisk(effectiveFrameMs, deviceMemoryGB)
+}
+
 export function useThermalGuard(
   params?: Partial<ThermalGuardParams>,
 ): ThermalGuardResult {
   const resolution = useStore(state => state.resolution)
+  const measuredFrameMs = useStore(state => state.measuredFrameMs)
   const { deviceMemoryGB } = readDeviceInfo()
 
   const estimatedFrameMs = estimateFrameMs({
@@ -86,7 +96,7 @@ export function useThermalGuard(
     resolution,
     ...params,
   })
-  const thermalRisk = classifyRisk(estimatedFrameMs, deviceMemoryGB)
+  const thermalRisk = classifyRiskHybrid(estimatedFrameMs, measuredFrameMs, deviceMemoryGB)
 
   return { thermalRisk, estimatedFrameMs, deviceMemoryGB }
 }

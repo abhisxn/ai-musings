@@ -139,10 +139,11 @@ export default function ThresholdView() {
     gestureGlitchActive,
     setGestureGlitchActive,
      soundTexture, setSoundTexture,
-     thermalRisk, setThermalRisk,
-     autoDowngradeEnabled, setAutoDowngradeEnabled,
-     reducedQuality, setReducedQuality,
-   } = useStore()
+      thermalRisk, setThermalRisk,
+      autoDowngradeEnabled, setAutoDowngradeEnabled,
+      reducedQuality, setReducedQuality,
+      measuredFrameMs,
+    } = useStore()
 
   const palette = getTheme(theme)
 
@@ -798,7 +799,8 @@ export default function ThresholdView() {
           THERMAL // {detectedRisk.toUpperCase()}
         </span>
         <span className={`${styles.hudMicro} opacity-50 whitespace-nowrap`}>
-          {estimatedFrameMs.toFixed(1)}ms
+          est {estimatedFrameMs.toFixed(1)}ms
+          {measuredFrameMs > 0 && ` · meas ${measuredFrameMs.toFixed(1)}ms`}
           {deviceMemoryGB !== null && ` · ${deviceMemoryGB}GB`}
         </span>
         <button

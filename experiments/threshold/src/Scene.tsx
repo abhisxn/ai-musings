@@ -41,6 +41,9 @@ export function Scene({
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
 
   const frameCountRef = useRef(0)
+  const frameStartTimeRef = useRef<number>(0)
+  const emaFrameMsRef = useRef<number>(0)
+  const frameCountForProfilerRef = useRef<number>(0)
 
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
@@ -222,6 +225,8 @@ useFrame((state) => {
     if (frameCountRef.current % frameSkip !== 0) return
 
     if (!pixelDataRef.current) return
+
+    const frameStartNow = performance.now()
 
     let emissiveScale = 1.0
 
@@ -497,6 +502,16 @@ useFrame((state) => {
       const mesh = radioDotRef.current
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
       mesh.instanceMatrix.needsUpdate = true
+    }
+
+    const frameDuration = performance.now() - frameStartNow
+    frameCountForProfilerRef.current++
+    const alpha = 0.1
+    emaFrameMsRef.current = frameCountForProfilerRef.current === 1
+      ? frameDuration
+      : (1 - alpha) * emaFrameMsRef.current + alpha * frameDuration
+    if (frameCountForProfilerRef.current % 10 === 0) {
+      useStore.getState().setMeasuredFrameMs(emaFrameMsRef.current)
     }
   })
 
