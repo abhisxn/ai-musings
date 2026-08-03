@@ -1,5 +1,5 @@
 /// <reference types="vitest/globals" />
-import { nextRenderMode, nextTheme, nextMoodEnabled } from '../useGestureControls'
+import { nextRenderMode, prevRenderMode, nextTheme, nextMoodEnabled } from '../useGestureControls'
 import { RENDER_MODES, THEMES_LIST, type RenderMode, type Theme } from '../store'
 
 describe('nextRenderMode', () => {
@@ -21,6 +21,31 @@ describe('nextRenderMode', () => {
       current = nextRenderMode(current)
     }
     expect(new Set(visited).size).toBe(RENDER_MODES.length)
+    expect(current).toBe(RENDER_MODES[0])
+  })
+})
+
+describe('prevRenderMode', () => {
+  it('steps to the previous render mode in RENDER_MODES order', () => {
+    expect(prevRenderMode('dots')).toBe('radio')
+    expect(prevRenderMode('blocks')).toBe('dots')
+  })
+
+  it('wraps from the first render mode back to the last', () => {
+    const first = RENDER_MODES[0] as RenderMode
+    const last = RENDER_MODES[RENDER_MODES.length - 1] as RenderMode
+    expect(prevRenderMode(first)).toBe(last)
+  })
+
+  it('is the inverse of nextRenderMode over a full cycle', () => {
+    let current: RenderMode = RENDER_MODES[0]
+    for (let i = 0; i < RENDER_MODES.length; i++) {
+      current = nextRenderMode(current)
+    }
+    expect(current).toBe(RENDER_MODES[0])
+    for (let i = 0; i < RENDER_MODES.length; i++) {
+      current = prevRenderMode(current)
+    }
     expect(current).toBe(RENDER_MODES[0])
   })
 })
