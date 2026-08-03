@@ -316,9 +316,9 @@ export function useAudio() {
       textureRef.current?.noise.dispose()
       textureRef.current?.gain.dispose()
       disposeTexture()
-      masterGainRef.current?.dispose()
-      proximityFilterRef.current?.dispose()
       analyzerRef.current?.dispose()
+      proximityFilterRef.current?.dispose()
+      masterGainRef.current?.dispose()
     }
   }, [])
 
