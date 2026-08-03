@@ -50,6 +50,8 @@ const THUMB_TIP_INDEX = 4
 const INDEX_TIP_INDEX = 8
 const MIDDLE_TIP_INDEX = 12
 
+const PROXIMITY_NO_HAND_DECAY = 0.2
+
 export function useGestureTracking() {
   const initialized = useStore((state) => state.initialized)
   const videoElement = useStore((state) => state.videoElement)
@@ -173,8 +175,8 @@ export function useGestureTracking() {
         const normalizedSpan = normalizeHandSpan(rawSpan)
         proximity = resolveContinuousValue(normalizedSpan, previousProximity, detected, confidence)
       } else {
-        // No hand: ease proximity back toward 0 through the smoothing curve.
-        proximity = resolveContinuousValue(0, previousProximity, detected, confidence)
+        // No hand: ease proximity back toward 0 by a fixed fraction per frame.
+        proximity = previousProximity * (1 - PROXIMITY_NO_HAND_DECAY)
       }
       previousProximity = proximity
 
