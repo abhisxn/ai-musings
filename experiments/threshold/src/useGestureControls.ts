@@ -53,8 +53,6 @@ export function useGestureControls(): void {
   const gesture = useStore((s) => s.handTracking.gesture)
   const renderMode = useStore((s) => s.renderMode)
   const setRenderMode = useStore((s) => s.setRenderMode)
-  const theme = useStore((s) => s.theme)
-  const setTheme = useStore((s) => s.setTheme)
   const moodEnabled = useStore((s) => s.moodEnabled)
   const setMoodEnabled = useStore((s) => s.setMoodEnabled)
   const viewMode = useStore((s) => s.viewMode)
@@ -85,5 +83,5 @@ export function useGestureControls(): void {
       }
     }
     lastGesture.current = gesture
-  }, [gesture, renderMode, theme, moodEnabled, viewMode, setRenderMode, setTheme, setMoodEnabled, setViewMode])
+  }, [gesture, renderMode, moodEnabled, viewMode, setRenderMode, setMoodEnabled, setViewMode])
 }
