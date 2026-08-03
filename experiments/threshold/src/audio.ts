@@ -341,7 +341,7 @@ export function useAudio() {
     }
     if (!audioEnabled) return
     if (gesture === lastFlourishGestureRef.current) return
-    if (gesture !== 'fist' && gesture !== 'open_palm' && gesture !== 'pinch') return
+    if (gesture !== 'fist' && gesture !== 'open_palm' && gesture !== 'pinch' && gesture !== 'thumb_up' && gesture !== 'thumb_down') return
     const target = textureVoiceRef.current?.synth
       ?? melodyRef.current?.synth
       ?? atmosRef.current?.[0]

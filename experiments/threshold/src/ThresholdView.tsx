@@ -43,11 +43,13 @@ function cameraDistanceForResolution(resolution: number): number {
 }
 
 /** Per-gesture reticle pulse swatch colors (mirrors the onboarding swatches):
- *  fist → green, open_palm → cyan, pinch → orange. */
+ *  fist → green, open_palm → cyan, pinch → orange, thumb_up → yellow, thumb_down → magenta. */
 const GESTURE_RETICLE_COLORS: Record<string, string> = {
   fist: '#00ff41',
   open_palm: '#00ffff',
   pinch: '#ff4400',
+  thumb_up: '#ffff00',
+  thumb_down: '#ff00ff',
 }
 
 function AnimatedCamera() {
@@ -487,7 +489,13 @@ export default function ThresholdView() {
   useControls('Gesture', {
     'hand tracking': monitor(() => {
       const gestureLabel = handTracking.gesture
-        ? { fist: 'FIST — cycle render mode', open_palm: 'OPEN PALM — toggle ARC', pinch: 'PINCH — threshold' }[handTracking.gesture]
+        ? {
+            fist: 'FIST — toggle flat/volumetric',
+            open_palm: 'OPEN PALM — toggle ARC',
+            pinch: 'PINCH — threshold',
+            thumb_up: 'THUMB UP — next render mode',
+            thumb_down: 'THUMB DOWN — prev render mode',
+          }[handTracking.gesture]
         : 'no hand detected'
       const statusLabel = { idle: 'not started', loading: 'starting camera…', active: 'tracking', failed: 'camera unavailable' }[gestureTrackingStatus]
       return `${gestureLabel} (${statusLabel})`
