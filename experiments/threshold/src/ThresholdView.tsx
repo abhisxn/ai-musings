@@ -14,6 +14,7 @@ import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
 import { useWebcam, useSampler, useMotionZones } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
 import { useEnergyAccumulator } from './useEnergyAccumulator'
+import { useThermalGuard } from './useThermalGuard'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { useGestureControls } from './useGestureControls'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
@@ -131,8 +132,11 @@ export default function ThresholdView() {
     gestureTrackingStatus,
     gestureGlitchActive,
     setGestureGlitchActive,
-    soundTexture, setSoundTexture,
-  } = useStore()
+     soundTexture, setSoundTexture,
+     setThermalRisk,
+     autoDowngradeEnabled, setAutoDowngradeEnabled,
+     reducedQuality, setReducedQuality,
+   } = useStore()
 
   const palette = getTheme(theme)
 
@@ -168,6 +172,28 @@ export default function ThresholdView() {
   const { status: gestureStatus } = useGestureTracking()
   useGestureControls()
   useEnergyAccumulator()
+
+  // Thermal Guard — reads device memory/concurrency + estimates GPU frame cost.
+  const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard()
+
+  // Sync detected risk to the store so other consumers can react.
+  useEffect(() => {
+    setThermalRisk(detectedRisk)
+  }, [detectedRisk, setThermalRisk])
+
+  // Auto-downgrade: when thermal risk is high and auto-downgrade is enabled,
+  // flip reducedQuality on (wired by Track C to post-process tiering + mesh mounting).
+  useEffect(() => {
+    if (autoDowngradeEnabled && detectedRisk === 'high' && !reducedQuality) {
+      setReducedQuality(true)
+      console.warn('[ThermalGuard] high thermal risk — auto-downgrading quality')
+    }
+  }, [detectedRisk, autoDowngradeEnabled, reducedQuality, setReducedQuality])
+
+  const thermalColor =
+    detectedRisk === 'high' ? '#ff4400'
+    : detectedRisk === 'medium' ? '#ffcc00'
+    : '#00ff41'
 
   // Ambient edge-panel glow: while gesture tracking is active and a hand is
   // being tracked, derive the legacy 3-zone [left, center, right] shape from
@@ -689,6 +715,32 @@ export default function ThresholdView() {
           style={{ border: `1px solid ${palette.accent}`, color: palette.accent, opacity: 0.4 }}
         >
           ?
+        </button>
+      </div>
+
+      {/* Thermal Guard HUD (top-left) */}
+      <div className="absolute top-8 left-8 z-20 pointer-events-auto flex items-center gap-3">
+        <span
+          className={styles.hudThermal}
+          style={{ '--thermal-color': thermalColor } as CSSProperties}
+        >
+          THERMAL // {detectedRisk.toUpperCase()}
+        </span>
+        <span className={`${styles.hudMicro} opacity-50 whitespace-nowrap`}>
+          {estimatedFrameMs.toFixed(1)}ms
+          {deviceMemoryGB !== null && ` · ${deviceMemoryGB}GB`}
+        </span>
+        <button
+          onClick={() => setAutoDowngradeEnabled(!autoDowngradeEnabled)}
+          className={`${styles.hudMicro} px-2 py-1 border transition-all pointer-events-auto`}
+          style={{
+            borderColor: autoDowngradeEnabled ? '#00ff41' : '#555',
+            color: autoDowngradeEnabled ? '#00ff41' : '#555',
+            background: autoDowngradeEnabled ? 'rgba(0,255,65,0.05)' : 'transparent',
+          }}
+          title="Thermal auto-downgrade (toggle for manual override)"
+        >
+          {autoDowngradeEnabled ? 'AUTO' : 'MANUAL'}
         </button>
       </div>
 
