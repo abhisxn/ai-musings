@@ -496,11 +496,7 @@ useFrame((state) => {
       const zBuf = meshZBufferRef.current
       if (zBuf) {
         for (let i = 0; i < positions.length / 3; i++) {
-          const x = i % resolution
-          const y = Math.floor(i / resolution)
-          const cellId = y * resolution + x
-          const z = zBuf[cellId] ?? 0
-          positions[i * 3 + 2] = z
+          positions[i * 3 + 2] = zBuf[i] ?? 0
         }
         geometry.attributes.position.needsUpdate = true
         geometry.computeVertexNormals()
@@ -647,7 +643,7 @@ useFrame((state) => {
             )
           case 'mesh':
             return (
-              <mesh key={`mesh-${resolution}`} ref={meshModeRef} visible>
+              <mesh key={`mesh-${resolution}`} ref={meshModeRef} visible frustumCulled={false}>
                 <planeGeometry args={[resolution * spacing, resolution * spacing, resolution - 1, resolution - 1]} />
                 <meshStandardMaterial
                   color="#ffffff"
