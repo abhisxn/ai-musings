@@ -7,7 +7,7 @@ export interface HandTracking {
   detected: boolean
   wrist: { x: number; y: number; z: number } | null
   pinchDistance: number
-  gesture: Exclude<Gesture, null> | null
+  gesture: Gesture
   confidence: number
 }
 
