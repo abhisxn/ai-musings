@@ -11,7 +11,7 @@ const RENDER_MODE_DESC: Record<RenderMode, string> = {
   ascii: '24-glyph ASCII portrait of the camera feed',
   pixel: 'Hard Bayer-dithered bitmap squares',
   ribbon: '3-band FFT, flowing horizontal bands',
-  mesh: 'Wireframe plane with per-vertex displacement',
+  mesh: 'Continuous wireframe surface displaced by brightness',
   dither: 'Full Bayer-dithered halftone face',
 }
 

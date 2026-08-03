@@ -27,7 +27,7 @@ const MODE_THEME_PITCH_SHIFT: Record<RenderMode, Record<Theme, number>> = {
   ascii:    { dark:  1, light:  2, acid:  3, heatmap: -3 },
   pixel:    { dark:  2, light:  3, acid: -3, heatmap: -2 },
   ribbon:   { dark:  3, light: -3, acid: -2, heatmap: -1 },
-  mesh:     { dark:  3, light: -3, acid: -2, heatmap: -1 },
+  mesh:     { dark:  2, light:  3, acid: -3, heatmap: -2 },
   dither:   { dark:  3, light: -3, acid: -2, heatmap: -1 },
 }
 
