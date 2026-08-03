@@ -23,6 +23,12 @@ export function nextRenderMode(current: RenderMode): RenderMode {
   return RENDER_MODES[(idx + 1) % RENDER_MODES.length]
 }
 
+/** Step to the previous render mode, wrapping modulo RENDER_MODES. */
+export function prevRenderMode(current: RenderMode): RenderMode {
+  const idx = RENDER_MODES.indexOf(current)
+  return RENDER_MODES[(idx - 1 + RENDER_MODES.length) % RENDER_MODES.length]
+}
+
 /** Advance to the next theme, wrapping modulo THEMES_LIST. */
 export function nextTheme(current: Theme): Theme {
   const idx = THEMES_LIST.indexOf(current)
@@ -36,10 +42,12 @@ export function nextMoodEnabled(current: boolean): boolean {
 
 /**
  * On each non-null gesture enter edge, fire the mapped action:
- *   FIST      -> cycle render mode
- *   OPEN_PALM -> toggle session-arc (moodEnabled)
- *   PINCH     -> (reserved for threshold control in ThresholdView — not
- *                handled here to avoid the pinch/threshold/arc conflict)
+ *   FIST       -> toggle viewMode (flat <-> volumetric)
+ *   OPEN_PALM  -> toggle session-arc (moodEnabled)
+ *   PINCH      -> (reserved for threshold control in ThresholdView — not
+ *                 handled here to avoid the pinch/threshold/arc conflict)
+ *   THUMB_UP   -> cycle render mode forward
+ *   THUMB_DOWN -> cycle render mode backward
  */
 export function useGestureControls(): void {
   const gesture = useStore((s) => s.handTracking.gesture)
@@ -49,6 +57,8 @@ export function useGestureControls(): void {
   const setTheme = useStore((s) => s.setTheme)
   const moodEnabled = useStore((s) => s.moodEnabled)
   const setMoodEnabled = useStore((s) => s.setMoodEnabled)
+  const viewMode = useStore((s) => s.viewMode)
+  const setViewMode = useStore((s) => s.setViewMode)
 
   const lastGesture = useRef<Gesture>(null)
 
@@ -58,17 +68,22 @@ export function useGestureControls(): void {
     if (gesture !== null) {
       switch (gesture) {
         case 'fist':
-          setRenderMode(nextRenderMode(renderMode))
+          setViewMode(viewMode === 'flat' ? 'volumetric' : 'flat')
           break
         case 'open_palm':
           setMoodEnabled(nextMoodEnabled(moodEnabled))
           break
         case 'pinch':
           // PINCH is handled in ThresholdView.tsx for threshold control.
-          // Do NOT also toggle ARC here — that was the conflict.
+          break
+        case 'thumb_up':
+          setRenderMode(nextRenderMode(renderMode))
+          break
+        case 'thumb_down':
+          setRenderMode(prevRenderMode(renderMode))
           break
       }
     }
     lastGesture.current = gesture
-  }, [gesture, renderMode, theme, moodEnabled, setRenderMode, setTheme, setMoodEnabled])
+  }, [gesture, renderMode, theme, moodEnabled, viewMode, setRenderMode, setTheme, setMoodEnabled, setViewMode])
 }
