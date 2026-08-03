@@ -120,7 +120,7 @@ export function Scene({
         mat.metalness = targetMetalness
       }
     })
-  }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs])
+   }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs, renderMode])
 
   // Shared dither atlas — single repeat across every mesh that uses it
   // (pixel / dots / radio ring / lines). A shared repeat keeps the reskin
@@ -519,64 +519,83 @@ useFrame((state) => {
       />
 
 
-      <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible={renderMode === 'blocks'}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
-      </instancedMesh>
-
-      {/* Radio: literal button — outer ring + inner filled dot */}
-      <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
-        <torusGeometry args={[0.5, 0.05, 16, 32]} />
-        <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
-      </instancedMesh>
-      <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
-        <circleGeometry args={[0.5, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
-      </instancedMesh>
-
-      <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'pixel'}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color="#ffffff" map={bayerPixelAtlas} transparent alphaTest={0.1} />
-      </instancedMesh>
-
-      <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'dots'}>
-        <sphereGeometry args={[1, 8, 8]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* hline: count = resolution (one instance per row); the per-frame loop
-          resizes each row's instance to full grid width */}
-      <instancedMesh key={`hline-${resolution}`} ref={hlineMeshRef} args={[null as any, null as any, resolution]} visible={renderMode === 'hline'}>
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* vline: count = resolution (one instance per column) */}
-      <instancedMesh key={`vline-${resolution}`} ref={vlineMeshRef} args={[null as any, null as any, resolution]} visible={renderMode === 'vline'}>
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* Ribbon: 3-band FFT sin-wave displacement per cell */}
-      <instancedMesh key={`ribbon-${resolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ribbon'}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ascii'}>
-        <planeGeometry args={[1, 1]}>
-          <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
-        </planeGeometry>
-        <primitive object={asciiMaterial} attach="material" />
-      </instancedMesh>
-
-      {/* Dither: fullscreen Bayer-dithered halftone face. The shader samples
-          the live webcam canvas (wrapped as a CanvasTexture by `useSampler`).
-          Mesh is in NDC space so it sits at the back of any camera frustum. */}
-      <mesh ref={ditherMeshRef} visible={renderMode === 'dither'} frustumCulled={false} renderOrder={-1}>
-        <planeGeometry args={[2, 2]} />
-        <primitive object={ditherMaterial} attach="material" />
-      </mesh>
+      {(() => {
+        switch (renderMode) {
+          case 'blocks':
+            return (
+              <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
+              </instancedMesh>
+            )
+          case 'radio':
+            return (
+              <>
+                <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible>
+                  <torusGeometry args={[0.5, 0.05, 16, 32]} />
+                  <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
+                </instancedMesh>
+                <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible>
+                  <circleGeometry args={[0.5, 32]} />
+                  <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
+                </instancedMesh>
+              </>
+            )
+          case 'pixel':
+            return (
+              <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshBasicMaterial color="#ffffff" map={bayerPixelAtlas} transparent alphaTest={0.1} />
+              </instancedMesh>
+            )
+          case 'dots':
+            return (
+              <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible>
+                <sphereGeometry args={[1, 8, 8]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'hline':
+            return (
+              <instancedMesh key={`hline-${resolution}`} ref={hlineMeshRef} args={[null as any, null as any, resolution]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'vline':
+            return (
+              <instancedMesh key={`vline-${resolution}`} ref={vlineMeshRef} args={[null as any, null as any, resolution]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'ascii':
+            return (
+              <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible>
+                <planeGeometry args={[1, 1]}>
+                  <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
+                </planeGeometry>
+                <primitive object={asciiMaterial} attach="material" />
+              </instancedMesh>
+            )
+          case 'ribbon':
+            return (
+              <instancedMesh key={`ribbon-${resolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'dither':
+            return (
+              <mesh ref={ditherMeshRef} visible frustumCulled={false} renderOrder={-1}>
+                <planeGeometry args={[2, 2]} />
+                <primitive object={ditherMaterial} attach="material" />
+              </mesh>
+            )
+          default:
+            return null
+        }
+      })()}
     </>
   )
 }
