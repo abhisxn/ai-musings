@@ -15,7 +15,7 @@ import { BLEED_SKEW_FLAT, BLEED_SKEW_VOLUMETRIC } from './bleedSkew'
 import { useWebcam } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
 import { useUnifiedSampler } from './useUnifiedSampler'
-import { useThermalGuard } from './useThermalGuard'
+import { useThermalGuard, useAdaptiveResolution } from './useThermalGuard'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { useGestureControls } from './useGestureControls'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
@@ -240,6 +240,9 @@ export default function ThresholdView() {
     postProcessCount: ppPassCount,
     rAFLoopCount: 1, // Only 1 rAF loop after Track B consolidation
   })
+
+  // Adaptive resolution: auto-downscale resolution when thermal risk is sustained high
+  const { resolutionTier, effectiveResolution } = useAdaptiveResolution(resolution, detectedRisk)
 
   // Sync detected risk to the store so other consumers can react.
   useEffect(() => {
@@ -823,6 +826,11 @@ export default function ThresholdView() {
         >
           {autoDowngradeEnabled ? 'AUTO' : 'MANUAL'}
         </button>
+        {resolutionTier < 1.0 && (
+          <span className={`${styles.hudMicro} text-[#ffcc00]`}>
+            RES ×{resolutionTier}
+          </span>
+        )}
       </div>
 
       {/* Camera controls: PIP | BLEED view selectors + OFF kill switch */}

@@ -103,6 +103,15 @@ interface ThresholdState {
   // Visibility Lifecycle
   isVisible: boolean
   setIsVisible: (val: boolean) => void
+
+  // Adaptive Resolution
+  resolutionTier: 1.0 | 0.75 | 0.5
+  setResolutionTier: (val: 1.0 | 0.75 | 0.5) => void
+}
+
+export function computeEffectiveResolution(resolution: number, tier: 1.0 | 0.75 | 0.5): number {
+  const raw = Math.round(resolution * tier)
+  return Math.max(16, Math.min(128, raw))
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -197,4 +206,7 @@ export const useStore = create<ThresholdState>((set) => ({
 
   isVisible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
   setIsVisible: (isVisible) => set({ isVisible }),
+
+  resolutionTier: 1.0,
+  setResolutionTier: (resolutionTier) => set({ resolutionTier }),
 }))

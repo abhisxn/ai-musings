@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useStore } from './store'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useStore, computeEffectiveResolution } from './store'
 import { Phase } from './types'
 import { wristDeltaMagnitude, type WristPosition } from './vision/wrist-mapping'
 import * as THREE from 'three'
@@ -10,8 +10,14 @@ export function useUnifiedSampler() {
   const initialized = useStore(state => state.initialized)
   const videoElement = useStore(state => state.videoElement)
   const resolution = useStore(state => state.resolution)
+  const resolutionTier = useStore(state => state.resolutionTier)
   const sourceMode = useStore(state => state.sourceMode)
   const isVisible = useStore(state => state.isVisible)
+
+  const effectiveResolution = useMemo(
+    () => computeEffectiveResolution(resolution, resolutionTier),
+    [resolution, resolutionTier]
+  )
 
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -30,14 +36,14 @@ export function useUnifiedSampler() {
     if (!samplerCanvasRef.current) {
       samplerCanvasRef.current = document.createElement('canvas')
     }
-    samplerCanvasRef.current.width = resolution
-    samplerCanvasRef.current.height = resolution
+    samplerCanvasRef.current.width = effectiveResolution
+    samplerCanvasRef.current.height = effectiveResolution
 
     const canvas = samplerCanvasRef.current
     const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
     prevFrameRef.current = null
-    prevResRef.current = resolution
+    prevResRef.current = effectiveResolution
     prevWristRef.current = null
 
     const IDLE_THRESHOLD = 0.075 // half of zone threshold (0.15)
@@ -62,49 +68,49 @@ export function useUnifiedSampler() {
 
       if (sourceMode === 'demo') {
         const time = Date.now() / 1000
-        for (let y = 0; y < resolution; y++) {
-          const targetY = y * resolution
-          for (let x = 0; x < resolution; x++) {
-            const nx = x / resolution
-            const ny = y / resolution
+        for (let y = 0; y < effectiveResolution; y++) {
+          const targetY = y * effectiveResolution
+          for (let x = 0; x < effectiveResolution; x++) {
+            const nx = x / effectiveResolution
+            const ny = y / effectiveResolution
             dataRef.current[targetY + x] = 0.5 + 0.5 * Math.sin(nx * 6 + time * 0.8) * Math.cos(ny * 4 + time * 0.5)
           }
         }
       } else if (videoElement && videoElement.readyState >= 2) {
         try {
-          ctx.drawImage(videoElement, 0, 0, resolution, resolution)
-          const imageData = ctx.getImageData(0, 0, resolution, resolution)
+          ctx.drawImage(videoElement, 0, 0, effectiveResolution, effectiveResolution)
+          const imageData = ctx.getImageData(0, 0, effectiveResolution, effectiveResolution)
           const pixels = imageData.data
 
-          for (let y = 0; y < resolution; y++) {
-            const targetY = y * resolution
-            for (let x = 0; x < resolution; x++) {
-              const idx = (y * resolution + x) * 4
+          for (let y = 0; y < effectiveResolution; y++) {
+            const targetY = y * effectiveResolution
+            for (let x = 0; x < effectiveResolution; x++) {
+              const idx = (y * effectiveResolution + x) * 4
               dataRef.current[targetY + x] = (0.299 * pixels[idx] + 0.587 * pixels[idx + 1] + 0.114 * pixels[idx + 2]) / 255
             }
           }
 
           if (!gestureActive) {
-            const zoneWidth = resolution / 3
+            const zoneWidth = effectiveResolution / 3
             const zoneDeltas = [0, 0, 0]
             const zoneCounts = [0, 0, 0]
             let totalDelta = 0
 
-            if (!prevFrameRef.current || prevResRef.current !== resolution) {
-              prevFrameRef.current = new Uint8Array(resolution * resolution)
-              prevResRef.current = resolution
-              for (let i = 0; i < resolution * resolution; i++) {
+            if (!prevFrameRef.current || prevResRef.current !== effectiveResolution) {
+              prevFrameRef.current = new Uint8Array(effectiveResolution * effectiveResolution)
+              prevResRef.current = effectiveResolution
+              for (let i = 0; i < effectiveResolution * effectiveResolution; i++) {
                 prevFrameRef.current[i] = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) / 3
               }
               frameId = requestAnimationFrame(loop)
               return
             }
 
-            for (let y = 0; y < resolution; y++) {
-              for (let x = 0; x < resolution; x++) {
-                const pIdx = (y * resolution + x) * 4
+            for (let y = 0; y < effectiveResolution; y++) {
+              for (let x = 0; x < effectiveResolution; x++) {
+                const pIdx = (y * effectiveResolution + x) * 4
                 const brightness = (pixels[pIdx] + pixels[pIdx + 1] + pixels[pIdx + 2]) / 3
-                const linearIdx = y * resolution + x
+                const linearIdx = y * effectiveResolution + x
                 const delta = Math.abs(brightness - prevFrameRef.current[linearIdx])
                 const zone = Math.min(2, Math.floor(x / zoneWidth))
                 zoneDeltas[zone] += delta
@@ -128,7 +134,7 @@ export function useUnifiedSampler() {
               setStatusText(`${zoneNames[maxZone]} ${Math.round(maxDelta * 100)}%`)
             }
 
-            const pixelCount = resolution * resolution
+            const pixelCount = effectiveResolution * effectiveResolution
             motionMagnitude = Math.min(1, totalDelta / (pixelCount * 255) * PIXEL_SCALE)
           } else {
             setStatusText('gesture tracking active')
@@ -183,7 +189,7 @@ export function useUnifiedSampler() {
       isMounted = false
       cancelAnimationFrame(frameId)
     }
-  }, [videoElement, resolution, sourceMode, initialized])
+  }, [videoElement, effectiveResolution, sourceMode, initialized])
 
   useEffect(() => {
     if (!samplerCanvasRef.current) return

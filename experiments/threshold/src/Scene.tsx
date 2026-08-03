@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Grid } from '@react-three/drei'
 import * as THREE from 'three'
-import { useStore } from './store'
+import { useStore, computeEffectiveResolution } from './store'
 import { Phase } from './types'
 import { generateBlueNoiseTexture } from './blue-noise'
 import { wristYToExtrusionDrift, wristProximityWarp } from './vision/wrist-mapping'
@@ -38,7 +38,12 @@ export function Scene({
   const meshModeRef = useRef<THREE.Mesh>(null)
   const ditherMeshRef = useRef<THREE.Mesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip, isVisible } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip, isVisible, resolutionTier } = useStore()
+
+  const effectiveResolution = useMemo(
+    () => computeEffectiveResolution(resolution, resolutionTier),
+    [resolution, resolutionTier]
+  )
 
   const frameCountRef = useRef(0)
   const frameStartTimeRef = useRef<number>(0)
@@ -59,10 +64,10 @@ export function Scene({
 
   const NOTES = useMemo(() => ['C2', 'E2', 'G2', 'A2', 'C3', 'E3', 'G3', 'A3', 'C4', 'E4', 'G4', 'A4'], [])
   
-  const count = resolution * resolution
+  const count = effectiveResolution * effectiveResolution
   const dummy = useMemo(() => new THREE.Object3D(), [])
   const fftData = useMemo(() => new Uint8Array(64), [])
-  const prevStates = useMemo(() => new Uint8Array(resolution * resolution), [resolution])
+  const prevStates = useMemo(() => new Uint8Array(effectiveResolution * effectiveResolution), [effectiveResolution])
 
   // Per-cell z displacement buffer for the `mesh` render mode. Written every
   // frame in the per-cell loop (after finalZ is computed), consumed after the
@@ -98,8 +103,8 @@ export function Scene({
   // planeGeometry's (resolution-1)x(resolution-1) segment count, which yields
   // resolution*resolution vertices).
   useEffect(() => {
-    meshZBufferRef.current = new Float32Array(resolution * resolution)
-  }, [resolution])
+    meshZBufferRef.current = new Float32Array(effectiveResolution * effectiveResolution)
+  }, [effectiveResolution])
 
   // Chrome color: UI / grid / emissive glow only. Per-cell diffuse is now
   // always driven by `getGradientColor(theme, brightness)` via instanceColor,
@@ -132,7 +137,7 @@ export function Scene({
         mat.metalness = targetMetalness
       }
     })
-   }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs, renderMode])
+   }, [chromeColor, moodEnabled, currentPhase, theme, effectiveResolution, meshRefs, renderMode])
 
   // Shared dither atlas — single repeat across every mesh that uses it
   // (pixel / dots / radio ring / lines). A shared repeat keeps the reskin
@@ -200,7 +205,7 @@ export function Scene({
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uFrame: { value: frameTextureRef?.current ?? null },
-        uResolution: { value: new THREE.Vector2(resolution, resolution) },
+        uResolution: { value: new THREE.Vector2(effectiveResolution, effectiveResolution) },
         uLevels: { value: 6 },
       },
       vertexShader: bayerDitherVertexShader,
@@ -209,7 +214,7 @@ export function Scene({
       depthWrite: false,
     })
     return mat
-  }, [frameTextureRef, resolution])
+  }, [frameTextureRef, effectiveResolution])
 
   useEffect(() => {
     return () => {
@@ -278,29 +283,29 @@ export function Scene({
         : getGradientColor(theme, brightness, cellColorScratch)
 
     let i = 0
-    for (let y = 0; y < resolution; y++) {
-      for (let x = 0; x < resolution; x++) {
+    for (let y = 0; y < effectiveResolution; y++) {
+      for (let x = 0; x < effectiveResolution; x++) {
         const id = i++
-        let brightness = pixelDataRef.current[y * resolution + x] || 0
+        let brightness = pixelDataRef.current[y * effectiveResolution + x] || 0
         if (inverse) brightness = 1.0 - brightness
 
-        const bx = Math.floor((x / resolution) * 128)
-        const by = Math.floor((y / resolution) * 128)
+        const bx = Math.floor((x / effectiveResolution) * 128)
+        const by = Math.floor((y / effectiveResolution) * 128)
         const noiseIdx = by * 128 + bx
         const modulatedThreshold = threshold + ((blueNoise[noiseIdx] / 255) - 0.5) * ditherIntensity
         const isActive = brightness > modulatedThreshold
         const wasActive = prevStates[id] === 1
 
         if (isActive && !wasActive && audioEnabled && clicksThisFrame < MAX_CLICKS_PER_FRAME) {
-          const noteIdx = Math.floor(((resolution - y) / resolution) * NOTES.length)
+          const noteIdx = Math.floor(((effectiveResolution - y) / effectiveResolution) * NOTES.length)
           triggerVoice(brightness, noteIdx, currentPhase)
           triggerClick('C2', '32n')
           clicksThisFrame++
         }
         prevStates[id] = isActive ? 1 : 0
 
-        const posX = (x - resolution / 2 + 0.5) * spacing
-        const posY = (resolution / 2 - 0.5 - y) * spacing
+        const posX = (x - effectiveResolution / 2 + 0.5) * spacing
+        const posY = (effectiveResolution / 2 - 0.5 - y) * spacing
 
         const proximityWarp =
           gestureTrackingStatus === 'active' && handTracking.detected && handTracking.wrist
@@ -308,8 +313,8 @@ export function Scene({
                 x,
                 y,
                 {
-                  x: handTracking.wrist.x * (resolution - 1),
-                  y: handTracking.wrist.y * (resolution - 1),
+                  x: handTracking.wrist.x * (effectiveResolution - 1),
+                  y: handTracking.wrist.y * (effectiveResolution - 1),
                   z: handTracking.wrist.z,
                 },
                 handTracking.detected,
@@ -390,7 +395,7 @@ export function Scene({
         // Ribbon: spectrum-analyzer bars. Each column = one FFT bin, bar height
         // = bin magnitude. Reads as a real audio spectrum, not just sin waves.
         if (renderMode === 'ribbon' && ribbonMeshRef.current && fftData) {
-          const binIdx = Math.min(63, Math.floor((x / resolution) * 64))
+          const binIdx = Math.min(63, Math.floor((x / effectiveResolution) * 64))
           const binValue = fftData[binIdx] / 255
           const barHeight = binValue * effectiveExtrusion * 2
           dummy.position.set(posX, posY, finalZ + barHeight / 2)
@@ -538,7 +543,7 @@ export function Scene({
         switch (renderMode) {
           case 'blocks':
             return (
-              <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible>
+              <instancedMesh key={`blocks-${effectiveResolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible>
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
               </instancedMesh>
@@ -546,11 +551,11 @@ export function Scene({
           case 'radio':
             return (
               <>
-                <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible>
+                <instancedMesh key={`radio-ring-${effectiveResolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible>
                   <torusGeometry args={[0.5, 0.05, 16, 32]} />
                   <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
                 </instancedMesh>
-                <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible>
+                <instancedMesh key={`radio-dot-${effectiveResolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible>
                   <circleGeometry args={[0.5, 32]} />
                   <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
                 </instancedMesh>
@@ -558,21 +563,21 @@ export function Scene({
             )
           case 'pixel':
             return (
-              <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible>
+              <instancedMesh key={`pixel-${effectiveResolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible>
                 <planeGeometry args={[1, 1]} />
                 <meshBasicMaterial color="#ffffff" map={bayerPixelAtlas} transparent alphaTest={0.1} />
               </instancedMesh>
             )
           case 'dots':
             return (
-              <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible>
+              <instancedMesh key={`dots-${effectiveResolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible>
                 <sphereGeometry args={[1, 8, 8]} />
                 <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
               </instancedMesh>
             )
           case 'ascii':
             return (
-              <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible>
+              <instancedMesh key={`ascii-${effectiveResolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible>
                 <planeGeometry args={[1, 1]}>
                   <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
                 </planeGeometry>
@@ -581,15 +586,15 @@ export function Scene({
             )
           case 'ribbon':
             return (
-              <instancedMesh key={`ribbon-${resolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible>
+              <instancedMesh key={`ribbon-${effectiveResolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible>
                 <boxGeometry args={[1, 1, 1]} />
                 <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
               </instancedMesh>
             )
           case 'mesh':
             return (
-              <mesh key={`mesh-${resolution}`} ref={meshModeRef} visible frustumCulled={false}>
-                <planeGeometry args={[resolution * spacing, resolution * spacing, resolution - 1, resolution - 1]} />
+              <mesh key={`mesh-${effectiveResolution}`} ref={meshModeRef} visible frustumCulled={false}>
+                <planeGeometry args={[effectiveResolution * spacing, effectiveResolution * spacing, effectiveResolution - 1, effectiveResolution - 1]} />
                 <meshStandardMaterial
                   color="#ffffff"
                   emissive={chromeColor}
