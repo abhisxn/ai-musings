@@ -15,6 +15,13 @@
   line-height: 1.4;
 }
 
+.hudThermal {
+  composes: hudMicro;
+  padding: 2px 8px;
+  border: 1px solid var(--thermal-color, #00ff41);
+  color: var(--thermal-color, #00ff41);
+}
+
 .hudCaption {
   font-size: 10px;
   letter-spacing: 0.2em;

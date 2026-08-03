@@ -83,6 +83,18 @@ interface ThresholdState {
 
   soundTexture: 'off' | 'glitch' | 'bloom' | 'bass'
   setSoundTexture: (val: 'off' | 'glitch' | 'bloom' | 'bass') => void
+
+  // Thermal Guard
+  thermalRisk: 'low' | 'medium' | 'high'
+  setThermalRisk: (val: 'low' | 'medium' | 'high') => void
+  autoDowngradeEnabled: boolean
+  setAutoDowngradeEnabled: (val: boolean) => void
+  reducedQuality: boolean
+  setReducedQuality: (val: boolean) => void
+
+  // Frame skip for thermal throttle: 1 = 60fps, 2 = 30fps
+  frameSkip: number
+  setFrameSkip: (val: number) => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -159,4 +171,15 @@ export const useStore = create<ThresholdState>((set) => ({
 
   soundTexture: 'bloom' as 'off' | 'glitch' | 'bloom' | 'bass',
   setSoundTexture: (soundTexture) => set({ soundTexture }),
+
+  // Thermal Guard (defaults: healthy, auto-downgrade on)
+  thermalRisk: 'low' as 'low' | 'medium' | 'high',
+  setThermalRisk: (thermalRisk) => set({ thermalRisk }),
+  autoDowngradeEnabled: true,
+  setAutoDowngradeEnabled: (autoDowngradeEnabled) => set({ autoDowngradeEnabled }),
+  reducedQuality: false,
+  setReducedQuality: (reducedQuality) => set({ reducedQuality }),
+
+  frameSkip: 1,
+  setFrameSkip: (frameSkip) => set({ frameSkip }),
 }))
