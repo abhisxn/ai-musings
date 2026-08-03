@@ -13,6 +13,8 @@ import { MOOD_CONFIGS } from './mood-config'
 import { generateDitherAtlas, generateHalftoneDotAtlas, generateBayerDitherAtlas } from './dither'
 import { bayerDitherVertexShader, bayerDitherFragmentShader } from './shaders'
 
+const PROXIMITY_EXTRUSION_BOOST = 0.5
+
 export function Scene({
   pixelDataRef,
   analyzerRef,
@@ -40,8 +42,6 @@ export function Scene({
   const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
 
   const frameCountRef = useRef(0)
-
-  const PROXIMITY_EXTRUSION_BOOST = 0.5
 
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
