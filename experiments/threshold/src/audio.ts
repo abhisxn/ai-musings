@@ -19,14 +19,14 @@ export function getTextureVoicePitchShift(phase: Phase): number {
 }
 
 const MODE_THEME_PITCH_SHIFT: Record<RenderMode, Record<Theme, number>> = {
-  radio:    { dark: -3, light: -2, acid: -1, heatmap:  0 },
-  dots:     { dark: -2, light: -1, acid:  0, heatmap:  1 },
-  blocks:   { dark: -1, light:  0, acid:  1, heatmap:  2 },
-  ascii:    { dark:  1, light:  2, acid:  3, heatmap: -3 },
-  pixel:    { dark:  2, light:  3, acid: -3, heatmap: -2 },
-  ribbon:   { dark:  3, light: -3, acid: -2, heatmap: -1 },
-  mesh:     { dark:  2, light:  3, acid: -3, heatmap: -2 },
-  dither:   { dark:  3, light: -3, acid: -2, heatmap: -1 },
+  radio:    { dark: -3, light: -2, acid: -1, heatmap:  0, cyber:  1, sunset:  2, ir:  3, matrix: -1, noir: -2 },
+  dots:     { dark: -2, light: -1, acid:  0, heatmap:  1, cyber:  2, sunset:  3, ir: -3, matrix:  0, noir: -1 },
+  blocks:   { dark: -1, light:  0, acid:  1, heatmap:  2, cyber:  3, sunset: -3, ir: -2, matrix:  1, noir:  0 },
+  ascii:    { dark:  1, light:  2, acid:  3, heatmap: -3, cyber: -2, sunset: -1, ir:  0, matrix:  2, noir:  3 },
+  pixel:    { dark:  2, light:  3, acid: -3, heatmap: -2, cyber: -1, sunset:  0, ir:  1, matrix:  3, noir: -3 },
+  ribbon:   { dark:  3, light: -3, acid: -2, heatmap: -1, cyber:  0, sunset:  1, ir:  2, matrix: -3, noir: -2 },
+  mesh:     { dark:  2, light:  3, acid: -3, heatmap: -2, cyber: -1, sunset:  0, ir:  1, matrix:  3, noir: -3 },
+  dither:   { dark:  3, light: -3, acid: -2, heatmap: -1, cyber:  0, sunset:  1, ir:  2, matrix: -3, noir: -2 },
 }
 
 export function getModeThemePitchShift(renderMode: RenderMode, theme: Theme): number {

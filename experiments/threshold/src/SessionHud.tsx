@@ -18,6 +18,11 @@ const THEME_DESC: Record<Theme, string> = {
   light: 'White on black',
   acid: 'Chartreuse high-contrast',
   heatmap: 'Blue→red thermal ramp',
+  cyber: 'Cyan→magenta glitch',
+  sunset: 'Orange→pink→purple gradient',
+  ir: 'Infrared red→amber→white',
+  matrix: 'Green phosphor parallel scanlines',
+  noir: 'Grayscale on black',
 }
 
 const TEXTURE_DESC: Record<string, string> = {
