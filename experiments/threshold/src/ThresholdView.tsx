@@ -11,9 +11,9 @@ import OnboardingOverlay from './OnboardingOverlay'
 import { SessionHud } from './SessionHud'
 import { useControls, folder, Leva, monitor } from 'leva'
 import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
-import { useWebcam, useSampler, useMotionZones } from './hooks'
+import { useWebcam } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
-import { useEnergyAccumulator } from './useEnergyAccumulator'
+import { useUnifiedSampler } from './useUnifiedSampler'
 import { useThermalGuard } from './useThermalGuard'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { useGestureControls } from './useGestureControls'
@@ -166,12 +166,10 @@ export default function ThresholdView() {
   }), [palette])
 
   const { videoRef } = useWebcam()
-  const { dataRef, frameTextureRef } = useSampler()
+  const { dataRef, frameTextureRef, statusText } = useUnifiedSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
-  const { statusText } = useMotionZones()
   const { status: gestureStatus } = useGestureTracking()
   useGestureControls()
-  useEnergyAccumulator()
 
   // Thermal Guard — reads device memory/concurrency + estimates GPU frame cost.
   const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard()
