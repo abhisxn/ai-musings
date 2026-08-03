@@ -15,8 +15,10 @@ edited after acceptance, only superseded by new ADRs.
 | 0010 | [Ribbon render mode (spectral removal)](0010-ribbon-render-mode.md) | 2026-07-26 | Phase 6 PR2 |
 | 0011 | [Multi-color themes](0011-multi-color-themes.md) | 2026-07-26 | Phase 6 PR2 |
 | 0012 | [Render mode revival (literal-name overhaul)](0012-render-mode-revival.md) | 2026-07-26 | Phase 6 PR2 |
+| 0013 | [GPU thermal guard layer](0013-thermal-guard.md) | 2026-08-03 | Phase 7 |
 
 ## Phase context
 
 - **Phase 5** — render fixes, mood/texture unification, legibility HUD, camera background, intro redesign
 - **Phase 6** — camera + defaults (PR1), render modes revival + multi-color themes (PR2), audio textures (PR3)
+- **Phase 7** — GPU thermal safety layer, redundant rAF/mesh/shader removal, post-process + store throttle optimization
