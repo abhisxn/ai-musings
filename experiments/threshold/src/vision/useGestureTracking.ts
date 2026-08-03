@@ -19,6 +19,7 @@ import {
   calculateLandmarkDistance,
   derivePinchGesture,
   detectGestureEdge,
+  normalizeHandSpan,
   normalizePinchDistance,
   resolveContinuousValue,
   resolveGesture,
@@ -47,6 +48,7 @@ function mapRawGesture(raw: string | null): Gesture {
 const WRIST_INDEX = 0
 const THUMB_TIP_INDEX = 4
 const INDEX_TIP_INDEX = 8
+const MIDDLE_TIP_INDEX = 12
 
 export function useGestureTracking() {
   const initialized = useStore((state) => state.initialized)
@@ -77,6 +79,7 @@ export function useGestureTracking() {
     // Carried across frames for hold-last-value / edge-detection policy.
     let previousGesture: Gesture = null
     let previousPinchDistance = 0
+    let previousProximity = 0
     let previousWrist: { x: number; y: number; z: number } | null = null
     let frameCounter = 0
 
@@ -161,6 +164,20 @@ export function useGestureTracking() {
         pinchDistance = resolveContinuousValue(previousPinchDistance, previousPinchDistance, detected, confidence)
       }
 
+      let proximity = 0
+      if (hand) {
+        const rawSpan = calculateLandmarkDistance(
+          hand.landmarks[WRIST_INDEX],
+          hand.landmarks[MIDDLE_TIP_INDEX]
+        )
+        const normalizedSpan = normalizeHandSpan(rawSpan)
+        proximity = resolveContinuousValue(normalizedSpan, previousProximity, detected, confidence)
+      } else {
+        // No hand: ease proximity back toward 0 through the smoothing curve.
+        proximity = resolveContinuousValue(0, previousProximity, detected, confidence)
+      }
+      previousProximity = proximity
+
       const edge = detectGestureEdge(previousGesture, resolvedGesture)
       previousGesture = resolvedGesture
       previousPinchDistance = pinchDistance
@@ -175,7 +192,7 @@ export function useGestureTracking() {
         detected,
         wrist,
         pinchDistance,
-        proximity: 0, // TODO(B3): replace with normalized hand-span + resolveContinuousValue
+        proximity,
         // One-shot: only report a gesture on the frame it's entered, not
         // every frame it's held - avoids re-firing downstream "moment" logic.
         gesture: edge.entered ?? null,
