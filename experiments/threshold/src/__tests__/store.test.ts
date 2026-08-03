@@ -30,7 +30,7 @@ describe('RENDER_MODES', () => {
     expect(RENDER_MODES).toContain('mesh')
   })
 
-  it('lists ten render modes', () => {
-    expect(RENDER_MODES).toHaveLength(10)
+  it('lists eight render modes', () => {
+    expect(RENDER_MODES).toHaveLength(8)
   })
 })

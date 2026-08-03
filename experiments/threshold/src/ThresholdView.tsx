@@ -408,9 +408,6 @@ export default function ThresholdView() {
       } else if (e.key >= '1' && e.key <= '9') {
         const idx = parseInt(e.key) - 1
         if (idx < modeList.length) setRenderMode(modeList[idx])
-      } else if (e.key === '0') {
-        const idx = 9
-        if (idx < modeList.length) setRenderMode(modeList[idx])
       } else if (e.key === 'a' || e.key === 'A') {
         setMoodEnabled(!useStore.getState().moodEnabled)
       } else if (e.key === 'm' || e.key === 'M') {
@@ -529,7 +526,7 @@ export default function ThresholdView() {
           </p>
           
           <div className="flex items-center justify-center gap-3 mb-6">
-            <span className={`${styles.hudCaption} opacity-60`}>ARC</span>
+            <span className={`${styles.hudCaption} opacity-60`}>FREE</span>
             <button
               onClick={() => setMoodEnabled(!moodEnabled)}
               className={`w-12 h-6 rounded-full transition-colors ${
@@ -541,7 +538,7 @@ export default function ThresholdView() {
                 moodEnabled ? 'translate-x-[26px]' : 'translate-x-[2px]'
               }`} style={{ background: palette.background }} />
             </button>
-            <span className={`${styles.hudCaption} opacity-60`}>FREE</span>
+            <span className={`${styles.hudCaption} opacity-60`}>ARC</span>
           </div>
           
           {moodEnabled && (

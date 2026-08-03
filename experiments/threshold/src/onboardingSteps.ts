@@ -31,7 +31,7 @@ export const GESTURE_ACTIONS = [
  * Session Arc, not theme.
  */
 export const KEYBOARD_SHORTCUTS = [
-  { keys: '1–0', action: 'select render mode (1–9, 0 = dither)' },
+  { keys: '1–8', action: 'select render mode' },
   { keys: 'a', action: 'toggle Session Arc on / off' },
   { keys: 'm', action: 'cycle mood: luminous → deep → pulse → solar → azure' },
   { keys: 'Space', action: 'toggle flat ↔ volumetric view' },

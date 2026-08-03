@@ -6,8 +6,6 @@ const RENDER_MODE_DESC: Record<RenderMode, string> = {
   radio: 'Literal radio-button cells (ring + filled dot when active)',
   dots: 'Sphere field, center-distance falloff',
   blocks: 'Extruded cubes, 0.95 gap between cells',
-  hline: 'Long horizontal lines (one per row)',
-  vline: 'Long vertical lines (one per column)',
   ascii: '24-glyph ASCII portrait of the camera feed',
   pixel: 'Hard Bayer-dithered bitmap squares',
   ribbon: '3-band FFT, flowing horizontal bands',

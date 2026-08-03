@@ -12,7 +12,7 @@ A live webcam feed reinterpreted in real time as an ASCII/dither/pixel-art field
 |---|---|---|
 | **Source Mode** | Where the per-cell brightness data comes from. | `pixel` (live webcam) / `demo` (synthetic pattern, no camera needed) |
 | **View Mode** | How the cell grid is projected. | `flat` (2D plane) / `volumetric` (each cell extruded along Z by brightness) |
-| **Render Mode** | The per-cell shape/glyph. | `radio`, `dots`, `blocks`, `hline`, `vline`, `ascii`, `pixel`, `ribbon`, `mesh`, `dither` (canonical order — `store.ts`) |
+| **Render Mode** | The per-cell shape/glyph. | `radio`, `dots`, `blocks`, `ascii`, `pixel`, `ribbon`, `mesh`, `dither` (canonical order — `store.ts`) |
 | **Resolution** | Grid density (cells per axis). | numeric slider |
 | **Threshold** | Brightness cutoff below which a cell is treated as "off"/background. | 0–1, also driven live by `pinchDistance` |
 | **Extrusion** | Z-depth multiplier in volumetric view. | numeric |
@@ -27,8 +27,6 @@ A live webcam feed reinterpreted in real time as an ASCII/dither/pixel-art field
 | `radio` | ring + dot | literal UI radio button per cell |
 | `dots` | sphere | geometry-based, visually distinct |
 | `blocks` | filled square | extruded cube per cell |
-| `hline` | horizontal bar | one instance per row |
-| `vline` | vertical bar | one instance per column |
 | `ascii` | glyph atlas character | the one mode that does *not* use the shared gradient-color system |
 | `pixel` | filled square | Bayer-dithered hard edges |
 | `ribbon` | spectrum bar | FFT-mapped horizontal bands |
@@ -82,7 +80,7 @@ An energy value (0–100) accumulates from how much motion is detected — wrist
 
 The gap between the rising and falling thresholds (e.g. enters `active` at 35 but must fall below 25 to return to `calm`) prevents the phase flickering back and forth when your energy hovers near a boundary. Within a phase, tempo interpolates between the Palette's `tempoRange` min (calm) and max (climax) — `getPhaseTempo()` in `mood-config.ts`.
 
-The Arc only runs while **Session Arc enabled** (`moodEnabled`) is on — toggled by the PINCH gesture or the Leva panel. When off (or before a camera/hand is available), energy resets to 0 and phase resets to `calm`.
+The Arc only runs while **Session Arc enabled** (`moodEnabled`) is on — toggled by the OPEN_PALM gesture, the `a` key, or the Leva panel. When off (or before a camera/hand is available), energy resets to 0 and phase resets to `calm`.
 
 *(Phase 4 adds a labeled on-screen indicator for this — today it only surfaces as a color swatch with no text label, which is the main source of "what does ARC even do" confusion.)*
 

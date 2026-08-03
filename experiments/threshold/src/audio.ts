@@ -22,8 +22,6 @@ const MODE_THEME_PITCH_SHIFT: Record<RenderMode, Record<Theme, number>> = {
   radio:    { dark: -3, light: -2, acid: -1, heatmap:  0 },
   dots:     { dark: -2, light: -1, acid:  0, heatmap:  1 },
   blocks:   { dark: -1, light:  0, acid:  1, heatmap:  2 },
-  hline:    { dark:  0, light:  1, acid:  2, heatmap:  3 },
-  vline:    { dark:  0, light:  1, acid:  2, heatmap:  3 },
   ascii:    { dark:  1, light:  2, acid:  3, heatmap: -3 },
   pixel:    { dark:  2, light:  3, acid: -3, heatmap: -2 },
   ribbon:   { dark:  3, light: -3, acid: -2, heatmap: -1 },

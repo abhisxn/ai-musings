@@ -52,8 +52,8 @@ describe('gesture → action contract (step 3)', () => {
 })
 
 describe('keyboard shortcuts (step 4)', () => {
-  it('documents keys 1-0 select render mode', () => {
-    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys.includes('1') && k.keys.includes('0'))
+  it('documents keys 1-8 select render mode', () => {
+    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys.includes('1') && k.keys.includes('8'))
     expect(entry?.action).toMatch(/select render mode/i)
   })
 

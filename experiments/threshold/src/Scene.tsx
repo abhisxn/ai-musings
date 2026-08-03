@@ -32,8 +32,6 @@ export function Scene({
   const radioRingRef = useRef<THREE.InstancedMesh>(null)
   const radioDotRef = useRef<THREE.InstancedMesh>(null)
   const dotsMeshRef = useRef<THREE.InstancedMesh>(null)
-  const hlineMeshRef = useRef<THREE.InstancedMesh>(null)
-  const vlineMeshRef = useRef<THREE.InstancedMesh>(null)
   const asciiMeshRef = useRef<THREE.InstancedMesh>(null)
   const pixelMeshRef = useRef<THREE.InstancedMesh>(null)
   const ribbonMeshRef = useRef<THREE.InstancedMesh>(null)
@@ -68,14 +66,6 @@ export function Scene({
   // loop to mutate the mesh's vertex z attribute.
   const meshZBufferRef = useRef<Float32Array | null>(null)
 
-  // Per-row / per-column brightness accumulators for hline/vline modes
-  // (reset each frame, written in the per-cell loop, consumed after).
-  // Sized to the current resolution so the per-row/per-col loops index safely.
-  const rowSumRef = useRef<Float32Array>(new Float32Array(resolution))
-  const rowCountRef = useRef<Float32Array>(new Float32Array(resolution))
-  const colSumRef = useRef<Float32Array>(new Float32Array(resolution))
-  const colCountRef = useRef<Float32Array>(new Float32Array(resolution))
-
   const blueNoise = useMemo(() => generateBlueNoiseTexture(128), [])
 
   // Stable per-cell phosphor-flicker offsets (±3%), seeded ONCE per resolution
@@ -95,10 +85,9 @@ export function Scene({
   const cellColorScratch = useMemo(() => new THREE.Color(), [])
 
   // Stable array of instanced-mesh refs shared by the material-effect and the
-  // per-frame loop. hline/vline use `count = resolution` (one per row/col);
-  // the rest use `count = resolution²`.
+  // per-frame loop (all use `count = resolution²`).
   const meshRefs = useMemo(
-    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, hlineMeshRef, vlineMeshRef, asciiMeshRef, pixelMeshRef, ribbonMeshRef, meshModeRef],
+    () => [blocksRef, radioRingRef, radioDotRef, dotsMeshRef, asciiMeshRef, pixelMeshRef, ribbonMeshRef, meshModeRef],
     [],
   )
 
@@ -168,10 +157,10 @@ export function Scene({
   const asciiAtlas = useMemo(() => {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
-    canvas.width = 24 * 64  // 1536px for 24 glyphs at 64px each
-    canvas.height = 64
-    ctx.fillStyle = 'white'; ctx.font = 'bold 48px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-    'MWNBDHK0@$#8X%+=-:;,._`"'.split('').forEach((char, i) => ctx.fillText(char, (i * 64) + 32, 32))
+    canvas.width = 24 * 128  // 3072px for 24 glyphs at 128px each — crisp at the larger scaled-up plane size
+    canvas.height = 128
+    ctx.fillStyle = 'white'; ctx.font = 'bold 96px monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    'MWNBDHK0@$#8X%+=-:;,._`"'.split('').forEach((char, i) => ctx.fillText(char, (i * 128) + 64, 64))
     const texture = new THREE.CanvasTexture(canvas)
     texture.minFilter = texture.magFilter = THREE.NearestFilter
     return texture
@@ -326,25 +315,31 @@ useFrame((state) => {
         const modeZ = finalZ
 
         if (renderMode === 'mesh' && meshZBufferRef.current) {
-          meshZBufferRef.current[id] = viewMode === 'flat' ? 0 : finalZ
+          // Mesh is a topographic surface — its entire visual identity is the
+          // per-vertex z-displacement, so it must displace by brightness in
+          // both view modes (unlike other modes, which use viewMode to decide
+          // whether to extrude at all).
+          meshZBufferRef.current[id] = finalZ
         }
         
         const s = isActive ? 0.4 : 0.1
         const pSize = 0.4
-        
+        const asciiScale = 1.1
+
         dummy.rotation.set(0, 0, 0)
         dummy.position.set(posX, posY, 0)
         dummy.scale.set(spacing * 0.9, spacing * 0.9, 0.05)
 
         if (viewMode === 'flat') {
           if (renderMode === 'ascii') {
-            dummy.scale.set(spacing * s, spacing * s, 1)
+            // Full-bleed monospace terminal grid — glyph ink density (not cell
+            // scale) carries brightness, so every cell fills its slot the same
+            // slight-overlap amount rather than shrinking to a threshold blob.
+            dummy.scale.set(spacing * asciiScale, spacing * asciiScale, 1)
           } else if (renderMode === 'pixel') {
             dummy.scale.set(spacing * s * 0.7, spacing * s * 0.7, 1)
           } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * s * pSize, spacing * s * pSize, spacing * s * pSize)
-          } else if (renderMode === 'hline' || renderMode === 'vline') {
-            dummy.scale.set(spacing * s, spacing * s, 0.05)
           } else if (renderMode === 'radio') {
             // Radio is handled below
           } else {
@@ -354,13 +349,11 @@ useFrame((state) => {
           // Volumetric Mode
           dummy.position.set(posX, posY, modeZ / 2)
           if (renderMode === 'ascii') {
-            dummy.scale.set(spacing * s, spacing * s, 1)
+            dummy.scale.set(spacing * asciiScale, spacing * asciiScale, 1)
           } else if (renderMode === 'pixel') {
             dummy.scale.set(spacing * s * 0.7, spacing * s * 0.7, 1)
           } else if (renderMode === 'dots') {
             dummy.scale.set(spacing * 0.9 * pSize, spacing * 0.9 * pSize, spacing * 0.9 * pSize)
-          } else if (renderMode === 'hline' || renderMode === 'vline') {
-            dummy.scale.set(spacing * s, spacing * s, modeZ * 0.95)
           } else {
             dummy.scale.set(spacing * 0.9, spacing * 0.9, modeZ)
           }
@@ -374,8 +367,6 @@ useFrame((state) => {
         if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setColorAt(id, computeCellColor(brightness))
         if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setColorAt(id, computeCellColor(brightness))
         if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setColorAt(id, computeCellColor(brightness))
-        if (renderMode === 'hline' && hlineMeshRef.current) hlineMeshRef.current.setColorAt(y, computeCellColor(brightness))
-        if (renderMode === 'vline' && vlineMeshRef.current) vlineMeshRef.current.setColorAt(x, computeCellColor(brightness))
 
         if (renderMode === 'ascii') {
           // Atlas order is dense-to-sparse (24 glyphs): 'MWNBDHK0@$#8X%+=-:;,._'` "'
@@ -388,15 +379,6 @@ useFrame((state) => {
         if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'ascii' && asciiMeshRef.current) asciiMeshRef.current.setMatrixAt(id, dummy.matrix)
         if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setMatrixAt(id, dummy.matrix)
-
-        // hline/vline: track the per-row / per-column mean brightness inside the
-        // per-cell loop, then write one instance per row/col AFTER the loop ends.
-        if (renderMode === 'hline' || renderMode === 'vline') {
-          rowSumRef.current[y] += brightness
-          rowCountRef.current[y] += 1
-          colSumRef.current[x] += brightness
-          colCountRef.current[x] += 1
-        }
 
         // Ribbon: spectrum-analyzer bars. Each column = one FFT bin, bar height
         // = bin magnitude. Reads as a real audio spectrum, not just sin waves.
@@ -448,44 +430,6 @@ useFrame((state) => {
       if (ribbonMeshRef.current.instanceColor) ribbonMeshRef.current.instanceColor.needsUpdate = true
     }
 
-    // hline: one instance per row, full-width, scaled to row mean brightness.
-    // Brightness dramatically affects thickness (0.2..1.5x spacing) so active
-    // rows stand out as thick bright lines vs inactive rows as thin dim lines.
-    if (renderMode === 'hline' && hlineMeshRef.current) {
-      const fullWidth = resolution * spacing
-      for (let y = 0; y < resolution; y++) {
-        const mean = rowCountRef.current[y] ? rowSumRef.current[y] / rowCountRef.current[y] : 0
-        const rowPosY = (resolution / 2 - 0.5 - y) * spacing
-        const thickness = spacing * (0.2 + mean * 1.3)
-        dummy.position.set(0, rowPosY, 0)
-        dummy.scale.set(fullWidth, thickness, 1)
-        dummy.rotation.set(0, 0, 0)
-        dummy.updateMatrix()
-        hlineMeshRef.current.setMatrixAt(y, dummy.matrix)
-      }
-      hlineMeshRef.current.instanceMatrix.needsUpdate = true
-    }
-    // vline: one instance per column, full-height, scaled to column mean brightness.
-    if (renderMode === 'vline' && vlineMeshRef.current) {
-      const fullHeight = resolution * spacing
-      for (let x = 0; x < resolution; x++) {
-        const mean = colCountRef.current[x] ? colSumRef.current[x] / colCountRef.current[x] : 0
-        const colPosX = (x - resolution / 2 + 0.5) * spacing
-        const thickness = spacing * (0.2 + mean * 1.3)
-        dummy.position.set(colPosX, 0, 0)
-        dummy.scale.set(thickness, fullHeight, 1)
-        dummy.rotation.set(0, 0, 0)
-        dummy.updateMatrix()
-        vlineMeshRef.current.setMatrixAt(x, dummy.matrix)
-      }
-      vlineMeshRef.current.instanceMatrix.needsUpdate = true
-    }
-    // Reset the per-frame accumulators so the next frame starts fresh.
-    if (renderMode === 'hline' || renderMode === 'vline') {
-      rowSumRef.current.fill(0); rowCountRef.current.fill(0)
-      colSumRef.current.fill(0); colCountRef.current.fill(0)
-    }
-
     // Mesh mode: read the per-cell z buffer written in the loop above and
     // apply it as vertex displacement on the planeGeometry. Vertices are laid
     // out in row-major order matching the per-cell loop (resolution*resolution
@@ -535,8 +479,6 @@ useFrame((state) => {
       case 'radio': activeRef = radioRingRef; break
       case 'pixel': activeRef = pixelMeshRef; break
       case 'dots': activeRef = dotsMeshRef; break
-      case 'hline': activeRef = hlineMeshRef; break
-      case 'vline': activeRef = vlineMeshRef; break
       case 'ascii': activeRef = asciiMeshRef; break
       case 'ribbon': activeRef = ribbonMeshRef; break
       case 'mesh': activeRef = meshModeRef; break
@@ -609,20 +551,6 @@ useFrame((state) => {
               <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible>
                 <sphereGeometry args={[1, 8, 8]} />
                 <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
-              </instancedMesh>
-            )
-          case 'hline':
-            return (
-              <instancedMesh key={`hline-${resolution}`} ref={hlineMeshRef} args={[null as any, null as any, resolution]} visible>
-                <planeGeometry args={[1, 1]} />
-                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-              </instancedMesh>
-            )
-          case 'vline':
-            return (
-              <instancedMesh key={`vline-${resolution}`} ref={vlineMeshRef} args={[null as any, null as any, resolution]} visible>
-                <planeGeometry args={[1, 1]} />
-                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
               </instancedMesh>
             )
           case 'ascii':
