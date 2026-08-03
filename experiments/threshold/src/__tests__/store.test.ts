@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { useStore } from '../store'
+import { useStore, RENDER_MODES } from '../store'
 
 describe('store defaults (Phase 6 PR1 REV 2)', () => {
   it('audioEnabled defaults to true', () => {
@@ -22,5 +22,15 @@ describe('store defaults (Phase 6 PR1 REV 2)', () => {
   })
   it('soundTexture stays bloom (Phase 5 default)', () => {
     expect(useStore.getState().soundTexture).toBe('bloom')
+  })
+})
+
+describe('RENDER_MODES', () => {
+  it('includes mesh as a render mode', () => {
+    expect(RENDER_MODES).toContain('mesh')
+  })
+
+  it('lists ten render modes', () => {
+    expect(RENDER_MODES).toHaveLength(10)
   })
 })

@@ -164,6 +164,32 @@ describe('useGestureControls — edge detection + dispatch (store-driven)', () =
     })
   })
 
+  describe('THUMB_UP/THUMB_DOWN cycle through all render modes including mesh', () => {
+    it('thumb_up visits every render mode including mesh in order', () => {
+      let last: Gesture = null
+      const visited = new Set<RenderMode>()
+      for (let i = 0; i < RENDER_MODES.length; i++) {
+        last = applyGestureEdge(last, 'thumb_up')
+        visited.add(useStore.getState().renderMode)
+        last = applyGestureEdge(last, null)
+      }
+      expect(visited.size).toBe(RENDER_MODES.length)
+      expect(visited).toContain('mesh')
+    })
+
+    it('thumb_down visits every render mode including mesh in reverse order', () => {
+      let last: Gesture = null
+      const visited = new Set<RenderMode>()
+      for (let i = 0; i < RENDER_MODES.length; i++) {
+        last = applyGestureEdge(last, 'thumb_down')
+        visited.add(useStore.getState().renderMode)
+        last = applyGestureEdge(last, null)
+      }
+      expect(visited.size).toBe(RENDER_MODES.length)
+      expect(visited).toContain('mesh')
+    })
+  })
+
   describe('OPEN_PALM -> toggle moodEnabled', () => {
     it('fires setMoodEnabled exactly once on null -> open_palm (toggling false -> true)', () => {
       expect(useStore.getState().moodEnabled).toBe(false)
