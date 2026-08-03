@@ -228,24 +228,15 @@ useFrame((state) => {
     }
 
     let audioIntensity = 0
-    if (audioEnabled && audioReactive && analyzerRef.current) {
+    if (audioEnabled && analyzerRef.current) {
       const analyser = analyzerRef.current.analyser || analyzerRef.current
       if (analyser.getByteFrequencyData) {
         analyser.getByteFrequencyData(fftData)
-        let sum = 0
-        for (let j = 0; j < 8; j++) sum += fftData[j]
-        audioIntensity = (sum / 8) / 255
-      }
-    }
-
-    // Spectral mode is audio-native: populate fftData whenever audio is
-    // enabled (independent of audioReactive) so the FFT-driven bars always
-    // have fresh data. audioReactive above still gates audioIntensity for
-    // emissive/extrusion effects on other modes.
-    if (audioEnabled && !audioReactive && analyzerRef.current) {
-      const analyser = analyzerRef.current.analyser || analyzerRef.current
-      if (analyser.getByteFrequencyData) {
-        analyser.getByteFrequencyData(fftData)
+        if (audioReactive) {
+          let sum = 0
+          for (let j = 0; j < 8; j++) sum += fftData[j]
+          audioIntensity = (sum / 8) / 255
+        }
       }
     }
 
@@ -483,17 +474,32 @@ useFrame((state) => {
     // shimmers without a per-frame Math.random() storm. ±3%, clamped >= 0.
     const flickerIdx = Math.floor(state.clock.elapsedTime * 24) % count
     const flicker = flickerOffsets[flickerIdx] ?? 0
-    meshRefs.forEach(ref => {
-      if (ref.current) {
-        if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true
-        if (ref.current.material instanceof THREE.MeshStandardMaterial) {
-          const mat = ref.current.material
-          const flickered = Math.max(0, baseEmissive * (1 + flicker))
-          mat.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
-        }
-        ref.current.instanceMatrix.needsUpdate = true
+    let activeRef: React.RefObject<THREE.InstancedMesh | null> | undefined
+    switch (renderMode) {
+      case 'blocks': activeRef = blocksRef; break
+      case 'radio': activeRef = radioRingRef; break
+      case 'pixel': activeRef = pixelMeshRef; break
+      case 'dots': activeRef = dotsMeshRef; break
+      case 'hline': activeRef = hlineMeshRef; break
+      case 'vline': activeRef = vlineMeshRef; break
+      case 'ascii': activeRef = asciiMeshRef; break
+      case 'ribbon': activeRef = ribbonMeshRef; break
+    }
+
+    if (activeRef?.current) {
+      const mesh = activeRef.current
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      if (mesh.material instanceof THREE.MeshStandardMaterial) {
+        const flickered = Math.max(0, baseEmissive * (1 + flicker))
+        mesh.material.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
       }
-    })
+      mesh.instanceMatrix.needsUpdate = true
+    }
+    if (renderMode === 'radio' && radioDotRef.current) {
+      const mesh = radioDotRef.current
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      mesh.instanceMatrix.needsUpdate = true
+    }
   })
 
   return (
