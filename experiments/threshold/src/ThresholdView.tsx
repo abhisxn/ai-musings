@@ -178,12 +178,33 @@ export default function ThresholdView() {
   // Pass the actual active instance-mesh count (1 — only the renderMode mesh is
   // mounted) and the post-process pass count from the tier below so the
   // estimate reflects the optimized configuration.
-  const ppTier = useMemo(() => {
-    if (reducedQuality) return 'low'
-    if (thermalRisk === 'high') return 'low'
-    if (thermalRisk === 'medium') return 'medium'
-    return 'high'
-  }, [thermalRisk, reducedQuality])
+  // Hysteresis: track last tier change to prevent oscillation.
+  // Once tier drops, require 2s dwell time before allowing upgrade.
+  const [ppTier, setPpTier] = useState<'high' | 'medium' | 'low'>('high')
+  const lastTierChangeRef = useRef<number>(Date.now())
+  const DWELL_TIME_MS = 2000
+
+  useEffect(() => {
+    const now = Date.now()
+    const timeSinceLastChange = now - lastTierChangeRef.current
+
+    let targetTier: 'high' | 'medium' | 'low'
+    if (reducedQuality) targetTier = 'low'
+    else if (thermalRisk === 'high') targetTier = 'low'
+    else if (thermalRisk === 'medium') targetTier = 'medium'
+    else targetTier = 'high'
+
+    // Only allow tier upgrade if dwell time has passed (prevents oscillation)
+    if (targetTier !== ppTier) {
+      const tierRank = { low: 0, medium: 1, high: 2 }
+      const isUpgrade = tierRank[targetTier] > tierRank[ppTier]
+
+      if (!isUpgrade || timeSinceLastChange >= DWELL_TIME_MS) {
+        setPpTier(targetTier)
+        lastTierChangeRef.current = now
+      }
+    }
+  }, [thermalRisk, reducedQuality, ppTier])
 
   const ppPassCount = useMemo(() => {
     switch (ppTier) {
@@ -197,6 +218,7 @@ export default function ThresholdView() {
   const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard({
     instanceMeshCount: 1,
     postProcessCount: ppPassCount,
+    rAFLoopCount: 1, // Only 1 rAF loop after Track B consolidation
   })
 
   // Sync detected risk to the store so other consumers can react.
@@ -212,6 +234,13 @@ export default function ThresholdView() {
       console.warn('[ThermalGuard] high thermal risk — auto-downgrading quality')
     }
   }, [detectedRisk, autoDowngradeEnabled, reducedQuality, setReducedQuality])
+
+  // rAF throttle: drop to 30fps target when thermal risk is high or document hidden.
+  const { setFrameSkip } = useStore()
+  useEffect(() => {
+    const targetSkip = (detectedRisk === 'high' || document.hidden) ? 2 : 1
+    setFrameSkip(targetSkip)
+  }, [detectedRisk, document.hidden, setFrameSkip])
 
   const thermalColor =
     detectedRisk === 'high' ? '#ff4400'
@@ -322,7 +351,8 @@ export default function ThresholdView() {
     localStorage.setItem('threshold_onboarding_done', 'true')
   }
 
-  const quantizedEnergy = Math.round(sessionEnergy / 5) * 5
+  // sessionEnergy is already quantized by useUnifiedSampler; read directly.
+  const quantizedEnergy = sessionEnergy
 
   useEffect(() => {
     if (!moodEnabled) {

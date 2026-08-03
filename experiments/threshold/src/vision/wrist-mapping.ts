@@ -1,14 +1,14 @@
 /**
  * Pure functions bridging raw hand-tracking output (a single 2D/3D wrist
  * position, normalized to [0, 1] image space) to the places
- * `ThresholdView`/`Scene`/`useEnergyAccumulator` used to source from
+ * `ThresholdView`/`Scene`/`useUnifiedSampler` used to source from
  * pixel-diff motion detection:
  *
  *   - the 3-zone ambient edge-panel glow (`zoneEnergy`)
  *   - the volumetric extrusion drift (base value still Leva/`extrusion`)
- *   - the session-arc energy accumulator's per-frame `motionMagnitude`
+ *     - the session-arc energy (via `useUnifiedSampler` quantized output)
  *
- * No store/React/browser dependency, so all three are unit-testable in
+ * No store/React/browser dependency, so all functions are unit-testable in
  * isolation (same pattern as `pinch.ts`).
  */
 
@@ -48,8 +48,8 @@ export function wristPositionToZoneEnergy(
 
 /**
  * Scales a frame-to-frame wrist displacement (in normalized [0, 1] image
- * units) into roughly the same 0-1 range `useEnergyAccumulator`'s legacy
- * pixel-diff `motionMagnitude` produced, so the session-arc charge/drain math
+ * units) into roughly the same 0-1 range the unified sampler's
+ * `sessionEnergy` output produces.
  * downstream doesn't need to change.
  *
  * Tuned empirically: a brisk hand wave covers on the order of 0.1-0.2 of the

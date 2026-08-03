@@ -91,6 +91,10 @@ interface ThresholdState {
   setAutoDowngradeEnabled: (val: boolean) => void
   reducedQuality: boolean
   setReducedQuality: (val: boolean) => void
+
+  // Frame skip for thermal throttle: 1 = 60fps, 2 = 30fps
+  frameSkip: number
+  setFrameSkip: (val: number) => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -175,4 +179,7 @@ export const useStore = create<ThresholdState>((set) => ({
   setAutoDowngradeEnabled: (autoDowngradeEnabled) => set({ autoDowngradeEnabled }),
   reducedQuality: false,
   setReducedQuality: (reducedQuality) => set({ reducedQuality }),
+
+  frameSkip: 1,
+  setFrameSkip: (frameSkip) => set({ frameSkip }),
 }))

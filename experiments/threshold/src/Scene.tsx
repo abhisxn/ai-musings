@@ -37,7 +37,9 @@ export function Scene({
   const ribbonMeshRef = useRef<THREE.InstancedMesh>(null)
   const ditherMeshRef = useRef<THREE.Mesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
+
+  const frameCountRef = useRef(0)
 
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
@@ -199,9 +201,19 @@ export function Scene({
     return mat
   }, [frameTextureRef, resolution])
 
+  useEffect(() => {
+    return () => {
+      ditherMaterial.dispose()
+    }
+  }, [ditherMaterial])
+
   const spacing = 0.25
 
 useFrame((state) => {
+    // rAF throttle: skip frames when thermal risk demands 30fps target.
+    frameCountRef.current++
+    if (frameCountRef.current % frameSkip !== 0) return
+
     if (!pixelDataRef.current) return
 
     let emissiveScale = 1.0

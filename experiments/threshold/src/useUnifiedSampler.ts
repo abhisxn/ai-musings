@@ -39,8 +39,7 @@ export function useUnifiedSampler() {
     prevResRef.current = resolution
     prevWristRef.current = null
 
-    const ZONE_THRESHOLD = 0.15
-    const IDLE_THRESHOLD = ZONE_THRESHOLD * 0.5
+    const IDLE_THRESHOLD = 0.075 // half of zone threshold (0.15)
     const CHARGE_RATE = 2
     const DRAIN_RATE = 0.5
     const PIXEL_SCALE = 10
@@ -193,6 +192,15 @@ export function useUnifiedSampler() {
       frameTextureRef.current.needsUpdate = true
     }
   })
+
+  useEffect(() => {
+    return () => {
+      if (frameTextureRef.current) {
+        frameTextureRef.current.dispose()
+        frameTextureRef.current = null
+      }
+    }
+  }, [frameTextureRef])
 
   return { dataRef, frameTextureRef, statusText }
 }

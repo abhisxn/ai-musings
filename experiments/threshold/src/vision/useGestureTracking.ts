@@ -10,7 +10,7 @@
  * `resolveGesture`/`resolveContinuousValue` (imported, not reimplemented) and
  * in the `GestureTrackingStatus` written to the store: an `init`-phase worker
  * error is permanent for the session (`status: 'failed'`), signalling
- * `useMotionZones` to take over as the fallback motion detector.
+ * `useUnifiedSampler` to take over as the fallback motion detector.
  */
 
 import { useEffect } from 'react'
@@ -59,7 +59,7 @@ export function useGestureTracking() {
     // `requestVideoFrameCallback`/OffscreenCanvas transfer aren't available in
     // every environment (older Safari, some test/SSR contexts) - treat that
     // as a permanent failure for this session, same as an init error, so the
-    // caller falls back to `useMotionZones`.
+    // caller falls back to `useUnifiedSampler`.
     if (typeof HTMLCanvasElement === 'undefined' || typeof OffscreenCanvas === 'undefined') {
       setGestureTrackingStatus('failed')
       return
