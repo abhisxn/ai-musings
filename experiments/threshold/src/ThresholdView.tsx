@@ -677,7 +677,7 @@ export default function ThresholdView() {
           left: '50%',
           top: '50%',
           transform: viewMode === 'volumetric' ? BLEED_SKEW_VOLUMETRIC : BLEED_SKEW_FLAT,
-          transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'transform 900ms cubic-bezier(0.16, 1, 0.3, 1)',
         }}
       >
         {cameraOn && cameraView === 'bleed' && (
@@ -855,8 +855,7 @@ export default function ThresholdView() {
           height: 'min(100vw, 100vh)',
           left: '50%',
           top: '50%',
-          transform: viewMode === 'volumetric' ? BLEED_SKEW_VOLUMETRIC : BLEED_SKEW_FLAT,
-          transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: 'translate(-50%, -50%)',
         }}
       >
       <Canvas shadows gl={{ antialias: false, alpha: true }} onCreated={({ gl }) => { 
