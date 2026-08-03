@@ -99,6 +99,10 @@ interface ThresholdState {
   // GPU Profiler
   measuredFrameMs: number
   setMeasuredFrameMs: (val: number) => void
+
+  // Visibility Lifecycle
+  isVisible: boolean
+  setIsVisible: (val: boolean) => void
 }
 
 export const useStore = create<ThresholdState>((set) => ({
@@ -190,4 +194,7 @@ export const useStore = create<ThresholdState>((set) => ({
 
   measuredFrameMs: 0,
   setMeasuredFrameMs: (measuredFrameMs) => set({ measuredFrameMs }),
+
+  isVisible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
+  setIsVisible: (isVisible) => set({ isVisible }),
 }))

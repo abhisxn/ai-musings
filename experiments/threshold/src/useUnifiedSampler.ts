@@ -11,6 +11,7 @@ export function useUnifiedSampler() {
   const videoElement = useStore(state => state.videoElement)
   const resolution = useStore(state => state.resolution)
   const sourceMode = useStore(state => state.sourceMode)
+  const isVisible = useStore(state => state.isVisible)
 
   const dataRef = useRef<Float32Array>(new Float32Array(128 * 128))
   const samplerCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -49,6 +50,10 @@ export function useUnifiedSampler() {
 
     const loop = () => {
       if (!isMounted) return
+      if (!isVisible) {
+        frameId = requestAnimationFrame(loop)
+        return
+      }
 
       const { gestureTrackingStatus, handTracking, moodEnabled } = useStore.getState()
       const gestureActive = gestureTrackingStatus === 'active'

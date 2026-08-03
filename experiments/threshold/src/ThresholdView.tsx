@@ -155,6 +155,14 @@ export default function ThresholdView() {
     }
   }, [initialized])
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      useStore.getState().setIsVisible(document.visibilityState === 'visible')
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
   // Leva brutalist theme — memoized on `palette` (a stable THEMES singleton
   // reference, so this only re-builds when the actual theme changes) so Leva
   // doesn't re-apply theming on every unrelated store-driven re-render.

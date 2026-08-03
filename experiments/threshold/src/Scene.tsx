@@ -38,7 +38,7 @@ export function Scene({
   const meshModeRef = useRef<THREE.Mesh>(null)
   const ditherMeshRef = useRef<THREE.Mesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip, isVisible } = useStore()
 
   const frameCountRef = useRef(0)
   const frameStartTimeRef = useRef<number>(0)
@@ -219,10 +219,12 @@ export function Scene({
 
   const spacing = 0.25
 
-useFrame((state) => {
+ useFrame((state) => {
     // rAF throttle: skip frames when thermal risk demands 30fps target.
     frameCountRef.current++
     if (frameCountRef.current % frameSkip !== 0) return
+
+    if (!isVisible) return
 
     if (!pixelDataRef.current) return
 

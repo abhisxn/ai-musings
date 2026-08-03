@@ -58,6 +58,7 @@ export function useGestureTracking() {
   const setHandTracking = useStore((state) => state.setHandTracking)
   const setGestureTrackingStatus = useStore((state) => state.setGestureTrackingStatus)
   const status = useStore((state) => state.gestureTrackingStatus)
+  const isVisible = useStore((state) => state.isVisible)
 
   useEffect(() => {
     if (!initialized || !videoElement) return
@@ -214,7 +215,9 @@ export function useGestureTracking() {
           break
         case 'result':
           awaitingResult = false
-          applyResult(msg.hands[0])
+          if (isVisible) {
+            applyResult(msg.hands[0])
+          }
           scheduleNextFrame()
           break
         case 'error':
