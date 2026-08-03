@@ -133,7 +133,7 @@ export default function ThresholdView() {
     gestureGlitchActive,
     setGestureGlitchActive,
      soundTexture, setSoundTexture,
-     setThermalRisk,
+     thermalRisk, setThermalRisk,
      autoDowngradeEnabled, setAutoDowngradeEnabled,
      reducedQuality, setReducedQuality,
    } = useStore()
@@ -172,7 +172,29 @@ export default function ThresholdView() {
   useGestureControls()
 
   // Thermal Guard — reads device memory/concurrency + estimates GPU frame cost.
-  const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard()
+  // Pass the actual active instance-mesh count (1 — only the renderMode mesh is
+  // mounted) and the post-process pass count from the tier below so the
+  // estimate reflects the optimized configuration.
+  const ppTier = useMemo(() => {
+    if (reducedQuality) return 'low'
+    if (thermalRisk === 'high') return 'low'
+    if (thermalRisk === 'medium') return 'medium'
+    return 'high'
+  }, [thermalRisk, reducedQuality])
+
+  const ppPassCount = useMemo(() => {
+    switch (ppTier) {
+      case 'high': return 8
+      case 'medium': return 4
+      case 'low': return 3
+      default: return 8
+    }
+  }, [ppTier])
+
+  const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard({
+    instanceMeshCount: 1,
+    postProcessCount: ppPassCount,
+  })
 
   // Sync detected risk to the store so other consumers can react.
   useEffect(() => {
@@ -800,17 +822,29 @@ export default function ThresholdView() {
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />
-          <ChromaticAberration offset={ppChromatic} />
+          {ppTier !== 'low' && (
+            <ChromaticAberration offset={ppChromatic} />
+          )}
           {/* focusDistance constant 0.02 (camera-lerp target isn't exposed to
               the composer; 0.02 keeps the near volumetric field sharp and lets
-              the far edge bloom into bokeh). bokehScale ~2.5. */}
-          {viewMode === 'volumetric' && (
+              the far edge bloom into bokeh). bokehScale ~2.5.
+              Only mounts at high tier + volumetric view. */}
+          {ppTier === 'high' && viewMode === 'volumetric' && (
             <DepthOfField focusDistance={0.02} bokehScale={2.5} />
           )}
-          <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
+          {/* Glitch only at high tier — deactivated when reducedQuality or
+              thermal risk is high (Glitch is omitted entirely, not just
+              active={false}). */}
+          {ppTier === 'high' && (
+            <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
+          )}
           <Scanline opacity={ppScanline} density={2} />
-          <Noise opacity={ppNoise} />
-          <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
+          {ppTier === 'high' && (
+            <Noise opacity={ppNoise} />
+          )}
+          {ppTier === 'high' && (
+            <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
+          )}
         </EffectComposer>
         <ambientLight intensity={0.2} />
         <DriftingPointLight basePosition={[10, 10, 10]} intensity={1} color={palette.accent} />
