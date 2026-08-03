@@ -243,6 +243,14 @@ useFrame((state) => {
     let clicksThisFrame = 0
     const MAX_CLICKS_PER_FRAME = 8
 
+    // Per-cell color helper: only called inside mode guards so
+    // getGradientColor runs once per cell (for the active mode) instead of
+    // once per cell for every mode.
+    const computeCellColor = (brightness: number) =>
+      moodEnabled
+        ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, brightness, cellColorScratch)
+        : getGradientColor(theme, brightness, cellColorScratch)
+
     let i = 0
     for (let y = 0; y < resolution; y++) {
       for (let x = 0; x < resolution; x++) {
@@ -326,19 +334,14 @@ useFrame((state) => {
         
         dummy.updateMatrix()
         
-        // Per-cell diffuse color: every theme resolves from its own gradient.
-        // ascii has no instanceColor (glyph atlas tints via material.color), so
-        // skip the gradient call there.
-        const cellColor = renderMode === 'ascii'
-          ? null
-          : moodEnabled
-            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, brightness, cellColorScratch)
-            : getGradientColor(theme, brightness, cellColorScratch)
-        if (cellColor && blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
-        if (cellColor && pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
-        if (cellColor && dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
-        if (cellColor && hlineMeshRef.current && renderMode === 'hline') hlineMeshRef.current.setColorAt(y, cellColor)
-        if (cellColor && vlineMeshRef.current && renderMode === 'vline') vlineMeshRef.current.setColorAt(x, cellColor)
+        // Per-cell diffuse color — only compute for the active mode's mesh.
+        // getGradientColor is invoked inside each mode guard so it never runs
+        // for cells whose mode won't consume the result.
+        if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'hline' && hlineMeshRef.current) hlineMeshRef.current.setColorAt(y, computeCellColor(brightness))
+        if (renderMode === 'vline' && vlineMeshRef.current) vlineMeshRef.current.setColorAt(x, computeCellColor(brightness))
 
         if (renderMode === 'ascii') {
           // Atlas order is dense-to-sparse (24 glyphs): 'MWNBDHK0@$#8X%+=-:;,._'` "'
@@ -382,6 +385,7 @@ useFrame((state) => {
         // scaled from 0..full as brightness rises — reads as a pressed/unpressed
         // UI radio button per cell.
         if (renderMode === 'radio') {
+          const cellColor = computeCellColor(brightness)
           if (radioRingRef.current) {
             dummy.position.set(posX, posY, finalZ)
             dummy.scale.set(spacing * 0.7, spacing * 0.7, 1)
