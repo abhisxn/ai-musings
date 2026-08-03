@@ -4,7 +4,7 @@ import { GestureTrackingStatus, HandTracking, Mood, Phase } from './types'
 export const RENDER_MODES = ['radio', 'dots', 'blocks', 'ascii', 'pixel', 'ribbon', 'mesh', 'dither'] as const
 export type RenderMode = (typeof RENDER_MODES)[number]
 
-export const THEMES_LIST = ['dark', 'light', 'acid', 'heatmap'] as const
+export const THEMES_LIST = ['dark', 'light', 'acid', 'heatmap', 'cyber', 'sunset', 'ir', 'matrix', 'noir'] as const
 export type Theme = (typeof THEMES_LIST)[number]
 
 interface ThresholdState {
@@ -135,7 +135,7 @@ export const useStore = create<ThresholdState>((set) => ({
   setShowGrid: (showGrid) => set({ showGrid }),
 
   // Session Arc
-  moodEnabled: true,
+  moodEnabled: false,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
   currentMood: 'pulse' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),
