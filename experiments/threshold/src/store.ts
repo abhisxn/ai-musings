@@ -135,7 +135,7 @@ export const useStore = create<ThresholdState>((set) => ({
   setShowGrid: (showGrid) => set({ showGrid }),
 
   // Session Arc
-  moodEnabled: false,
+  moodEnabled: true,
   setMoodEnabled: (moodEnabled) => set({ moodEnabled }),
   currentMood: 'pulse' as Mood,
   setCurrentMood: (currentMood) => set({ currentMood }),

@@ -16,6 +16,7 @@ edited after acceptance, only superseded by new ADRs.
 | 0011 | [Multi-color themes](0011-multi-color-themes.md) | 2026-07-26 | Phase 6 PR2 |
 | 0012 | [Render mode revival (literal-name overhaul)](0012-render-mode-revival.md) | 2026-07-26 | Phase 6 PR2 |
 | 0013 | [GPU thermal guard layer](0013-thermal-guard.md) | 2026-08-03 | Phase 7 |
+| 0014 | [Mesh render mode (continuous wireframe contour)](0014-mesh-render-mode.md) | 2026-08-03 | Proposed |
 
 ## Phase context
 
