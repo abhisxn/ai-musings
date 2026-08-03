@@ -2,6 +2,7 @@
 import {
   calculateLandmarkDistance,
   normalizePinchDistance,
+  normalizeHandSpan,
   derivePinchGesture,
   resolveGesture,
   resolveContinuousValue,
@@ -174,5 +175,26 @@ describe('detectGestureEdge', () => {
     expect(detectGestureEdge(null, 'pinch').entered).toBe('pinch')
     expect(detectGestureEdge(null, 'thumb_up').entered).toBe('thumb_up')
     expect(detectGestureEdge(null, 'thumb_down').entered).toBe('thumb_down')
+  })
+})
+
+describe('normalizeHandSpan', () => {
+  it('clamps distances below min to 0', () => {
+    expect(normalizeHandSpan(0.01, 0.05, 0.5)).toBe(0)
+  })
+
+  it('clamps distances above max to 1', () => {
+    expect(normalizeHandSpan(0.6, 0.05, 0.5)).toBe(1)
+  })
+
+  it('interpolates linearly between min and max', () => {
+    expect(normalizeHandSpan(0.05, 0.05, 0.5)).toBe(0)
+    expect(normalizeHandSpan(0.275, 0.05, 0.5)).toBeCloseTo(0.5, 5)
+    expect(normalizeHandSpan(0.5, 0.05, 0.5)).toBe(1)
+  })
+
+  it('returns 0 when maxDistance <= minDistance', () => {
+    expect(normalizeHandSpan(0.2, 0.5, 0.05)).toBe(0)
+    expect(normalizeHandSpan(0.2, 0.3, 0.3)).toBe(0)
   })
 })

@@ -498,7 +498,7 @@ export default function ThresholdView() {
           }[handTracking.gesture]
         : 'no hand detected'
       const statusLabel = { idle: 'not started', loading: 'starting camera…', active: 'tracking', failed: 'camera unavailable' }[gestureTrackingStatus]
-      return `${gestureLabel} (${statusLabel})`
+      return `${gestureLabel} · proximity ${handTracking.proximity.toFixed(2)} (${statusLabel})`
     }),
   })
 
