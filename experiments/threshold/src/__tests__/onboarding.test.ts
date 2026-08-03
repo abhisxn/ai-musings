@@ -52,14 +52,14 @@ describe('gesture → action contract (step 3)', () => {
 })
 
 describe('keyboard shortcuts (step 4)', () => {
-  it('documents keys 1–7 select render mode', () => {
-    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys.includes('1') && k.keys.includes('7'))
+  it('documents keys 1-0 select render mode', () => {
+    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys.includes('1') && k.keys.includes('0'))
     expect(entry?.action).toMatch(/select render mode/i)
   })
 
-  it('documents 0 toggles mood on/off', () => {
-    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys === '0')
-    expect(entry?.action).toMatch(/toggle mood/i)
+  it('documents a toggles Session Arc on/off', () => {
+    const entry = KEYBOARD_SHORTCUTS.find((k) => k.keys === 'a')
+    expect(entry?.action).toMatch(/toggle.*arc/i)
   })
 
   it('documents m cycles mood', () => {

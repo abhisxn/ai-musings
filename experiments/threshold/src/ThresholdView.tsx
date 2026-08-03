@@ -400,6 +400,9 @@ export default function ThresholdView() {
         const idx = parseInt(e.key) - 1
         if (idx < modeList.length) setRenderMode(modeList[idx])
       } else if (e.key === '0') {
+        const idx = 9
+        if (idx < modeList.length) setRenderMode(modeList[idx])
+      } else if (e.key === 'a' || e.key === 'A') {
         setMoodEnabled(!useStore.getState().moodEnabled)
       } else if (e.key === 'm' || e.key === 'M') {
         const moods: Mood[] = ['luminous', 'deep', 'pulse', 'solar', 'azure']

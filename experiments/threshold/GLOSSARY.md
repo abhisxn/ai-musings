@@ -12,7 +12,7 @@ A live webcam feed reinterpreted in real time as an ASCII/dither/pixel-art field
 |---|---|---|
 | **Source Mode** | Where the per-cell brightness data comes from. | `pixel` (live webcam) / `demo` (synthetic pattern, no camera needed) |
 | **View Mode** | How the cell grid is projected. | `flat` (2D plane) / `volumetric` (each cell extruded along Z by brightness) |
-| **Render Mode** | The per-cell shape/glyph. | `radio`, `dots`, `blocks`, `lines`, `ascii`, `pixel`, `spectral` (canonical order — `store.ts:4`, also the order the FIST gesture cycles through) |
+| **Render Mode** | The per-cell shape/glyph. | `radio`, `dots`, `blocks`, `hline`, `vline`, `ascii`, `pixel`, `ribbon`, `mesh`, `dither` (canonical order — `store.ts`) |
 | **Resolution** | Grid density (cells per axis). | numeric slider |
 | **Threshold** | Brightness cutoff below which a cell is treated as "off"/background. | 0–1, also driven live by `pinchDistance` |
 | **Extrusion** | Z-depth multiplier in volumetric view. | numeric |
@@ -24,13 +24,16 @@ A live webcam feed reinterpreted in real time as an ASCII/dither/pixel-art field
 
 | Mode | Shape | Notes |
 |---|---|---|
-| `dots` | circle | geometry-based, visually distinct |
-| `blocks` | filled square | near-identical footprint to `pixel` today (Phase 4 Track E gives them distinct fill rules) |
-| `pixel` | filled square | see above |
-| `lines` | bar | currently renders **vertical** bars; Phase 4 Track E changes this to **horizontal** |
-| `ascii` | glyph atlas character | the one mode that does *not* use the shared gradient-color system — tints via flat material color/emissive instead |
-| `radio` | ring + center dot | geometry-based, visually distinct |
-| `spectral` | soft sprite/glow | geometry-based, visually distinct |
+| `radio` | ring + dot | literal UI radio button per cell |
+| `dots` | sphere | geometry-based, visually distinct |
+| `blocks` | filled square | extruded cube per cell |
+| `hline` | horizontal bar | one instance per row |
+| `vline` | vertical bar | one instance per column |
+| `ascii` | glyph atlas character | the one mode that does *not* use the shared gradient-color system |
+| `pixel` | filled square | Bayer-dithered hard edges |
+| `ribbon` | spectrum bar | FFT-mapped horizontal bands |
+| `mesh` | wireframe plane | continuous surface displaced by per-cell brightness |
+| `dither` | fullscreen halftone | fragment-shader Bayer dither |
 
 All modes except `ascii` pull their per-cell color from the same shared gradient function (`getGradientColor`, `theme.ts:42`), keyed on the current **Theme** and that cell's brightness.
 
