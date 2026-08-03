@@ -37,7 +37,9 @@ export function Scene({
   const ribbonMeshRef = useRef<THREE.InstancedMesh>(null)
   const ditherMeshRef = useRef<THREE.Mesh>(null)
   
-  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus } = useStore()
+  const { resolution, threshold, extrusion, viewMode, theme, inverse, audioReactive, audioEnabled, renderMode, showGrid, ditherIntensity, moodEnabled, currentMood, currentPhase, handTracking, gestureTrackingStatus, frameSkip } = useStore()
+
+  const frameCountRef = useRef(0)
 
   // Wrist-driven extrusion drift: `extrusion` (Leva slider) stays the base
   // value; when gesture tracking is active, wrist height adds a small drift
@@ -120,7 +122,7 @@ export function Scene({
         mat.metalness = targetMetalness
       }
     })
-  }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs])
+   }, [chromeColor, moodEnabled, currentPhase, theme, resolution, meshRefs, renderMode])
 
   // Shared dither atlas — single repeat across every mesh that uses it
   // (pixel / dots / radio ring / lines). A shared repeat keeps the reskin
@@ -199,9 +201,19 @@ export function Scene({
     return mat
   }, [frameTextureRef, resolution])
 
+  useEffect(() => {
+    return () => {
+      ditherMaterial.dispose()
+    }
+  }, [ditherMaterial])
+
   const spacing = 0.25
 
 useFrame((state) => {
+    // rAF throttle: skip frames when thermal risk demands 30fps target.
+    frameCountRef.current++
+    if (frameCountRef.current % frameSkip !== 0) return
+
     if (!pixelDataRef.current) return
 
     let emissiveScale = 1.0
@@ -228,29 +240,28 @@ useFrame((state) => {
     }
 
     let audioIntensity = 0
-    if (audioEnabled && audioReactive && analyzerRef.current) {
+    if (audioEnabled && analyzerRef.current) {
       const analyser = analyzerRef.current.analyser || analyzerRef.current
       if (analyser.getByteFrequencyData) {
         analyser.getByteFrequencyData(fftData)
-        let sum = 0
-        for (let j = 0; j < 8; j++) sum += fftData[j]
-        audioIntensity = (sum / 8) / 255
-      }
-    }
-
-    // Spectral mode is audio-native: populate fftData whenever audio is
-    // enabled (independent of audioReactive) so the FFT-driven bars always
-    // have fresh data. audioReactive above still gates audioIntensity for
-    // emissive/extrusion effects on other modes.
-    if (audioEnabled && !audioReactive && analyzerRef.current) {
-      const analyser = analyzerRef.current.analyser || analyzerRef.current
-      if (analyser.getByteFrequencyData) {
-        analyser.getByteFrequencyData(fftData)
+        if (audioReactive) {
+          let sum = 0
+          for (let j = 0; j < 8; j++) sum += fftData[j]
+          audioIntensity = (sum / 8) / 255
+        }
       }
     }
 
     let clicksThisFrame = 0
     const MAX_CLICKS_PER_FRAME = 8
+
+    // Per-cell color helper: only called inside mode guards so
+    // getGradientColor runs once per cell (for the active mode) instead of
+    // once per cell for every mode.
+    const computeCellColor = (brightness: number) =>
+      moodEnabled
+        ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, brightness, cellColorScratch)
+        : getGradientColor(theme, brightness, cellColorScratch)
 
     let i = 0
     for (let y = 0; y < resolution; y++) {
@@ -335,19 +346,14 @@ useFrame((state) => {
         
         dummy.updateMatrix()
         
-        // Per-cell diffuse color: every theme resolves from its own gradient.
-        // ascii has no instanceColor (glyph atlas tints via material.color), so
-        // skip the gradient call there.
-        const cellColor = renderMode === 'ascii'
-          ? null
-          : moodEnabled
-            ? getMoodGradientColor(MOOD_CONFIGS[currentMood].baseHue, brightness, cellColorScratch)
-            : getGradientColor(theme, brightness, cellColorScratch)
-        if (cellColor && blocksRef.current && renderMode === 'blocks') blocksRef.current.setColorAt(id, cellColor)
-        if (cellColor && pixelMeshRef.current && renderMode === 'pixel') pixelMeshRef.current.setColorAt(id, cellColor)
-        if (cellColor && dotsMeshRef.current && renderMode === 'dots') dotsMeshRef.current.setColorAt(id, cellColor)
-        if (cellColor && hlineMeshRef.current && renderMode === 'hline') hlineMeshRef.current.setColorAt(y, cellColor)
-        if (cellColor && vlineMeshRef.current && renderMode === 'vline') vlineMeshRef.current.setColorAt(x, cellColor)
+        // Per-cell diffuse color — only compute for the active mode's mesh.
+        // getGradientColor is invoked inside each mode guard so it never runs
+        // for cells whose mode won't consume the result.
+        if (renderMode === 'blocks' && blocksRef.current) blocksRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'pixel' && pixelMeshRef.current) pixelMeshRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'dots' && dotsMeshRef.current) dotsMeshRef.current.setColorAt(id, computeCellColor(brightness))
+        if (renderMode === 'hline' && hlineMeshRef.current) hlineMeshRef.current.setColorAt(y, computeCellColor(brightness))
+        if (renderMode === 'vline' && vlineMeshRef.current) vlineMeshRef.current.setColorAt(x, computeCellColor(brightness))
 
         if (renderMode === 'ascii') {
           // Atlas order is dense-to-sparse (24 glyphs): 'MWNBDHK0@$#8X%+=-:;,._'` "'
@@ -391,6 +397,7 @@ useFrame((state) => {
         // scaled from 0..full as brightness rises — reads as a pressed/unpressed
         // UI radio button per cell.
         if (renderMode === 'radio') {
+          const cellColor = computeCellColor(brightness)
           if (radioRingRef.current) {
             dummy.position.set(posX, posY, finalZ)
             dummy.scale.set(spacing * 0.7, spacing * 0.7, 1)
@@ -483,17 +490,32 @@ useFrame((state) => {
     // shimmers without a per-frame Math.random() storm. ±3%, clamped >= 0.
     const flickerIdx = Math.floor(state.clock.elapsedTime * 24) % count
     const flicker = flickerOffsets[flickerIdx] ?? 0
-    meshRefs.forEach(ref => {
-      if (ref.current) {
-        if (ref.current.instanceColor) ref.current.instanceColor.needsUpdate = true
-        if (ref.current.material instanceof THREE.MeshStandardMaterial) {
-          const mat = ref.current.material
-          const flickered = Math.max(0, baseEmissive * (1 + flicker))
-          mat.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
-        }
-        ref.current.instanceMatrix.needsUpdate = true
+    let activeRef: React.RefObject<THREE.InstancedMesh | null> | undefined
+    switch (renderMode) {
+      case 'blocks': activeRef = blocksRef; break
+      case 'radio': activeRef = radioRingRef; break
+      case 'pixel': activeRef = pixelMeshRef; break
+      case 'dots': activeRef = dotsMeshRef; break
+      case 'hline': activeRef = hlineMeshRef; break
+      case 'vline': activeRef = vlineMeshRef; break
+      case 'ascii': activeRef = asciiMeshRef; break
+      case 'ribbon': activeRef = ribbonMeshRef; break
+    }
+
+    if (activeRef?.current) {
+      const mesh = activeRef.current
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      if (mesh.material instanceof THREE.MeshStandardMaterial) {
+        const flickered = Math.max(0, baseEmissive * (1 + flicker))
+        mesh.material.emissiveIntensity = moodEnabled ? flickered * emissiveScale * breathMultiplier : flickered
       }
-    })
+      mesh.instanceMatrix.needsUpdate = true
+    }
+    if (renderMode === 'radio' && radioDotRef.current) {
+      const mesh = radioDotRef.current
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+      mesh.instanceMatrix.needsUpdate = true
+    }
   })
 
   return (
@@ -513,64 +535,83 @@ useFrame((state) => {
       />
 
 
-      <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible={renderMode === 'blocks'}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
-      </instancedMesh>
-
-      {/* Radio: literal button — outer ring + inner filled dot */}
-      <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
-        <torusGeometry args={[0.5, 0.05, 16, 32]} />
-        <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
-      </instancedMesh>
-      <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible={renderMode === 'radio'}>
-        <circleGeometry args={[0.5, 32]} />
-        <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
-      </instancedMesh>
-
-      <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'pixel'}>
-        <planeGeometry args={[1, 1]} />
-        <meshBasicMaterial color="#ffffff" map={bayerPixelAtlas} transparent alphaTest={0.1} />
-      </instancedMesh>
-
-      <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'dots'}>
-        <sphereGeometry args={[1, 8, 8]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* hline: count = resolution (one instance per row); the per-frame loop
-          resizes each row's instance to full grid width */}
-      <instancedMesh key={`hline-${resolution}`} ref={hlineMeshRef} args={[null as any, null as any, resolution]} visible={renderMode === 'hline'}>
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* vline: count = resolution (one instance per column) */}
-      <instancedMesh key={`vline-${resolution}`} ref={vlineMeshRef} args={[null as any, null as any, resolution]} visible={renderMode === 'vline'}>
-        <planeGeometry args={[1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      {/* Ribbon: 3-band FFT sin-wave displacement per cell */}
-      <instancedMesh key={`ribbon-${resolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ribbon'}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
-      </instancedMesh>
-
-      <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible={renderMode === 'ascii'}>
-        <planeGeometry args={[1, 1]}>
-          <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
-        </planeGeometry>
-        <primitive object={asciiMaterial} attach="material" />
-      </instancedMesh>
-
-      {/* Dither: fullscreen Bayer-dithered halftone face. The shader samples
-          the live webcam canvas (wrapped as a CanvasTexture by `useSampler`).
-          Mesh is in NDC space so it sits at the back of any camera frustum. */}
-      <mesh ref={ditherMeshRef} visible={renderMode === 'dither'} frustumCulled={false} renderOrder={-1}>
-        <planeGeometry args={[2, 2]} />
-        <primitive object={ditherMaterial} attach="material" />
-      </mesh>
+      {(() => {
+        switch (renderMode) {
+          case 'blocks':
+            return (
+              <instancedMesh key={`blocks-${resolution}`} ref={blocksRef} args={[null as any, null as any, count]} visible>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#ffffff" map={halftoneDotAtlas} emissive={chromeColor} roughness={0.4} metalness={0.6} />
+              </instancedMesh>
+            )
+          case 'radio':
+            return (
+              <>
+                <instancedMesh key={`radio-ring-${resolution}`} ref={radioRingRef} args={[null as any, null as any, count]} visible>
+                  <torusGeometry args={[0.5, 0.05, 16, 32]} />
+                  <meshStandardMaterial color="#ffffff" map={ditherAtlas} emissive={chromeColor} emissiveIntensity={0.5} blending={THREE.AdditiveBlending} depthWrite={false} transparent />
+                </instancedMesh>
+                <instancedMesh key={`radio-dot-${resolution}`} ref={radioDotRef} args={[null as any, null as any, count]} visible>
+                  <circleGeometry args={[0.5, 32]} />
+                  <meshBasicMaterial color="#ffffff" transparent depthWrite={false} />
+                </instancedMesh>
+              </>
+            )
+          case 'pixel':
+            return (
+              <instancedMesh key={`pixel-${resolution}`} ref={pixelMeshRef} args={[null as any, null as any, count]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshBasicMaterial color="#ffffff" map={bayerPixelAtlas} transparent alphaTest={0.1} />
+              </instancedMesh>
+            )
+          case 'dots':
+            return (
+              <instancedMesh key={`dots-${resolution}`} ref={dotsMeshRef} args={[null as any, null as any, count]} visible>
+                <sphereGeometry args={[1, 8, 8]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} roughness={0.1} metalness={0.8} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'hline':
+            return (
+              <instancedMesh key={`hline-${resolution}`} ref={hlineMeshRef} args={[null as any, null as any, resolution]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'vline':
+            return (
+              <instancedMesh key={`vline-${resolution}`} ref={vlineMeshRef} args={[null as any, null as any, resolution]} visible>
+                <planeGeometry args={[1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'ascii':
+            return (
+              <instancedMesh key={`ascii-${resolution}`} ref={asciiMeshRef} args={[null as any, null as any, count]} visible>
+                <planeGeometry args={[1, 1]}>
+                  <primitive object={aGlyphIndex} attach="attributes-aGlyphIndex" />
+                </planeGeometry>
+                <primitive object={asciiMaterial} attach="material" />
+              </instancedMesh>
+            )
+          case 'ribbon':
+            return (
+              <instancedMesh key={`ribbon-${resolution}`} ref={ribbonMeshRef} args={[null as any, null as any, count]} visible>
+                <boxGeometry args={[1, 1, 1]} />
+                <meshStandardMaterial color="#ffffff" emissive={chromeColor} emissiveIntensity={2} alphaMap={ditherAtlas} transparent />
+              </instancedMesh>
+            )
+          case 'dither':
+            return (
+              <mesh ref={ditherMeshRef} visible frustumCulled={false} renderOrder={-1}>
+                <planeGeometry args={[2, 2]} />
+                <primitive object={ditherMaterial} attach="material" />
+              </mesh>
+            )
+          default:
+            return null
+        }
+      })()}
     </>
   )
 }

@@ -11,9 +11,10 @@ import OnboardingOverlay from './OnboardingOverlay'
 import { SessionHud } from './SessionHud'
 import { useControls, folder, Leva, monitor } from 'leva'
 import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
-import { useWebcam, useSampler, useMotionZones } from './hooks'
+import { useWebcam } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
-import { useEnergyAccumulator } from './useEnergyAccumulator'
+import { useUnifiedSampler } from './useUnifiedSampler'
+import { useThermalGuard } from './useThermalGuard'
 import { useGestureTracking } from './vision/useGestureTracking'
 import { useGestureControls } from './useGestureControls'
 import { wristPositionToZoneEnergy } from './vision/wrist-mapping'
@@ -54,13 +55,16 @@ function AnimatedCamera() {
   const resolution = useStore(state => state.resolution)
   const cameraRef = useRef<THREE.PerspectiveCamera>(null)
 
+  // Cache the distance so the per-frame useFrame loop doesn't recompute
+  // the Math.tan-based formula every 16ms — only when resolution changes.
+  const targetDist = useMemo(() => cameraDistanceForResolution(resolution), [resolution])
+
   useFrame((_, delta) => {
     if (!cameraRef.current) return
     const basePos = viewMode === 'flat' ? POS_FLAT : POS_VOLUMETRIC
     // Scale the base position so the camera's Z-component (its perpendicular
     // distance to the grid plane at z=0) matches the distance needed for the
     // grid to exactly fill the viewport. The viewing angle is preserved.
-    const targetDist = cameraDistanceForResolution(resolution)
     const baseZ = Math.abs(basePos.z)
     const scale = baseZ > 0 ? targetDist / baseZ : 1
     const targetPos = basePos.clone().multiplyScalar(scale)
@@ -131,8 +135,11 @@ export default function ThresholdView() {
     gestureTrackingStatus,
     gestureGlitchActive,
     setGestureGlitchActive,
-    soundTexture, setSoundTexture,
-  } = useStore()
+     soundTexture, setSoundTexture,
+     thermalRisk, setThermalRisk,
+     autoDowngradeEnabled, setAutoDowngradeEnabled,
+     reducedQuality, setReducedQuality,
+   } = useStore()
 
   const palette = getTheme(theme)
 
@@ -162,12 +169,83 @@ export default function ThresholdView() {
   }), [palette])
 
   const { videoRef } = useWebcam()
-  const { dataRef, frameTextureRef } = useSampler()
+  const { dataRef, frameTextureRef, statusText } = useUnifiedSampler()
   const { analyzerRef, triggerVoice, triggerClick } = useAudio()
-  const { statusText } = useMotionZones()
   const { status: gestureStatus } = useGestureTracking()
   useGestureControls()
-  useEnergyAccumulator()
+
+  // Thermal Guard — reads device memory/concurrency + estimates GPU frame cost.
+  // Pass the actual active instance-mesh count (1 — only the renderMode mesh is
+  // mounted) and the post-process pass count from the tier below so the
+  // estimate reflects the optimized configuration.
+  // Hysteresis: track last tier change to prevent oscillation.
+  // Once tier drops, require 2s dwell time before allowing upgrade.
+  const [ppTier, setPpTier] = useState<'high' | 'medium' | 'low'>('high')
+  const lastTierChangeRef = useRef<number>(Date.now())
+  const DWELL_TIME_MS = 2000
+
+  useEffect(() => {
+    const now = Date.now()
+    const timeSinceLastChange = now - lastTierChangeRef.current
+
+    let targetTier: 'high' | 'medium' | 'low'
+    if (reducedQuality) targetTier = 'low'
+    else if (thermalRisk === 'high') targetTier = 'low'
+    else if (thermalRisk === 'medium') targetTier = 'medium'
+    else targetTier = 'high'
+
+    // Only allow tier upgrade if dwell time has passed (prevents oscillation)
+    if (targetTier !== ppTier) {
+      const tierRank = { low: 0, medium: 1, high: 2 }
+      const isUpgrade = tierRank[targetTier] > tierRank[ppTier]
+
+      if (!isUpgrade || timeSinceLastChange >= DWELL_TIME_MS) {
+        setPpTier(targetTier)
+        lastTierChangeRef.current = now
+      }
+    }
+  }, [thermalRisk, reducedQuality, ppTier])
+
+  const ppPassCount = useMemo(() => {
+    switch (ppTier) {
+      case 'high': return 8
+      case 'medium': return 4
+      case 'low': return 3
+      default: return 8
+    }
+  }, [ppTier])
+
+  const { thermalRisk: detectedRisk, estimatedFrameMs, deviceMemoryGB } = useThermalGuard({
+    instanceMeshCount: 1,
+    postProcessCount: ppPassCount,
+    rAFLoopCount: 1, // Only 1 rAF loop after Track B consolidation
+  })
+
+  // Sync detected risk to the store so other consumers can react.
+  useEffect(() => {
+    setThermalRisk(detectedRisk)
+  }, [detectedRisk, setThermalRisk])
+
+  // Auto-downgrade: when thermal risk is high and auto-downgrade is enabled,
+  // flip reducedQuality on (wired by Track C to post-process tiering + mesh mounting).
+  useEffect(() => {
+    if (autoDowngradeEnabled && detectedRisk === 'high' && !reducedQuality) {
+      setReducedQuality(true)
+      console.warn('[ThermalGuard] high thermal risk — auto-downgrading quality')
+    }
+  }, [detectedRisk, autoDowngradeEnabled, reducedQuality, setReducedQuality])
+
+  // rAF throttle: drop to 30fps target when thermal risk is high or document hidden.
+  const { setFrameSkip } = useStore()
+  useEffect(() => {
+    const targetSkip = (detectedRisk === 'high' || document.hidden) ? 2 : 1
+    setFrameSkip(targetSkip)
+  }, [detectedRisk, document.hidden, setFrameSkip])
+
+  const thermalColor =
+    detectedRisk === 'high' ? '#ff4400'
+    : detectedRisk === 'medium' ? '#ffcc00'
+    : '#00ff41'
 
   // Ambient edge-panel glow: while gesture tracking is active and a hand is
   // being tracked, derive the legacy 3-zone [left, center, right] shape from
@@ -273,7 +351,8 @@ export default function ThresholdView() {
     localStorage.setItem('threshold_onboarding_done', 'true')
   }
 
-  const quantizedEnergy = Math.round(sessionEnergy / 5) * 5
+  // sessionEnergy is already quantized by useUnifiedSampler; read directly.
+  const quantizedEnergy = sessionEnergy
 
   useEffect(() => {
     if (!moodEnabled) {
@@ -692,6 +771,32 @@ export default function ThresholdView() {
         </button>
       </div>
 
+      {/* Thermal Guard HUD (top-left) */}
+      <div className="absolute top-8 left-8 z-20 pointer-events-auto flex items-center gap-3">
+        <span
+          className={styles.hudThermal}
+          style={{ '--thermal-color': thermalColor } as CSSProperties}
+        >
+          THERMAL // {detectedRisk.toUpperCase()}
+        </span>
+        <span className={`${styles.hudMicro} opacity-50 whitespace-nowrap`}>
+          {estimatedFrameMs.toFixed(1)}ms
+          {deviceMemoryGB !== null && ` · ${deviceMemoryGB}GB`}
+        </span>
+        <button
+          onClick={() => setAutoDowngradeEnabled(!autoDowngradeEnabled)}
+          className={`${styles.hudMicro} px-2 py-1 border transition-all pointer-events-auto`}
+          style={{
+            borderColor: autoDowngradeEnabled ? '#00ff41' : '#555',
+            color: autoDowngradeEnabled ? '#00ff41' : '#555',
+            background: autoDowngradeEnabled ? 'rgba(0,255,65,0.05)' : 'transparent',
+          }}
+          title="Thermal auto-downgrade (toggle for manual override)"
+        >
+          {autoDowngradeEnabled ? 'AUTO' : 'MANUAL'}
+        </button>
+      </div>
+
       {/* Camera controls: PIP | BLEED view selectors + OFF kill switch */}
       <div className="absolute top-8 right-8 z-20 flex gap-2 items-center pointer-events-auto">
         {(['pip', 'bleed'] as const).map((v) => (
@@ -750,17 +855,29 @@ export default function ThresholdView() {
         <EffectComposer>
           <Bloom luminanceThreshold={ppBloom.threshold} intensity={ppBloom.intensity} levels={Math.min(ppBloom.levels, 6)} mipmapBlur />
           <HueSaturation hue={0} saturation={0.15} />
-          <ChromaticAberration offset={ppChromatic} />
+          {ppTier !== 'low' && (
+            <ChromaticAberration offset={ppChromatic} />
+          )}
           {/* focusDistance constant 0.02 (camera-lerp target isn't exposed to
               the composer; 0.02 keeps the near volumetric field sharp and lets
-              the far edge bloom into bokeh). bokehScale ~2.5. */}
-          {viewMode === 'volumetric' && (
+              the far edge bloom into bokeh). bokehScale ~2.5.
+              Only mounts at high tier + volumetric view. */}
+          {ppTier === 'high' && viewMode === 'volumetric' && (
             <DepthOfField focusDistance={0.02} bokehScale={2.5} />
           )}
-          <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
+          {/* Glitch only at high tier — deactivated when reducedQuality or
+              thermal risk is high (Glitch is omitted entirely, not just
+              active={false}). */}
+          {ppTier === 'high' && (
+            <Glitch active={gestureGlitchActive} delay={new THREE.Vector2(1e9, 2e9)} duration={new THREE.Vector2(0.15, 0.25)} strength={new THREE.Vector2(0.15, 0.25)} />
+          )}
           <Scanline opacity={ppScanline} density={2} />
-          <Noise opacity={ppNoise} />
-          <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
+          {ppTier === 'high' && (
+            <Noise opacity={ppNoise} />
+          )}
+          {ppTier === 'high' && (
+            <Vignette eskil={false} offset={0.1} darkness={ppVignette} />
+          )}
         </EffectComposer>
         <ambientLight intensity={0.2} />
         <DriftingPointLight basePosition={[10, 10, 10]} intensity={1} color={palette.accent} />
