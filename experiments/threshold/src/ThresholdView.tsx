@@ -11,6 +11,7 @@ import OnboardingOverlay from './OnboardingOverlay'
 import { SessionHud } from './SessionHud'
 import { useControls, folder, Leva, monitor } from 'leva'
 import { getTheme, PHASE_COLORS, PHASE_LABELS } from './theme'
+import { BLEED_SKEW_FLAT, BLEED_SKEW_VOLUMETRIC } from './bleedSkew'
 import { useWebcam } from './hooks'
 import { useAudio, ensureAudioContext } from './audio'
 import { useUnifiedSampler } from './useUnifiedSampler'
@@ -675,7 +676,8 @@ export default function ThresholdView() {
           height: 'min(100vw, 100vh)',
           left: '50%',
           top: '50%',
-          transform: 'translate(-50%, -50%)',
+          transform: viewMode === 'volumetric' ? BLEED_SKEW_VOLUMETRIC : BLEED_SKEW_FLAT,
+          transition: 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         {cameraOn && cameraView === 'bleed' && (
