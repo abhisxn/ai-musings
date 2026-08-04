@@ -5,7 +5,12 @@ import { ExperimentFrame } from './ExperimentFrame'
 import { ExperimentMeta } from '@/lib/types'
 
 // Dynamically import React experiments with SSR disabled
-const Threshold = dynamic(() => import('../../experiments/threshold/index'), { 
+const Threshold = dynamic(() => import('../../experiments/threshold/index'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
+})
+
+const DeckContentLab = dynamic(() => import('../../experiments/deck-content-lab/index'), {
   ssr: false,
   loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
 })
@@ -21,6 +26,10 @@ export function ExperimentView({ meta }: Props) {
 
   if (meta.slug === 'threshold') {
     return <Threshold />
+  }
+
+  if (meta.slug === 'deck-content-lab') {
+    return <DeckContentLab />
   }
 
   return (
