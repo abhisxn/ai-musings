@@ -11,7 +11,7 @@ const meta: ExperimentMeta = {
   tags: ['ai', 'narrative', 'product', 'agent-orchestration', 'vibe-coding'],
   series: undefined,
   thumbnail: '/experiments/deck-content-lab/thumbnail.png',
-  hero: '/experiments/deck-content-lab/hero.svg',
+  hero: '/experiments/deck-content-lab/hero.png',
   caseStudy: {
     about: [
       {

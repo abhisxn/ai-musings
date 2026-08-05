@@ -10,8 +10,8 @@ const meta: ExperimentMeta = {
   status: 'live',
   tags: ['vision', 'audio', 'terminal', 'camera', 'webgl', 'ai'],
   series: 'perception',
-  thumbnail: '/experiments/threshold/thumbnail.svg',
-  hero: '/experiments/threshold/hero.svg',
+  thumbnail: '/experiments/threshold/thumbnail.png',
+  hero: '/experiments/threshold/hero.png',
   caseStudy: {
     about: [
       {
