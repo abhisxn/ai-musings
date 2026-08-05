@@ -3,6 +3,11 @@ import Image from 'next/image'
 import { ExperimentMeta, CaseStudyParagraph } from '@/lib/types'
 import { assetPath } from '@/lib/assetPath'
 import { SectionNav } from './SectionNav'
+import { PipelineDiagram } from '../../experiments/deck-content-lab/PipelineDiagram'
+
+const diagramsBySlug: Record<string, React.ComponentType> = {
+  'deck-content-lab': PipelineDiagram,
+}
 
 interface CaseStudyLayoutProps {
   meta: ExperimentMeta
@@ -30,6 +35,7 @@ function Paragraphs({ items }: { items: CaseStudyParagraph[] }) {
 export function CaseStudyLayout({ meta }: CaseStudyLayoutProps) {
   const cs = meta.caseStudy
   const eyebrow = meta.series ? `${meta.series} · ${statusLabel[meta.status]}` : statusLabel[meta.status]
+  const Diagram = diagramsBySlug[meta.slug]
 
   return (
     <article className="max-w-6xl mx-auto px-4 pb-24">
@@ -70,6 +76,7 @@ export function CaseStudyLayout({ meta }: CaseStudyLayoutProps) {
 
           <section id="inner-workings" className="flex flex-col gap-4">
             <h2 className="t-h3 text-fg">Inner Workings</h2>
+            {Diagram && <Diagram />}
             <Paragraphs items={cs.innerWorkings} />
           </section>
 
