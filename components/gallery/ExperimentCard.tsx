@@ -6,7 +6,10 @@ import { motion } from 'framer-motion'
 import { ExperimentMeta } from '@/lib/types'
 import { assetPath } from '@/lib/assetPath'
 import { Badge } from '@/components/ui/Badge'
+import { Tag } from '@/components/ui/Tag'
 import { Card } from '@/components/ui/Card'
+
+const MAX_CARD_TAGS = 3
 
 interface ExperimentCardProps {
   experiment: ExperimentMeta
@@ -32,7 +35,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
   return (
     <Link
       href={`/${experiment.slug}`}
-      className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card"
+      className="group block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card"
     >
       <motion.div
         className="h-full"
@@ -42,7 +45,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
         whileTap={{ scale: 0.99 }}
       >
         <Card className="h-full" contentClassName="p-0">
-          <div className="relative aspect-[4/3] overflow-hidden bg-surface-3">
+          <div className="relative aspect-[1200/523] overflow-hidden bg-black">
             <motion.div
               className="w-full h-full"
               variants={imageVariants}
@@ -57,13 +60,22 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
             </motion.div>
           </div>
 
-          <div className="flex flex-col gap-2.5 p-5">
-            <div className="flex flex-wrap gap-1.5">
-              {experiment.series && <Badge label={experiment.series} active />}
+          <div className="flex flex-col gap-3 p-6">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Badge label={statusLabel[experiment.status]} />
+              {experiment.tags.slice(0, MAX_CARD_TAGS).map((tag) => (
+                <Tag key={tag} label={tag} />
+              ))}
             </div>
             <h2 className="t-h5 text-fg">{experiment.title}</h2>
             <p className="t-body3 text-fg/70 leading-relaxed">{experiment.summary}</p>
+
+            <div className="flex items-center gap-2 pt-1 t-caption text-fg/50 group-hover:text-accent transition-colors duration-200">
+              View case study
+              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+                →
+              </span>
+            </div>
           </div>
         </Card>
       </motion.div>

@@ -4,21 +4,21 @@ const PORTFOLIO_URL = 'https://thatguyabhishek.com'
 const YEAR = new Date().getFullYear()
 
 const SOCIALS = [
-  { label: 'LinkedIn', href: 'https://www.linkedin.com/in/thatguyabhishek/' },
-  { label: 'Dribbble', href: 'https://dribbble.com/abhisheksaxena' },
-  { label: 'Behance', href: 'https://www.behance.net/thatguyabhishek' },
+  { label: 'LinkedIn', emoji: '👤', href: 'https://www.linkedin.com/in/thatguyabhishek/' },
+  { label: 'Dribbble', emoji: '⚡', href: 'https://dribbble.com/abhisheksaxena' },
+  { label: 'Behance', emoji: '🔸', href: 'https://www.behance.net/thatguyabhishek' },
 ]
 
 const LINKS = [
-  { label: 'About', href: `${PORTFOLIO_URL}/about` },
-  { label: 'Work', href: `${PORTFOLIO_URL}/work` },
-  { label: 'Awards', href: `${PORTFOLIO_URL}/awards` },
+  { label: 'About', emoji: '☝', href: `${PORTFOLIO_URL}/about` },
+  { label: 'Work', emoji: '🎨', href: `${PORTFOLIO_URL}/work` },
+  { label: 'Awards', emoji: '🏆', href: `${PORTFOLIO_URL}/awards` },
 ]
 
 const CONTACT = [
-  { label: 'Call for a Chat', href: 'tel:+919999005281' },
-  { label: 'Send an email', href: 'mailto:abhisxn@gmail.com' },
-  { label: 'WhatsApp me', href: 'https://wa.me/919999005281' },
+  { label: 'Call for a Chat', emoji: '📞', href: 'tel:+919999005281' },
+  { label: 'Send an email', emoji: '📧', href: 'mailto:abhisxn@gmail.com' },
+  { label: 'WhatsApp me', emoji: '💬', href: 'https://wa.me/919999005281' },
 ]
 
 export function Footer() {
@@ -51,8 +51,8 @@ export function Footer() {
           </div>
 
           {/* Links grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-border-1 pt-10 text-center sm:text-left">
-            <div className="flex flex-col gap-4 items-center sm:items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 border-t border-border-1 pt-10 text-center">
+            <div className="flex flex-col gap-4 items-center">
               <p className="t-body1 font-semibold text-fg">Socials</p>
               {SOCIALS.map((link) => (
                 <a
@@ -62,12 +62,12 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
                 >
-                  {link.label}
+                  {link.emoji} {link.label}
                 </a>
               ))}
             </div>
 
-            <div className="flex flex-col gap-4 items-center sm:items-start">
+            <div className="flex flex-col gap-4 items-center">
               <p className="t-body1 font-semibold text-fg">Links</p>
               {LINKS.map((link) => (
                 <a
@@ -77,12 +77,12 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
                 >
-                  {link.label}
+                  {link.emoji} {link.label}
                 </a>
               ))}
             </div>
 
-            <div className="flex flex-col gap-4 items-center sm:items-start">
+            <div className="flex flex-col gap-4 items-center">
               <p className="t-body1 font-semibold text-fg">Contact</p>
               {CONTACT.map((link) => (
                 <a
@@ -92,7 +92,7 @@ export function Footer() {
                   rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
                   className="t-body2 text-fg/70 inline-block font-medium relative after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:after:w-full"
                 >
-                  {link.label}
+                  {link.emoji} {link.label}
                 </a>
               ))}
             </div>
