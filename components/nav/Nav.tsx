@@ -11,11 +11,11 @@ const RESUME_URL =
 const PORTFOLIO_URL = 'https://thatguyabhishek.com'
 
 const NAV_LINKS = [
-  { label: 'About', href: `${PORTFOLIO_URL}/about`, external: true },
-  { label: 'Work', href: `${PORTFOLIO_URL}/work`, external: true },
-  { label: 'Awards', href: `${PORTFOLIO_URL}/awards`, external: true },
-  { label: 'AI Musings', href: '/', external: false },
-  { label: 'Contact', href: `${PORTFOLIO_URL}/contact`, external: true },
+  { label: 'About', href: `${PORTFOLIO_URL}/about` },
+  { label: 'Work', href: `${PORTFOLIO_URL}/work` },
+  { label: 'Awards', href: `${PORTFOLIO_URL}/awards` },
+  { label: 'AI Musings', href: '/' },
+  { label: 'Contact', href: `${PORTFOLIO_URL}/contact` },
 ]
 
 function ArrowIcon({ size = 14 }: { size?: number }) {
@@ -52,17 +52,17 @@ export function Nav() {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-40 transition-all duration-300"
+      className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
       style={
         scrolled
           ? {
-              backgroundColor: 'color-mix(in srgb, var(--color-bg) 80%, transparent)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
+              background: 'color-mix(in srgb, var(--color-bg) 70%, transparent)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
               borderBottom: '1px solid var(--color-border-1)',
             }
           : {
-              backgroundColor: 'transparent',
+              background: 'transparent',
               borderBottom: '1px solid transparent',
             }
       }
@@ -70,8 +70,6 @@ export function Nav() {
       <div className="max-w-[1200px] mx-auto px-6 sm:px-10 lg:px-16 h-16 flex items-center justify-between">
         <Link
           href={PORTFOLIO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex items-center hover:opacity-70 transition-opacity duration-200"
         >
           <Image
@@ -87,27 +85,15 @@ export function Nav() {
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-6">
           <nav className="flex items-center gap-7">
-            {NAV_LINKS.map((link) =>
-              link.external ? (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="t-body2 text-fg/70 relative transition-colors duration-200 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-fg hover:after:w-full"
-                >
-                  {link.label}
-                </a>
-              ) : (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="t-body2 text-fg relative transition-colors duration-200 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-full after:bg-current"
-                >
-                  {link.label}
-                </Link>
-              )
-            )}
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="t-body2 text-fg/70 relative transition-colors duration-200 after:absolute after:left-0 after:-bottom-0.5 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-fg hover:after:w-full"
+              >
+                {link.label}
+              </Link>
+            ))}
           </nav>
           <a
             href={RESUME_URL}
@@ -148,38 +134,25 @@ export function Nav() {
 
       {/* Mobile menu */}
       <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'}`}
+        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${open ? 'max-h-72 opacity-100' : 'max-h-0 opacity-0'}`}
         style={{
-          backgroundColor: 'color-mix(in srgb, var(--color-bg) 96%, transparent)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: 'color-mix(in srgb, var(--color-bg) 92%, transparent)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
           borderBottom: '1px solid var(--color-border-1)',
         }}
       >
         <nav className="flex flex-col px-6 py-5 gap-5">
-          {NAV_LINKS.map((link) =>
-            link.external ? (
-              <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="t-body2 text-fg/70 transition-colors hover:text-fg"
-              >
-                {link.label}
-              </a>
-            ) : (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="t-body2 text-fg transition-colors"
-              >
-                {link.label}
-              </Link>
-            )
-          )}
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="t-body2 text-fg/70 transition-colors hover:underline"
+            >
+              {link.label}
+            </Link>
+          ))}
           <a
             href={RESUME_URL}
             target="_blank"
