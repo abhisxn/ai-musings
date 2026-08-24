@@ -10,6 +10,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       attribute="data-theme"
       defaultTheme="dark"
       enableSystem={false}
+      storageKey="musings-theme"
     >
       <MotionConfig reducedMotion="user">{children}</MotionConfig>
     </NextThemesProvider>
