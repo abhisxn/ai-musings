@@ -15,6 +15,16 @@ const DeckContentLab = dynamic(() => import('../../experiments/deck-content-lab/
   loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
 })
 
+const ChartsStudio = dynamic(() => import('../../experiments/charts-studio/index'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
+})
+
+const GutterGeneration = dynamic(() => import('../../experiments/gutter-generation/index'), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center h-full text-fg/60 t-caption animate-pulse">Loading experiment…</div>
+})
+
 interface Props {
   meta: ExperimentMeta
 }
@@ -30,6 +40,14 @@ export function ExperimentView({ meta }: Props) {
 
   if (meta.slug === 'deck-content-lab') {
     return <DeckContentLab />
+  }
+
+  if (meta.slug === 'charts-studio') {
+    return <ChartsStudio />
+  }
+
+  if (meta.slug === 'gutter-generation') {
+    return <GutterGeneration />
   }
 
   return (
