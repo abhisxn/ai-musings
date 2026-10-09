@@ -14,6 +14,11 @@ module.exports = {
         fg: 'var(--color-fg)',
         accent: 'var(--color-accent)',
         'on-accent': 'var(--color-on-accent)',
+        brand: 'var(--color-brand)',
+        ink: 'var(--color-ink)',
+        coral: 'var(--color-coral)',
+        'fg-muted': 'var(--color-fg-muted)',
+        'surface-inverse': 'var(--color-surface-inverse)',
         secondary: 'var(--color-secondary)',
         'surface-1': 'var(--color-surface-1)',
         'surface-2': 'var(--color-surface-2)',
@@ -39,7 +44,13 @@ module.exports = {
       },
       fontFamily: {
         display: ['var(--font-glory)', 'serif'],
-        body: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+        body: ['var(--font-glory)', 'system-ui', 'sans-serif'],
+        manrope: ['var(--font-manrope)', 'system-ui', 'sans-serif'],
+      },
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
       },
       borderRadius: {
         btn: 'var(--radius-btn)',

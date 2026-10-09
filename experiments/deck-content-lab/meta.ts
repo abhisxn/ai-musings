@@ -5,6 +5,8 @@ const meta: ExperimentMeta = {
   title: 'Deck Content Lab',
   description: 'A narrative-first AI presentation builder. Story locked before a single slide exists.',
   summary: 'AI-orchestrated presentation builder that forces a story to hold together as structured data before any layout exists.',
+  cardTitle: 'Deck Content Lab: Story Before Slides',
+  cardSummary: "A narrative-first presentation builder. 16 agents lock the story as structured data before any layout exists, so the argument holds together before anyone designs a slide.",
   date: '2026-08-05',
   type: 'react',
   status: 'live',

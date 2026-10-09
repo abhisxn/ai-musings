@@ -2,12 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
 import { ExperimentMeta } from '@/lib/types'
 import { assetPath } from '@/lib/assetPath'
-import { Badge } from '@/components/ui/Badge'
 import { Tag } from '@/components/ui/Tag'
-import { Card } from '@/components/ui/Card'
 
 const MAX_CARD_TAGS = 3
 
@@ -21,64 +18,46 @@ const statusLabel: Record<ExperimentMeta['status'], string> = {
   archived: 'Archived',
 }
 
-const cardVariants = {
-  rest: { scale: 1 },
-  hover: { scale: 1.02, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
-}
-
-const imageVariants = {
-  rest: { opacity: 0.85, scale: 1.02 },
-  hover: { opacity: 1, scale: 1.06, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const } },
-}
-
 export function ExperimentCard({ experiment }: ExperimentCardProps) {
+  // Spec mirrors thatguyabhishek Card size "l" (the grid size; our cards are ~520px wide like its
+  // 520px imgSizes): 24px radius, 3:2 image that insets on hover, gap-4 / px-6 pt-5 pb-8 content,
+  // t-h4 title, t-body2 (18px) description, 14px link CTA.
   return (
     <Link
       href={`/${experiment.slug}`}
-      className="group block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg rounded-card"
+      className="group flex flex-col h-full overflow-hidden rounded-[24px] bg-surface-inverse text-ink shadow-md no-underline transition-transform duration-300 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
     >
-      <motion.div
-        className="h-full"
-        initial="rest"
-        whileHover="hover"
-        variants={cardVariants}
-        whileTap={{ scale: 0.99 }}
-      >
-        <Card className="h-full" contentClassName="p-0">
-          <div className="relative aspect-[3/2] overflow-hidden bg-black">
-            <motion.div
-              className="w-full h-full"
-              variants={imageVariants}
-            >
-              <Image
-                src={assetPath(experiment.thumbnail)}
-                alt={experiment.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </motion.div>
-          </div>
+      <div className="w-full shrink-0 overflow-hidden transition-[padding] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:pt-3 group-hover:px-3">
+        <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-[20px] transition-[border-radius] duration-[400ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:rounded-[20px]">
+          <Image
+            src={assetPath(experiment.thumbnail)}
+            alt={experiment.title}
+            fill
+            className="object-cover transition-transform duration-[350ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.08]"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        </div>
+      </div>
 
-          <div className="flex flex-col flex-1 gap-3 px-5 pt-4 pb-6">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge label={statusLabel[experiment.status]} />
-              {experiment.tags.slice(0, MAX_CARD_TAGS).map((tag) => (
-                <Tag key={tag} label={tag} />
-              ))}
-            </div>
-            <h2 className="text-lg font-semibold leading-snug text-fg">{experiment.title}</h2>
-            <p className="t-body3 text-fg/70 leading-[1.26] line-clamp-3">{experiment.summary}</p>
+      <div className="flex flex-col items-start flex-1 gap-4 px-6 pt-5 pb-8">
+        <div className="flex flex-nowrap gap-1 w-full overflow-hidden">
+          <Tag label={statusLabel[experiment.status]} />
+          {experiment.tags.slice(0, MAX_CARD_TAGS).map((tag) => (
+            <Tag key={tag} label={tag} />
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 w-full">
+          <h2 className="t-h4 w-full text-ink line-clamp-2">{experiment.cardTitle ?? experiment.title}</h2>
+          <p className="t-body2 w-full text-ink/70 leading-[1.4] line-clamp-4 min-h-[4lh]">{experiment.cardSummary ?? experiment.summary}</p>
+        </div>
 
-            <div className="mt-auto flex items-center gap-2 pt-1 text-base font-semibold text-fg/70 group-hover:text-accent transition-colors duration-200">
-              Know more
-              <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
-                →
-              </span>
-            </div>
-          </div>
-        </Card>
-      </motion.div>
+        <span className="mt-auto pt-4 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-wider leading-none text-ink transition-colors duration-200 group-hover:text-coral">
+          Know more
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M1.5 10.5L10.5 1.5M10.5 1.5H4.5M10.5 1.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </div>
     </Link>
   )
 }
