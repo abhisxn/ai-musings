@@ -5,6 +5,8 @@ const meta: ExperimentMeta = {
   title: 'Gutter Generation',
   description: 'A DOM-physics crowd that watches back. Drop in an avatar and a force-repelled crowd of eyes, cockroaches, pointed fingers, and placards reacts to it, in real time, with no canvas anywhere.',
   summary: 'Physics-driven protest satire toy: a crowd of DOM creatures that tracks, swarms, and refuses to let a dropped-in avatar hide.',
+  cardTitle: 'Gutter Generation: A Crowd That Watches Back',
+  cardSummary: 'Drop in an avatar and a crowd of eyes, cockroaches and placards swarms it. All DOM physics, no canvas.',
   date: '2026-08-18',
   type: 'react',
   status: 'live',

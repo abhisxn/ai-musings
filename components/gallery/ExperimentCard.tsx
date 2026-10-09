@@ -52,7 +52,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
             >
               <Image
                 src={assetPath(experiment.thumbnail)}
-                alt={experiment.title}
+                alt={experiment.cardTitle ?? experiment.title}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -67,8 +67,8 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
                 <Tag key={tag} label={tag} />
               ))}
             </div>
-            <h2 className="text-lg font-semibold leading-snug text-fg">{experiment.title}</h2>
-            <p className="t-body3 text-fg/70 leading-[1.26] line-clamp-3">{experiment.summary}</p>
+            <h2 className="text-lg font-semibold leading-snug text-fg">{experiment.cardTitle ?? experiment.title}</h2>
+            <p className="t-body3 text-fg/70 leading-[1.26] line-clamp-3">{experiment.cardSummary ?? experiment.summary}</p>
 
             <div className="mt-auto flex items-center gap-2 pt-1 text-base font-semibold text-fg/70 group-hover:text-accent transition-colors duration-200">
               Know more

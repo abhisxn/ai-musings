@@ -5,6 +5,8 @@ const meta: ExperimentMeta = {
   title: 'Charts Studio',
   description: 'Paste a dataset, get a ranked, scored gallery of the best chart types for that specific data, not a static list of every chart type Excel has.',
   summary: 'Chart recommendation engine that scores and explains every candidate against the actual shape of your data.',
+  cardTitle: 'Charts Studio: Charts With Reasons',
+  cardSummary: 'Paste a dataset and get chart types ranked and scored against its real shape, each with a stated reason.',
   date: '2026-09-03',
   type: 'react',
   status: 'wip',
