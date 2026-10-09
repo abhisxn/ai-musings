@@ -29,6 +29,8 @@ export interface ExperimentMeta {
   title: string
   description: string
   summary: string        // one-sentence gallery-card subcopy
+  cardTitle?: string     // gallery-card title override (falls back to title)
+  cardSummary?: string   // gallery-card body override (falls back to summary)
   date: string           // ISO date e.g. "2026-04-30"
   type: ExperimentType
   status: ExperimentStatus

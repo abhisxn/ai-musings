@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
+import { Logo } from './Logo'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
 const RESUME_URL =
@@ -72,14 +72,7 @@ export function Nav() {
           href={PORTFOLIO_URL}
           className="flex items-center hover:opacity-70 transition-opacity duration-200"
         >
-          <Image
-            src="/logo.svg"
-            alt="thatguyabhishek"
-            width={118}
-            height={50}
-            className="h-12 w-auto"
-            priority
-          />
+          <Logo />
         </Link>
 
         {/* Desktop */}

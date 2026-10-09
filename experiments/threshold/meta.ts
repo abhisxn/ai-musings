@@ -5,6 +5,8 @@ const meta: ExperimentMeta = {
   title: 'Threshold v5',
   description: 'Volumetric terminal instrument. AI depth estimation.',
   summary: 'A webcam turned into a volumetric instrument — real-time depth, gesture, and generative sound built from a single video feed.',
+  cardTitle: 'Creature: Your Webcam, Rebuilt in Depth',
+  cardSummary: "Point your webcam at a room and get it back as 3D terrain. Depth estimation, webcam filters and generative sound all run from one camera feed, live in the browser.",
   date: '2026-04-30',
   type: 'react',
   status: 'live',
