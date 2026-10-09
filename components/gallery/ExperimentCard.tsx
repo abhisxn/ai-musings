@@ -45,7 +45,7 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
         whileTap={{ scale: 0.99 }}
       >
         <Card className="h-full" contentClassName="p-0">
-          <div className="relative aspect-[1200/523] overflow-hidden bg-black">
+          <div className="relative aspect-[3/2] overflow-hidden bg-black">
             <motion.div
               className="w-full h-full"
               variants={imageVariants}
@@ -60,18 +60,18 @@ export function ExperimentCard({ experiment }: ExperimentCardProps) {
             </motion.div>
           </div>
 
-          <div className="flex flex-col gap-3 p-6">
+          <div className="flex flex-col flex-1 gap-3 px-5 pt-4 pb-6">
             <div className="flex flex-wrap items-center gap-1.5">
               <Badge label={statusLabel[experiment.status]} />
               {experiment.tags.slice(0, MAX_CARD_TAGS).map((tag) => (
                 <Tag key={tag} label={tag} />
               ))}
             </div>
-            <h2 className="t-h5 text-fg">{experiment.title}</h2>
-            <p className="t-body3 text-fg/70 leading-relaxed">{experiment.summary}</p>
+            <h2 className="text-lg font-semibold leading-snug text-fg">{experiment.title}</h2>
+            <p className="t-body3 text-fg/70 leading-[1.26] line-clamp-3">{experiment.summary}</p>
 
-            <div className="flex items-center gap-2 pt-1 t-caption text-fg/50 group-hover:text-accent transition-colors duration-200">
-              View case study
+            <div className="mt-auto flex items-center gap-2 pt-1 text-base font-semibold text-fg/70 group-hover:text-accent transition-colors duration-200">
+              Know more
               <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
                 →
               </span>
